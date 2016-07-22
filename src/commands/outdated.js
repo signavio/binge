@@ -1,7 +1,4 @@
-import readGraph from '../graph/readWithStatus'
-import { flat as flatTopology } from '../graph/topology'
-
-
+import readGraph from '../graph/withStatus'
 
 export default function(){
     process.chdir('S:/workspace-trunk/signavio/client/bdmsimulation/')
@@ -13,7 +10,7 @@ export default function(){
             return
         }
 
-        flatTopology(graph).reverse().forEach( node => {
+        graph.forEach( node => {
             const {name, npmStatus} = node
             console.log(`${name} - ${npmStatus.needsInstall}`)
 

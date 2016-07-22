@@ -1,17 +1,12 @@
 import async from 'async'
 
-import readGraph from '../graph/readWithStatus'
-import {flat as flatTopology} from '../graph/topology'
-import {layer as layerTopology} from '../graph/topology'
-import executeInGraph from '../graph-execution/layerSeries'
-
+import readGraph from '../graph/withStatus'
 import createConnectTask from '../tasks/connect'
 import createInstallTask from '../tasks/install'
 import createPatchTask from '../tasks/patch'
 import createRinseTask from '../tasks/rinse'
 import createTranspileTask from '../tasks/transpile'
 import createWatchTask from '../tasks/watch'
-
 
 const createPathInTask = () => createPatchTask({}, true)
 const createPathOutTask = () => createPatchTask({}, false)
@@ -24,8 +19,8 @@ export default function(callback){
     function thenRinse(err, graph){
         if(tryFatal(err))return failure()
 
-        executeInGraph(
-            layerTopology(graph),
+        async.map(
+            graph,
             createRinseTask(),
             err => thenPatchIn(err, graph)
         )
@@ -35,7 +30,7 @@ export default function(callback){
         if(tryFatal(err))return failure()
 
         async.map(
-            flatTopology(graph),
+            graph,
             createPathInTask(),
             err => thenInstall(err, graph)
         )
@@ -44,8 +39,9 @@ export default function(callback){
     function thenInstall(err, graph){
         if(tryFatal(err))return failure()
 
-        executeInGraph(
-            layerTopology(graph),
+        async.mapLimit(
+            graph,
+            4,
             createInstallTask({showOutput: false}),
             err => thenPatchOut(err, graph)
         )
@@ -56,7 +52,7 @@ export default function(callback){
 
         //always do the cleanup
         async.map(
-            flatTopology(graph),
+            graph,
             createPathOutTask(),
             isOk ? err => thenTranspile(err, graph) : failure
         )
@@ -66,7 +62,7 @@ export default function(callback){
         if(tryFatal(err))return failure()
 
         async.map(
-            flatTopology(graph),
+            graph,
             createTranspileTask({showOutput: false}),
             err => thenWatch(err, graph)
         )
@@ -75,10 +71,10 @@ export default function(callback){
     function thenConnect(err, graph){
         if(tryFatal(err))return failure()
 
-        const rootNode = graph
+        const [rootNode] = graph
 
         async.map(
-            flatTopology(graph),
+            graph,
             createConnectTask(rootNode),
             err => thenWatch(err, graph)
         )
@@ -89,8 +85,9 @@ export default function(callback){
 
         const rootNode = graph
 
+        //TODO launch all the watches in the same process
         async.map(
-            flatTopology(graph),
+            graph,
             createWatchTask(rootNode),
             thenEnd
         )

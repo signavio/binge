@@ -1,6 +1,5 @@
 import async from 'async'
-import readGraph from '../graph/readWithStatus'
-import {flat as flatTopology} from '../graph/topology'
+import readGraph from '../graph/withStatus'
 import createCleanTask from '../tasks/clean'
 
 
@@ -13,8 +12,8 @@ function thenClean(err, graph){
     if(tryFatal(err))return failure()
 
     async.mapLimit(
-        flatTopology(graph).reverse(),
-        10,
+        graph,
+        4,
         createCleanTask(),
         thenEnd
     )

@@ -52,7 +52,7 @@ export default function (rootPath, callback){
             (err, nodes) => {
                 if(!err){
                     node.children = nodes
-                }                
+                }
                 callback(err)
             }
         )
@@ -70,7 +70,7 @@ export default function (rootPath, callback){
             done => readIgnoreFile(npmIgnorePath, done)
         ], cacheNode)
 
-        function cacheNode(err, [packageJson, npmIgnore] = []){
+        function cacheNode(err, [packageJson, npmIgnore] = []) {
             if(err) return callback(err)
 
             const node = cache[pkgPath] = {
@@ -82,8 +82,6 @@ export default function (rootPath, callback){
             callback(null, node)
         }
     }
-
-
 }
 
 function allDependencies(packageJson){

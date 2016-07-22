@@ -1,40 +1,59 @@
-import flatten from './flatten'
-
 /*
- *  Returns layers of nodes.
+ * Returns layers of nodes.
  *
- * The layers are topologically relevant. Nodes in the same layer
- * can be solved concurrently in safe manner. We can create batches of:
+ * Each layer is organized by dependency level. Layers are are topologically
+ * relevant. Nodes in the same layer can be solved concurrently in safe manner,
+ * from the dependency point of view
  *
- * batches = topology.map(warever)
- * async.series([
- *     batches.map( batch => async.parallell(batch))
- * ])
- *
- * ASSUMES AN ACYCLIC GRAPH (validated on parse)
+ * The following operation would success:
+ * for( i=layers.length - 1; i>=0; i-- )
+ *     layers[i].mapInParallel( node => doNpmInstallInNode(node) )
  *
  */
 
-export function layer(dependencyGraph){
+export function layer(rootNode){
 
-    let unprocessed = flatten(dependencyGraph)
-    let topology = []
+    let pending = allNodes(rootNode)
+    let result = []
 
-    const isFolded = node => node.children.every(isProcessed)
-    const isUnfolded = node => node.children.some(isUnprocessed)
-    const isProcessed = node => unprocessed.indexOf(node) === -1
-    const isUnprocessed = node => !isProcessed(node)
+    /*
+     * isTight: A node with one or more pending (pending) children
+     * isLoose: A node with no pending children
+     * tighten: Remove all loose nodes from the unsewpt
+     * loosen: Get all the loose nodes (the next layer)
+     * isLocked: If it is not possible to loosen more nodes -> graph has a cycle
+     */
+    const isTight  = node => node.children.some(c => pending.indexOf(c) !== -1)
+    const isLoose  = node => node.children.every(c => pending.indexOf(c) === -1)
+    const tighten  = () => pending.filter(isTight)
+    const loosen   = () => pending.filter(isLoose)
+    const isLocked = () => loosen().length === 0
 
-    for(; unprocessed.length ;){
-        topology = [...topology, unprocessed.filter(isFolded)]
-        unprocessed = unprocessed.filter(isUnfolded)
+    for( ; pending.length ; ){
+
+        if(isLocked()){
+            return new Error("Dependency Graph contains cycles")
+        }
+        result = [loosen(), ...result]
+        pending = tighten()
     }
 
-    //topology dog
-    return topology
+    return result
 }
 
-export function flat(dependencyGraph){
+export function flat(rootNode){
     //flatten the layers into a single array
-    return Array.prototype.concat.apply([], layer(dependencyGraph))
+    return Array.prototype.concat.apply([], layer(rootNode))
+}
+
+function allNodes(rootNode){
+    function traverse(node){
+        if(result.indexOf(node) === -1){
+            result.push(node)
+            node.children.forEach(traverse)
+        }
+    }
+    const result = []
+    traverse(rootNode)
+    return result
 }

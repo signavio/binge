@@ -19,7 +19,7 @@ export default function createTask(options = defaultOptions) {
             spawn('npm', ['run', 'prepublish'], opts, callback)
         }
         else {
-            console.log(`Binge: No prepublish script for ${node.packageJson.name}`)
+            console.log(`Binge: Skipping transpile for ${node.name}`)
             callback(null)
         }
     }
