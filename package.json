@@ -1,6 +1,6 @@
 {
   "name": "binge",
-  "version": "0.0.1",
+  "version": "0.0.1-beta.1",
   "description": "Tool for managing monorepos with local packages",
   "main": "lib/index.js",
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "author": "Cristovao Honorato",
   "license": "ISC",
-  "dependencies": {    
+  "dependencies": {
     "async": "^1.5.0",
     "chalk": "^1.1.1",
     "chokidar": "^1.6.0",
