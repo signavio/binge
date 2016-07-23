@@ -1,11 +1,9 @@
 import chalk from 'chalk'
 import archy from '../util/archy'
-
 import readGraph from '../graph/withStatus'
 
 
 export default function(){
-    process.chdir('S:/workspace-trunk/signavio/client/bdmsimulation/')
     readGraph('.', thenChristmasTree)
 }
 
@@ -26,10 +24,10 @@ function tryFatal(err){
     return !!err
 }
 
-function failure(){
-    console.log('Binge: ' + chalk.red('Failure'))
+function success(){
+    console.log("Binge: " + chalk.green("Success"))
 }
 
-function success(){
-    console.log('Binge: ' + chalk.green('Success'))
+function failure(){
+    console.log("Binge: " + chalk.red("Failure"))
 }

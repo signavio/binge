@@ -1,4 +1,6 @@
 import async from 'async'
+import chalk from 'chalk'
+import parallel from '../graph-execution/parallel'
 
 import readGraph from '../graph/withStatus'
 import createConnectTask from '../tasks/connect'
@@ -10,16 +12,14 @@ import createTranspileTask from '../tasks/transpile'
 const createPathInTask = () => createPatchTask({}, true)
 const createPathOutTask = () => createPatchTask({}, false)
 
-
 export default function(){
-    process.chdir('S:/workspace-trunk/signavio/client/bdmsimulation/')
     readGraph('.', thenRinse)
 }
 
 function thenRinse(err, graph){
     if(tryFatal(err))return failure()
 
-    async.map(
+    parallel(
         graph,
         createRinseTask(),
         err => thenPatchIn(err, graph)
@@ -29,7 +29,7 @@ function thenRinse(err, graph){
 function thenPatchIn(err, graph){
     if(tryFatal(err))return failure()
 
-    async.map(
+    parallel(
         graph,
         createPathInTask(),
         err => thenInstall(err, graph)
@@ -39,7 +39,7 @@ function thenPatchIn(err, graph){
 function thenInstall(err, graph){
     if(tryFatal(err))return failure()
 
-    async.map(
+    parallel(
         graph,
         createInstallTask({showOutput: false}),
         err => thenPatchOut(err, graph)
@@ -49,8 +49,7 @@ function thenInstall(err, graph){
 function thenPatchOut(err, graph){
     const isOk = !tryFatal(err)
 
-    //always do the cleanup
-    async.map(
+    parallel(
         graph,
         createPathOutTask(),
         isOk ? err => thenTranspile(err, graph) : failure
@@ -60,7 +59,7 @@ function thenPatchOut(err, graph){
 function thenTranspile(err, graph){
     if(tryFatal(err))return failure()
 
-    async.map(
+    parallel(
         graph,
         createTranspileTask({showOutput: false}),
         err => thenConnect(err, graph)
@@ -72,7 +71,7 @@ function thenConnect(err, graph){
 
     const [rootNode] = graph
 
-    async.map(
+    parallel(
         graph,
         createConnectTask(rootNode),
         thenEnd
@@ -94,10 +93,10 @@ function tryFatal(err){
     return !!err
 }
 
-function failure(){
-    console.log("Binge: Failure")
+function success(){
+    console.log("Binge: " + chalk.green("Success"))
 }
 
-function success(){
-    console.log("Binge: Success")
+function failure(){
+    console.log("Binge: " + chalk.red("Failure"))
 }

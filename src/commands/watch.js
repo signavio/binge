@@ -1,4 +1,6 @@
 import async from 'async'
+import chalk from 'chalk'
+import parallel from '../graph-execution/parallel'
 
 import readGraph from '../graph/withStatus'
 import createConnectTask from '../tasks/connect'
@@ -13,13 +15,12 @@ const createPathOutTask = () => createPatchTask({}, false)
 
 
 export default function(callback){
-    process.chdir('S:/workspace-trunk/signavio/client/bdmsimulation/')
     readGraph('.', thenRinse)
 
     function thenRinse(err, graph){
         if(tryFatal(err))return failure()
 
-        async.map(
+        parallel(
             graph,
             createRinseTask(),
             err => thenPatchIn(err, graph)
@@ -29,7 +30,7 @@ export default function(callback){
     function thenPatchIn(err, graph){
         if(tryFatal(err))return failure()
 
-        async.map(
+        parallel(
             graph,
             createPathInTask(),
             err => thenInstall(err, graph)
@@ -39,9 +40,8 @@ export default function(callback){
     function thenInstall(err, graph){
         if(tryFatal(err))return failure()
 
-        async.mapLimit(
+        parallel(
             graph,
-            4,
             createInstallTask({showOutput: false}),
             err => thenPatchOut(err, graph)
         )
@@ -51,7 +51,7 @@ export default function(callback){
         const isOk = !tryFatal(err)
 
         //always do the cleanup
-        async.map(
+        parallel(
             graph,
             createPathOutTask(),
             isOk ? err => thenTranspile(err, graph) : failure
@@ -61,7 +61,7 @@ export default function(callback){
     function thenTranspile(err, graph){
         if(tryFatal(err))return failure()
 
-        async.map(
+        parallel(
             graph,
             createTranspileTask({showOutput: false}),
             err => thenWatch(err, graph)
@@ -83,14 +83,10 @@ export default function(callback){
     function thenWatch(err, graph){
         if(tryFatal(err))return failure()
 
-        const rootNode = graph
+        const [rootNode] = graph
 
         //TODO launch all the watches in the same process
-        async.map(
-            graph,
-            createWatchTask(rootNode),
-            thenEnd
-        )
+        graph.forEach(createWatchTask(rootNode))        
     }
 
     function thenEnd(err){
@@ -108,11 +104,11 @@ export default function(callback){
         return !!err
     }
 
-    function failure(){
-        console.log("Binge: Failure")
+    function success(){
+        console.log("Binge: " + chalk.green("Success"))
     }
 
-    function success(){
-        console.log("Binge: Success")
+    function failure(){
+        console.log("Binge: " + chalk.red("Failure"))
     }
 }

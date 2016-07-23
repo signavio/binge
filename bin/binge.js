@@ -24,6 +24,7 @@ const cli = meow([
   "  --skip-connect       TODO Skip the connect step ('build' and 'watch' commands only)",
   //"  --ignore [glob]      Ignores packages with names matching the given glob (Works only in combination with the 'bootstrap' command).",
   //"  --yes                Skip all confirmation prompts",
+  "  --cwd                Set the current working directory",
   "  --concurrency        How many threads to use if binge parallelises the tasks (defaults to 4)",
   "  --loud               TODO Output all available inforomation",
   "  --social (default)   TODO Output information about the current task and current step",
@@ -37,7 +38,6 @@ const cli = meow([
 
 require("signal-exit").unload()
 
-
 const commandName = cli.input[0]
 const command = binge[commandName]
 
@@ -50,5 +50,9 @@ if (!command) {
 } else {
     console.time("execution")
     process.on("exit", () => console.timeEnd("execution"))
+    if(cli.flags.cwd) {
+        console.log("Binge: Executing in " + chalk.magenta(cli.flags.cwd))
+        process.chdir(cli.flags.cwd)
+    }
     command(cli.input.slice(1), cli.flags)
 }

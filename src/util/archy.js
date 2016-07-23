@@ -1,3 +1,5 @@
+import chalk from 'chalk'
+
 export default function archy (node, prefix = ' ' , opts = {}) {
     function chr(s) {
         const chars = {
@@ -17,7 +19,7 @@ export default function archy (node, prefix = ' ' , opts = {}) {
          ' '
      )
 
-    return prefix + lines.join(splitter) + '\n' +
+    return prefix + chalk.yellow(lines.join(splitter)) + '\n' +
         node.children.map((childNode, i) => {
             const last = i === node.children.length - 1
             const more = childNode.children.length > 0

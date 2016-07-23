@@ -1,10 +1,10 @@
 import readGraph from '../graph/withStatus'
 
 export default function(){
-    process.chdir('S:/workspace-trunk/signavio/client/bdmsimulation/')
 
     readGraph('.', (err, graph) => {
         if(err){
+            //TODO move the success error to a common place
             console.log("FATAL*************************")
             console.log(err)
             return

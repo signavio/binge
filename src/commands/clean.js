@@ -1,19 +1,18 @@
 import async from 'async'
+import parallel from '../graph-execution/parallel'
+
 import readGraph from '../graph/withStatus'
 import createCleanTask from '../tasks/clean'
 
-
 export default function(){
-    process.chdir('S:/workspace-trunk/signavio/client/bdmsimulation/')
     readGraph('.', thenClean)
 }
 
 function thenClean(err, graph){
     if(tryFatal(err))return failure()
 
-    async.mapLimit(
+    parallel(
         graph,
-        4,
         createCleanTask(),
         thenEnd
     )
@@ -34,10 +33,10 @@ function tryFatal(err){
     return !!err
 }
 
-function failure(){
-    console.log("Binge: Failure")
+function success(){
+    console.log("Binge: " + chalk.green("Success"))
 }
 
-function success(){
-    console.log("Binge: Success")
+function failure(){
+    console.log("Binge: " + chalk.red("Failure"))
 }
