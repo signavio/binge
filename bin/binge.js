@@ -1,10 +1,15 @@
-'use strict'
+#!/usr/bin/env node
+/*
+ * The "shebang" above is required for npm to correctly and install package the
+ * package bin shortcut on windows
+ * see: https://github.com/ForbesLindesay/cmd-shim/blob/f59af911f1373239a7537072641d55ff882c3701/index.js#L22
+ */
 
-const binge = require("../lib/index").default
-const chalk = require("chalk")
-const meow = require("meow")
+var binge = require("../lib/index").default
+var chalk = require("chalk")
+var meow = require("meow")
 
-const cli = meow([
+var cli = meow([
   "Usage",
   "  $ binge [command]",
   "",
@@ -38,8 +43,8 @@ const cli = meow([
 
 require("signal-exit").unload()
 
-const commandName = cli.input[0]
-const command = binge[commandName]
+var commandName = cli.input[0]
+var command = binge[commandName]
 
 if (!command) {
     if (commandName) {
