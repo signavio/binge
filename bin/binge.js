@@ -10,7 +10,7 @@ var chalk = require("chalk")
 var meow = require("meow")
 
 var cli = meow([
-  "Usage",
+  "Usage", 
   "  $ binge [command]",
   "",
   "Commands:",

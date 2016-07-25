@@ -1,4 +1,5 @@
 import async from 'async'
+import chalk from 'chalk'
 import parallel from '../graph-execution/parallel'
 
 import readGraph from '../graph/withStatus'
