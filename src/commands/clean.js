@@ -2,10 +2,11 @@ import async from 'async'
 import chalk from 'chalk'
 import parallel from '../graph-execution/parallel'
 
-import readGraph from '../graph/withStatus'
+import readGraph from '../graph/withNeedsInstall'
 import createCleanTask from '../tasks/clean'
 
 export default function(){
+    process.chdir('S:/workspace-trunk/signavio/client/bdmsimulation/')
     readGraph('.', thenClean)
 }
 

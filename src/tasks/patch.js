@@ -21,7 +21,6 @@ export default function createTask(options = defaultOptions, mask = true ) {
                     break
                 default:
                     return callback(new Error(`Failed patching ${mask} ${node.path}`))
-
             }
         })
     }

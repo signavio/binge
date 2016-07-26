@@ -1,32 +1,54 @@
-import fs from 'fs'
+import async from 'async'
+import chalk from 'chalk'
 import path from 'path'
 import rimraf from "rimraf";
-import async from 'async'
+
 
 const defaultOptions = {
-    showOutput: true
+    showOutput: true,
+    rinseAll: false
 }
 
 export default function createTask(options = defaultOptions) {
 
     return (node, callback) => {
 
-        const count = node.npmStatus.stale.length
-        if(count){
-            console.log(`${node.name}: rimrafing ${count} nodes`)
-            const nodeModulesPath = path.join(node.path, 'node_modules')
-            async.map(
-                node.npmStatus.stale,
-                (name, done) => rimraf(dependencyPath(node, name), done),
-                callback
-            )
+        const children = options.rinseAll
+            ?  node.children
+            :  staleChildren(node)
+
+        const status = children.length
+            ? chalk.yellow(`${children.length} packages`)
+            : chalk.green('skipping')
+
+        log(status, node.name)
+
+        if(children.length === 0){
+            return callback(null)
         }
-        else {            
-            callback(null)
-        }
+
+        async.map(
+            children,
+            (childNode, done) => rinseChild(node, childNode, done),
+            callback
+        )
     }
 }
 
-function dependencyPath(node, name){
-    return path.join(node.path, 'node_modules', name)
+function staleChildren(node){
+    return node.children.filter(
+        childNode => (
+            childNode.status.needsBuild === true ||
+            node.status.needsInstall.stale.indexOf(childNode.name) !== -1
+        )
+    )
+}
+
+function rinseChild(node, childNode, callback) {
+    const installedPath = path.join(node.path, 'node_modules', childNode.name)
+    rimraf(installedPath, callback)
+}
+
+function log(status, name){
+    console.log(`[Binge] Rinse ${status} for ${name}`)
 }

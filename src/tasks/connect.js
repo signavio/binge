@@ -9,8 +9,7 @@ const defaultOptions = {
 export default function createTask(destNode, options = defaultOptions) {
 
     return (node, callback) => {
-        console.log(`Binge: Connecting to ${node.name}`)
-        debugger
+        console.log(`Binge: Connecting to ${node.name}`)        
 
         const srcDirPath = node.path
         const destDirPath = path.join(

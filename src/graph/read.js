@@ -77,7 +77,8 @@ export default function (rootPath, callback){
                 name: packageJson.name,
                 path: pkgPath,
                 packageJson,
-                npmIgnore
+                npmIgnore,
+                status: {}
             }
             callback(null, node)
         }

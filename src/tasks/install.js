@@ -1,17 +1,27 @@
+import chalk from 'chalk'
+import rimraf from "rimraf";
+
 import {spawn} from '../util/childProcess'
 
 const defaultOptions = {
-    showOutput: true
+    showOutput: false
 }
 
 export default function createTask(options = defaultOptions ) {
     return (node, callback) => {
-        if(!node.npmStatus.needsInstall){
-            console.log(`Binge: Skipping install for ${node.name}`)
+
+        const isSkip = !shouldInstall(node)
+
+        const status = isSkip
+            ? chalk.green('skipped')
+            : chalk.yellow('executing')
+
+        log(status, node.name)
+
+        if(isSkip){
             return callback(null)
         }
 
-        console.log(`Binge: Installing ${node.name}`)
         const args = options.showOutput
             ? ['install', '--quiet']
             : ['install', '--silent']
@@ -25,4 +35,15 @@ export default function createTask(options = defaultOptions ) {
 
         spawn('npm', args, opts, callback)
     }
+}
+
+function shouldInstall(node){
+    return (
+        node.status.needsInstall.result === true ||
+        node.children.some( childNode => childNode.status.needsBuild === true )
+    )
+}
+
+function log(status, name){
+    console.log(`[Binge] Install ${status} for ${name}`)
 }

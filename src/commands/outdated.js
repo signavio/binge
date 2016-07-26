@@ -1,4 +1,4 @@
-import readGraph from '../graph/withStatus'
+import readGraph from '../graph/withNeedsInstall'
 
 export default function(){
 

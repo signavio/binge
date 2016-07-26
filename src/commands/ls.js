@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import archy from '../util/archy'
-import readGraph from '../graph/withStatus'
+import readGraph from '../graph/withNeedsInstall'
 
 
 export default function(){

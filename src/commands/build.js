@@ -1,8 +1,10 @@
 import async from 'async'
 import chalk from 'chalk'
-import parallel from '../graph-execution/parallel'
 
-import readGraph from '../graph/withStatus'
+
+
+/*
+import parallel from '../graph-execution/parallel'
 import createConnectTask from '../tasks/connect'
 import createInstallTask from '../tasks/install'
 import createPatchTask from '../tasks/patch'
@@ -11,92 +13,76 @@ import createTranspileTask from '../tasks/transpile'
 
 const createPathInTask = () => createPatchTask({}, true)
 const createPathOutTask = () => createPatchTask({}, false)
+*/
+
+
+const CONCURRENCY = 8
+
+import readGraph from '../graph/withNeedsBuild'
+import {layer as layerTopology} from '../graph/topology'
+import createTranspileTask from '../tasks/transpile'
+import createRinseTask from '../tasks/rinse'
+import createInstallTask from '../tasks/install'
 
 export default function(){
-    readGraph('.', thenRinse)
+
+    process.chdir('S:/workspace-trunk/signavio/client/bdmsimulation/')
+    readGraph('.', function(err, graph){
+        if(err)end(err)
+
+        const [rootNode] = graph
+        const layers = layerTopology(rootNode).reverse()
+
+        async.mapSeries(
+            layers,
+            executeLayer,
+            end
+        )
+    })
 }
 
-function thenRinse(err, graph){
-    if(tryFatal(err))return failure()
+function executeLayer(layer, callback) {
+    console.log("[Binge] Layer")
+    async.series([
+        done => rinseLayer(layer, done),
+        done => installLayer(layer, done),
+        done => transpileLayer(layer, done)
+    ], callback)
+}
 
-    parallel(
-        graph,
+function rinseLayer(layer, callback){
+    async.mapLimit(
+        layer,
+        CONCURRENCY,
         createRinseTask(),
-        err => thenPatchIn(err, graph)
+        err => callback(err, layer)
     )
 }
 
-function thenPatchIn(err, graph){
-    if(tryFatal(err))return failure()
-
-    parallel(
-        graph,
-        createPathInTask(),
-        err => thenInstall(err, graph)
+function installLayer(layer, callback) {
+    async.mapLimit(
+        layer,
+        CONCURRENCY,
+        createInstallTask(),
+        callback
     )
 }
 
-function thenInstall(err, graph){
-    if(tryFatal(err))return failure()
-
-    parallel(
-        graph,
-        createInstallTask({showOutput: false}),
-        err => thenPatchOut(err, graph)
+function transpileLayer(layer, callback) {
+    async.mapLimit(
+        layer,
+        CONCURRENCY,
+        createTranspileTask(),
+        callback
     )
 }
 
-function thenPatchOut(err, graph){
-    const isOk = !tryFatal(err)
-
-    parallel(
-        graph,
-        createPathOutTask(),
-        isOk ? err => thenTranspile(err, graph) : failure
-    )
-}
-
-function thenTranspile(err, graph){
-    if(tryFatal(err))return failure()
-
-    parallel(
-        graph,
-        createTranspileTask({showOutput: false}),
-        err => thenConnect(err, graph)
-    )
-}
-
-function thenConnect(err, graph){
-    if(tryFatal(err))return failure()
-
-    const [rootNode] = graph
-
-    parallel(
-        graph,
-        createConnectTask(rootNode),
-        thenEnd
-    )
-}
-
-function thenEnd(err){
-    if(!tryFatal(err)){
-        success()
-    } else {
-        failure()
-    }
-}
-
-function tryFatal(err){
+function end(err){
     if(err){
         console.log(err)
+        console.log("Binge: " + chalk.red("Failure"))
     }
-    return !!err
-}
-
-function success(){
-    console.log("Binge: " + chalk.green("Success"))
-}
-
-function failure(){
-    console.log("Binge: " + chalk.red("Failure"))
+    else {
+        console.log("Binge: " + chalk.green("Success"))
+    }
 }
