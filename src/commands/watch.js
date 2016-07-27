@@ -2,12 +2,11 @@ import async from 'async'
 import chalk from 'chalk'
 import archy from '../util/archy'
 
-import readGraph from '../graph/withTopology'
+import readGraph from '../graph/withValidation'
 import {layer as layerTopology} from '../graph/topology'
 import createWatchTask from '../tasks/watch'
 
 export default function(callback){
-    process.chdir('S:/workspace-trunk/signavio/client/bdmsimulation/')
     readGraph('.', thenWatch)
 }
 
@@ -15,10 +14,6 @@ function thenWatch(err, graph){
     if(err)end()
 
     const [rootNode, ...rest] = graph
-    const layers = layerTopology(rootNode).reverse()
-    console.log("\n[Binge] Christmas Tree\n")
-    console.log(archy(rootNode))
-
     rest.forEach(createWatchTask(rootNode))
 }
 

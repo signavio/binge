@@ -3,6 +3,10 @@ import async from 'async'
 import readPackageJson from 'read-package-json'
 import readIgnoreFile from '../util/readIgnoreFile'
 
+/*
+ * Do not call directly. Always call at least readWithTopology
+ * that function validates the graph, and performs a cycle check
+ */
 export default function (rootPath, callback){
     rootPath = path.resolve(rootPath)
 

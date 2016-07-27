@@ -2,12 +2,11 @@ import async from 'async'
 import chalk from 'chalk'
 import archy from '../util/archy'
 import createCleanTask from '../tasks/clean'
-import readGraph from '../graph/withTopology'
+import readGraph from '../graph/withValidation'
 
 const CONCURRENCY = 8
 
 export default function(){
-    process.chdir('S:/workspace-trunk/signavio/client/bdmsimulation/')
     readGraph('.', thenClean)
 }
 
@@ -21,7 +20,7 @@ function thenClean(err, graph){
     async.mapLimit(
         graph,
         CONCURRENCY,
-        createCleanTask(),        
+        createCleanTask(),
         end
     )
 }

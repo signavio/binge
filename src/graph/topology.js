@@ -5,15 +5,13 @@
  * relevant. Nodes in the same layer can be solved concurrently in safe manner,
  * from the dependency point of view
  *
- * The following operation would success:
- * for( i=layers.length - 1; i>=0; i-- )
- *     layers[i].mapInParallel( node => doNpmInstallInNode(node) )
- *
  */
 
-export function layer(rootNode){
+ import reachable from './reachable'
 
-    let pending = allNodes(rootNode)
+export function layer(startNode){
+
+    let pending = [startNode, ...reachable(startNode)]
     let result = []
 
     /*
@@ -41,19 +39,7 @@ export function layer(rootNode){
     return result
 }
 
-export function flat(rootNode){
+export function flat(startNode){
     //flatten the layers into a single array
-    return Array.prototype.concat.apply([], layer(rootNode))
-}
-
-function allNodes(rootNode){
-    function traverse(node){
-        if(result.indexOf(node) === -1){
-            result.push(node)
-            node.children.forEach(traverse)
-        }
-    }
-    const result = []
-    traverse(rootNode)
-    return result
+    return Array.prototype.concat.apply([], layer(startNode))
 }

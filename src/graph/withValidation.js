@@ -1,5 +1,5 @@
 import async from 'async'
-import read from './read'
+import read from './_read'
 import {flat as flatTopology} from './topology'
 
 export default function (rootPath, callback) {

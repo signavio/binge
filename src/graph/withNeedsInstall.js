@@ -1,6 +1,6 @@
 import async from 'async'
 import readNeedsInstall from '../node/needsInstall'
-import read from './withTopology'
+import read from './withReachable'
 
 export default function(rootPath, callback) {
 

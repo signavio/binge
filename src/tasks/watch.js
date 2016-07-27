@@ -14,8 +14,13 @@ export default function createTask(destNode, options){
             'Expected absolute path for the source destNode'
         )
 
+        const ignored = [
+            ...srcNode.npmIgnore,
+            /.*package.json$/
+        ]
+
         chokidar
-            .watch(srcDirPath, {ignored: srcNode.npmIgnore})
+            .watch(srcDirPath, {ignored})
             .on('change', copyFile)
 
         function copyFile(srcFilePath){

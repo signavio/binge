@@ -40,7 +40,7 @@ export default function createTask(options = defaultOptions ) {
 function shouldInstall(node){
     return (
         node.status.needsInstall.result === true ||
-        node.children.some( childNode => childNode.status.needsBuild === true )
+        node.reachable.some( childNode => childNode.status.needsBuild === true )
     )
 }
 

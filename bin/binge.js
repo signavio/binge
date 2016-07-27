@@ -10,27 +10,27 @@ var chalk = require("chalk")
 var meow = require("meow")
 
 var cli = meow([
-  "Usage", 
+  "Usage",
   "  $ binge [command]",
   "",
   "Commands:",
-  "  build      Install, prepublish and connect outdated local packages (each step only for outdated)",
+  "  build      Rinse, Install, and Build local packages (each step with optimistic skips)",
   "  watch      Same as build plus watch and connect local packages",
-  "  status     Print a tree with the status of local packages",
+  "  dry-run    TODO Print a tree with the status of local packages",
   "  clean      Remove the node_modules directory from all local packages",
   "  run        TODO - Run npm script in each package",
   "  exec       TODO - Run a command in each package",
   "  harmony    TODO - Print a tree with all non harmonized dependencies",
-  "  ls         List all local packages",
+  "  ls         Output the local package dependency tree",
   "",
   "Options:",
-  "  --skip-install       TODO Skip the install step ('build' and 'watch' commands only)",
-  "  --skip-prepublish    TODO Skip the prepublish step ('build' and 'watch' commands only)",
-  "  --skip-connect       TODO Skip the connect step ('build' and 'watch' commands only)",
-  //"  --ignore [glob]      Ignores packages with names matching the given glob (Works only in combination with the 'bootstrap' command).",
-  //"  --yes                Skip all confirmation prompts",
+  //"  --skip-install     TODO Skip the install step ('build' and 'watch' commands only)",
+  //"  --skip-prepublish  TODO Skip the prepublish step ('build' and 'watch' commands only)",
+  //"  --skip-connect     TODO Skip the connect step ('build' and 'watch' commands only)",
+  //"  --ignore [glob]    Ignores packages with names matching the given glob (Works only in combination with the 'bootstrap' command).",
   "  --cwd                Set the current working directory",
-  "  --concurrency        How many threads to use if binge parallelises the tasks (defaults to 4)",
+  "  --rinse-all          Rinse all file dependencies ('build' command only)",
+  "  --concurrency        TODO Limit the parallel factor that binge uses on async (defaults to 8)",
   "  --loud               TODO Output all available inforomation",
   "  --social (default)   TODO Output information about the current task and current step",
   "  --quiet              TODO Output only the final timing-success-failure statement",
@@ -59,5 +59,5 @@ if (!command) {
         console.log("Binge: Executing in " + chalk.magenta(cli.flags.cwd))
         process.chdir(cli.flags.cwd)
     }
-    command(cli.input.slice(1), cli.flags)
+    command(cli.flags)
 }

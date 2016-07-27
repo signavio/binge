@@ -14,16 +14,11 @@ export default function createTask(options = defaultOptions) {
     return (node, callback) => {
 
         const children = options.rinseAll
-            ?  node.children
-            :  staleChildren(node)
-
-        const status = children.length
-            ? chalk.yellow(`${children.length} packages`)
-            : chalk.green('skipping')
-
-        log(status, node.name)
+            ?  node.reachable
+            :  staleReachable(node)
 
         if(children.length === 0){
+            console.log(`[Binge] Rinse ${chalk.green('skipping')} for ${node.name}`)
             return callback(null)
         }
 
@@ -35,8 +30,8 @@ export default function createTask(options = defaultOptions) {
     }
 }
 
-function staleChildren(node){
-    return node.children.filter(
+function staleReachable(node){
+    return node.reachable.filter(
         childNode => (
             childNode.status.needsBuild === true ||
             node.status.needsInstall.stale.indexOf(childNode.name) !== -1
@@ -45,10 +40,7 @@ function staleChildren(node){
 }
 
 function rinseChild(node, childNode, callback) {
-    const installedPath = path.join(node.path, 'node_modules', childNode.name)
+    console.log(`[Binge] Rinse ${chalk.yellow(childNode.name)} in ${node.name}`)
+    const installedPath = path.join(node.path, 'node_modules', chalk.yellow(childNode.name))
     rimraf(installedPath, callback)
-}
-
-function log(status, name){
-    console.log(`[Binge] Rinse ${status} for ${name}`)
 }

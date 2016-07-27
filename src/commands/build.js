@@ -10,9 +10,7 @@ import createInstallTask from '../tasks/install'
 
 const CONCURRENCY = 8
 
-export default function({rinseAll = false}){
-
-    process.chdir('S:/workspace-trunk/signavio/client/bdmsimulation/')
+export default function(options){
     readGraph('.', function(err, graph){
         if(err)end(err)
 
@@ -28,42 +26,46 @@ export default function({rinseAll = false}){
             end
         )
     })
+
+    function executeLayer(layer, callback) {
+        async.series([
+            done => rinseLayer(layer, done),
+            done => installLayer(layer, done),
+            done => transpileLayer(layer, done)
+        ], callback)
+    }
+
+    function rinseLayer(nodes, callback){
+        async.mapLimit(
+            nodes,
+            CONCURRENCY,
+            createRinseTask({rinseAll: false}),
+            callback
+        )
+    }
+
+    function installLayer(nodes, callback) {
+        async.mapLimit(
+            nodes,
+            CONCURRENCY,
+            createInstallTask(options),
+            callback
+        )
+    }
+
+    function transpileLayer(nodes, callback) {
+        async.mapLimit(
+            nodes,
+            CONCURRENCY,
+            createTranspileTask(options),
+            callback
+        )
+    }
+
+
 }
 
-function executeLayer(layer, callback) {
-    async.series([
-        done => rinseLayer(layer, done),
-        done => installLayer(layer, done),
-        done => transpileLayer(layer, done)
-    ], callback)
-}
 
-function rinseLayer(nodes, callback){
-    async.mapLimit(
-        nodes,
-        CONCURRENCY,
-        createRinseTask(),
-        callback
-    )
-}
-
-function installLayer(nodes, callback) {
-    async.mapLimit(
-        nodes,
-        CONCURRENCY,
-        createInstallTask(),
-        callback
-    )
-}
-
-function transpileLayer(nodes, callback) {
-    async.mapLimit(
-        nodes,
-        CONCURRENCY,
-        createTranspileTask(),
-        callback
-    )
-}
 
 function end(err){
     if(err){

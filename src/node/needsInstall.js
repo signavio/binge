@@ -28,45 +28,64 @@ export default function(node, callback){
             callback(null, {needsInstall: noInstall(node) })
         }
     })
+
 }
 
 function start(node, callback){
+    if(node.name === 'dmn-data'){
+        debugger
+    }
     const allDependencies = Object.assign(
         {},
         node.packageJson.dependencies,
         node.packageJson.devDependencies
     )
 
-    const dependencies = Object.keys(allDependencies).map(key => ({
-        name: key,
-        version: allDependencies[key],
-        ownerPath: node.path
+    const publishedDependencies = Object.keys(allDependencies)
+        .filter( key => !isFileDependency(allDependencies[key]))
+        .map( key => ({
+            isPublished: true,
+            name: key,
+            version: allDependencies[key],
+            ownerPath: node.path
+        }))
+
+    const fileDependencies = node.reachable.map(node => ({
+        isPublished: false,
+        node
     }))
 
     async.map(
-        dependencies,
+        [...publishedDependencies, ...fileDependencies],
         check,
-        //error never ocurrs
         (err, results) => callback(null, {needsInstall: merge(results)} )
     )
-}
 
-function check(dependency, callback) {
-    const handler = isFileDependency(dependency.version) ? file : published
-    handler(dependency, callback)
+    function check(dependency, callback) {
+        if(dependency.isPublished === true){
+            published(dependency, callback)
+        }
+        else {
+            file(node, dependency.node, callback)
+        }
+    }
 }
-
 
 function published(dependency, callback) {
-    const filePath = path.join(installedPath(dependency), 'package.json')
+    const filePath = path.join(
+        dependency.ownerPath,
+        'node_modules',
+        dependency.name,
+        'package.json'
+    )
+
     readPackageJson(filePath, (err, installedPJson) => {
-        const result = checkPublished(err, installedPJson, dependency)
+        const result = isUnsatisfied(err, dependency, installedPJson)
         callback(null, result)
     })
-
 }
 
-function checkPublished(err, installedPJson, dependency){
+function isUnsatisfied(err, dependency, installedPJson){
     if(err){
         return noDependencyInstall(err, dependency.name)
     }
@@ -84,26 +103,23 @@ function checkPublished(err, installedPJson, dependency){
 }
 
 
-function file(dependency, callback) {
-
-    const filePaths = [
-        path.join(installedPath(dependency), 'package.json'),
-        path.join(sourcePath(dependency), 'package.json')
-    ]
-
-    async.map(
-        filePaths,
-        readPackageJson,
-        (err, [installedPJson, sourcePJson] = []) => {
-            const result = checkFile(err, installedPJson, sourcePJson, dependency)
-            callback(null, result)
-        }
+function file(node, childNode, callback) {
+    const installPath = path.join(
+        node.path,
+        'node_modules',
+        childNode.name,
+        'package.json'
     )
+
+    readPackageJson(installPath, (err, installedPJson) => {
+        const result = isStale(err, childNode.packageJson, installedPJson)
+        callback(null, result)
+    })
 }
 
-function checkFile(err, installedPJson, srcPJson, dependency){
+function isStale(err, srcPJson, installedPJson){
     if(err){
-        return noDependencyInstall(err, dependency.name)
+        return noDependencyInstall(err, srcPJson.name)
     }
 
     const iDeps = Object.assign(
@@ -127,21 +143,6 @@ function checkFile(err, installedPJson, srcPJson, dependency){
     return diff.length > 0
         ? stale(srcPJson.name)
         : OkiDokiUnitedStates()
-}
-
-function installedPath(dependency){
-    return path.join(
-        dependency.ownerPath,
-        'node_modules',
-        dependency.name
-    )
-}
-
-function sourcePath(dependency){
-    return path.resolve(path.join(
-        dependency.ownerPath,
-        dependency.version.substring('file:'.length)
-    ))
 }
 
 function isFileDependency(version){
