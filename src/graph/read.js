@@ -19,7 +19,7 @@ export default function (rootPath, callback){
              return callback(null, cache[rootPath])
         }
 
-        async.mapSeries(
+        async.map(
             nodes,
             expandNode,
             thenExpand

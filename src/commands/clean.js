@@ -1,9 +1,10 @@
 import async from 'async'
 import chalk from 'chalk'
-import parallel from '../graph-execution/parallel'
-
-import readGraph from '../graph/withNeedsInstall'
+import archy from '../util/archy'
 import createCleanTask from '../tasks/clean'
+import readGraph from '../graph/withTopology'
+
+const CONCURRENCY = 8
 
 export default function(){
     process.chdir('S:/workspace-trunk/signavio/client/bdmsimulation/')
@@ -11,34 +12,29 @@ export default function(){
 }
 
 function thenClean(err, graph){
-    if(tryFatal(err))return failure()
+    if(err)end()
 
-    parallel(
+    const [rootNode] = graph
+    console.log("\n[Binge] Christmas Tree\n")
+    console.log(archy(rootNode))
+
+    async.mapLimit(
         graph,
-        createCleanTask(),
-        thenEnd
+        CONCURRENCY,
+        createCleanTask(),        
+        end
     )
 }
 
-function thenEnd(err){
-    if(!tryFatal(err)){
-        success()
-    } else {
-        failure()
-    }
-}
 
-function tryFatal(err){
+function end(err){
     if(err){
         console.log(err)
+        console.log("[Binge] " + chalk.red("Failure"))
+        process.exit(1)
     }
-    return !!err
-}
-
-function success(){
-    console.log("Binge: " + chalk.green("Success"))
-}
-
-function failure(){
-    console.log("Binge: " + chalk.red("Failure"))
+    else {
+        console.log("[Binge] " + chalk.green("Success"))
+        process.exit(0)
+    }
 }

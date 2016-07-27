@@ -1,30 +1,16 @@
 import async from 'async'
 import chalk from 'chalk'
 
-
-
-/*
-import parallel from '../graph-execution/parallel'
-import createConnectTask from '../tasks/connect'
-import createInstallTask from '../tasks/install'
-import createPatchTask from '../tasks/patch'
-import createRinseTask from '../tasks/rinse'
-import createTranspileTask from '../tasks/transpile'
-
-const createPathInTask = () => createPatchTask({}, true)
-const createPathOutTask = () => createPatchTask({}, false)
-*/
-
-
-const CONCURRENCY = 8
-
+import archy from '../util/archy'
 import readGraph from '../graph/withNeedsBuild'
 import {layer as layerTopology} from '../graph/topology'
 import createTranspileTask from '../tasks/transpile'
 import createRinseTask from '../tasks/rinse'
 import createInstallTask from '../tasks/install'
 
-export default function(){
+const CONCURRENCY = 8
+
+export default function({rinseAll = false}){
 
     process.chdir('S:/workspace-trunk/signavio/client/bdmsimulation/')
     readGraph('.', function(err, graph){
@@ -32,6 +18,9 @@ export default function(){
 
         const [rootNode] = graph
         const layers = layerTopology(rootNode).reverse()
+
+        console.log("\n[Binge] Christmas Tree\n")
+        console.log(archy(rootNode))
 
         async.mapSeries(
             layers,
@@ -42,7 +31,6 @@ export default function(){
 }
 
 function executeLayer(layer, callback) {
-    console.log("[Binge] Layer")
     async.series([
         done => rinseLayer(layer, done),
         done => installLayer(layer, done),
@@ -50,27 +38,27 @@ function executeLayer(layer, callback) {
     ], callback)
 }
 
-function rinseLayer(layer, callback){
+function rinseLayer(nodes, callback){
     async.mapLimit(
-        layer,
+        nodes,
         CONCURRENCY,
         createRinseTask(),
-        err => callback(err, layer)
+        callback
     )
 }
 
-function installLayer(layer, callback) {
+function installLayer(nodes, callback) {
     async.mapLimit(
-        layer,
+        nodes,
         CONCURRENCY,
         createInstallTask(),
         callback
     )
 }
 
-function transpileLayer(layer, callback) {
+function transpileLayer(nodes, callback) {
     async.mapLimit(
-        layer,
+        nodes,
         CONCURRENCY,
         createTranspileTask(),
         callback
@@ -80,9 +68,11 @@ function transpileLayer(layer, callback) {
 function end(err){
     if(err){
         console.log(err)
-        console.log("Binge: " + chalk.red("Failure"))
+        console.log("[Binge] " + chalk.red("Failure"))
+        process.exit(1)
     }
     else {
-        console.log("Binge: " + chalk.green("Success"))
+        console.log("[Binge] " + chalk.green("Success"))
+        process.exit(0)
     }
 }
