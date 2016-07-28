@@ -2,10 +2,10 @@ import async from 'async'
 import chalk from 'chalk'
 
 import archy from '../util/archy'
-import readGraph from '../graph/withNeedsBuild'
+import readGraph from '../graph/withDependencies'
 import {layer as layerTopology} from '../graph/topology'
-import createTranspileTask from '../tasks/transpile'
-import createRinseTask from '../tasks/rinse'
+import createBuildTask from '../tasks/build'
+import createPruneTask from '../tasks/prune'
 import createInstallTask from '../tasks/install'
 
 const CONCURRENCY = 8
@@ -29,17 +29,17 @@ export default function(options){
 
     function executeLayer(layer, callback) {
         async.series([
-            done => rinseLayer(layer, done),
+            done => pruneLayer(layer, done),
             done => installLayer(layer, done),
             done => transpileLayer(layer, done)
         ], callback)
     }
 
-    function rinseLayer(nodes, callback){
+    function pruneLayer(nodes, callback){
         async.mapLimit(
             nodes,
             CONCURRENCY,
-            createRinseTask({rinseAll: false}),
+            createPruneTask(options),
             callback
         )
     }
@@ -57,15 +57,11 @@ export default function(options){
         async.mapLimit(
             nodes,
             CONCURRENCY,
-            createTranspileTask(options),
+            createBuildTask(options),
             callback
         )
     }
-
-
 }
-
-
 
 function end(err){
     if(err){

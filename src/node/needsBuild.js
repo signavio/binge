@@ -9,9 +9,9 @@ import {spawn} from '../util/childProcess'
 export default function (node, callback){
     allSrcItems(node, (err, srcItems) => {
         invariant(err === null, 'Always null1')
-        isUpToDate(node, srcItems, (err, result) => {
+        isUpToDate(node, srcItems, (err, isUpToDate) => {
             invariant(err === null, 'Always null2')
-            callback(null, {needsBuild: !result})
+            callback(null, !isUpToDate)
         })
     })
 }

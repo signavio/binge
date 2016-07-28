@@ -14,9 +14,8 @@ var cli = meow([
   "  $ binge [command]",
   "",
   "Commands:",
-  "  build      Rinse, Install, and Build local packages (each step with optimistic skips)",
-  "  watch      Same as build plus watch and connect local packages",
-  "  dry-run    TODO Print a tree with the status of local packages",
+  "  bootstrap  Prune, Install, and Build local packages (each step with optimistic skips)",
+  "  watch      Watches file dependencies, and copies them to the current package",
   "  clean      Remove the node_modules directory from all local packages",
   "  run        TODO - Run npm script in each package",
   "  exec       TODO - Run a command in each package",
@@ -29,10 +28,10 @@ var cli = meow([
   //"  --skip-connect     TODO Skip the connect step ('build' and 'watch' commands only)",
   //"  --ignore [glob]    Ignores packages with names matching the given glob (Works only in combination with the 'bootstrap' command).",
   "  --cwd                Set the current working directory",
-  "  --rinse-all          Rinse all file dependencies ('build' command only)",
+  "  --dry-run            Only works with the bootstrap command",
   "  --concurrency        TODO Limit the parallel factor that binge uses on async (defaults to 8)",
   "  --loud               TODO Output all available inforomation",
-  "  --social (default)   TODO Output information about the current task and current step",
+  //"  --social (default)   TODO Output information about the current task and current step",
   "  --quiet              TODO Output only the final timing-success-failure statement",
   "  --silent             TODO No outputs"
 ], {
@@ -56,8 +55,9 @@ if (!command) {
     console.time("execution")
     process.on("exit", () => console.timeEnd("execution"))
     if(cli.flags.cwd) {
-        console.log("Binge: Executing in " + chalk.magenta(cli.flags.cwd))
         process.chdir(cli.flags.cwd)
+        console.log("[Binge] Executing in " + chalk.magenta(process.cwd()))
     }
+
     command(cli.flags)
 }

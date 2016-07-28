@@ -1,12 +1,18 @@
+import chalk from 'chalk'
 import chokidar from 'chokidar'
 import fse from 'fs-extra'
 import invariant from 'invariant'
 import path from 'path'
+import pad from 'pad'
 
 export default function createTask(destNode, options){
 
     return (srcNode, callback) => {
-        console.log(`Binge: Watching ${srcNode.name}`)
+        console.log(
+            `[Binge] ${name(srcNode.name)} ` +
+            `${action('Watch')} ` +
+            `${chalk.magenta('executing')}`
+        )
 
         const srcDirPath = srcNode.path
         invariant(
@@ -54,4 +60,12 @@ export default function createTask(destNode, options){
             fse.copy(srcFilePath, destFilePath, {clobber:true})
         }
     }
+}
+
+function name(text){
+    return chalk.yellow(pad(text, 25))
+}
+
+function action(action){
+    return pad(action, 10)
 }

@@ -1,6 +1,6 @@
 import async from 'async'
 import readNeedsBuild from '../node/needsBuild'
-import read from './withNeedsInstall'
+import read from './withReachable'
 
 export default function(rootPath, callback) {
 
@@ -16,15 +16,9 @@ export default function(rootPath, callback) {
     })
 }
 
-function augment(node, callback){    
+function augment(node, callback){
     readNeedsBuild(node, (err, result) => {
-        if(!err){
-            node.status = Object.assign(
-                {},
-                node.status,
-                result
-            )
-        }
+        node.needsBuild = result
         callback(err)
     })
 }

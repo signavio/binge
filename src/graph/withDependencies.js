@@ -1,15 +1,14 @@
 import async from 'async'
-import readNeedsInstall from '../node/needsInstall'
-import read from './withReachable'
+import readDependencies from '../node/dependencies'
+import read from './withHasNodeModules'
 
 export default function(rootPath, callback) {
 
     read(rootPath, (err, graph) => {
        if(err)return callback(err)
 
-       async.mapLimit(
+       async.mapSeries(
            graph,
-           8,
            augment,
            err => callback(err, graph)
        )
@@ -17,13 +16,9 @@ export default function(rootPath, callback) {
 }
 
 function augment(node, callback){
-    readNeedsInstall(node, (err, result) => {
+    readDependencies(node, (err, result) => {
         if(!err){
-            node.status = Object.assign(
-                {},
-                node.status,
-                result
-            )
+            node.dependencies = result
         }
         callback(err)
     })
