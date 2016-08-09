@@ -17,4 +17,6 @@ export function spawn(command, args, opts, callback) {
         childProcess.stderr.setEncoding("utf8").on("data", chunk => stderr += chunk)
     }
 
+    return childProcess
+
 }

@@ -2,7 +2,7 @@ import async from 'async'
 import path from 'path'
 
 import dirExists from '../util/dirExists'
-import read from './withNeedsBuild'
+import read from './withReachable'
 
 
 export default function(rootPath, callback) {

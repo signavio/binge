@@ -4,7 +4,7 @@ import readPackageJson from 'read-package-json'
 import readIgnoreFile from '../util/readIgnoreFile'
 
 /*
- * Do not call directly. Always call at least readWithTopology
+ * Do not call directly. Always call at least readValidation
  * that function validates the graph, and performs a cycle check
  */
 export default function (rootPath, callback){

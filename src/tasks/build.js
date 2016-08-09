@@ -27,17 +27,12 @@ export default function createTask(options = defaultOptions) {
             return callback(null)
         }
 
-        const isUpToDate = node.needsBuild === false
-        if(isUpToDate){
-            log(node.name, 'Build', chalk.green('skipped'))
-            return callback(null)
-        }
-
         log(node.name, 'Build', chalk.magenta('executing'))
 
         const opts = {
             cwd: node.path,
-            stdio: ['ignore', 'ignore', 'ignore']
+            stdio: ['ignore', 'ignore', 'inherit']
+            //stdio: ['ignore', 'ignore', 'ignore']
             //stdio: options.showOutput === true
             //    ? ['ignore', 'ignore', 'inherit'] //pipe stdout
             //    : ['ignore', 'ignore', 'ignore']

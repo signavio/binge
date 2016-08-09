@@ -7,7 +7,6 @@ import {spawn} from '../util/childProcess'
 import isMissing from '../installed-dep/isMissing'
 import isStale from '../installed-dep/isStale'
 import isUnsatisfied from '../installed-dep/isUnsatisfied'
-import needsBuild from '../installed-dep/needsBuild'
 
 const defaultOptions = {
     dryRun: false
@@ -18,38 +17,34 @@ export default function createTask(options = defaultOptions ) {
 
         if(!shouldInstall(node)){
             logSkip(node)
-            return callback(null)
         }
-
-        logExecute(node, options)
+        else {
+            logExecute(node, options)
+        }
 
         const spawnOptions = {
             cwd: node.path,
-            stdio: ['ignore', 'ignore', 'ignore']
+            stdio: node.pipe === true
+                ? ['ignore', 'ignore', 'inherit']
+                : ['ignore', 'ignore', 'ignore']
         }
 
-        if(!options.dryRun){
-            spawn('npm', ['install', '--quiet'], spawnOptions, callback)
-        }
-        else {
-            callback(null)
-        }
+        spawn('npm', ['install', '--silent'], spawnOptions, callback)
     }
 }
 
 function shouldInstall(node){
     return (
         node.hasNodeModules === false ||
-        node.dependencies.some(triggers)
+        node.dependencies.some(isTrigger)
     )
 }
 
-function triggers(dependency){
+function isTrigger(dependency){
     return (
         isMissing(dependency) ||
         isStale(dependency) ||
-        isUnsatisfied(dependency) ||
-        needsBuild(dependency)
+        isUnsatisfied(dependency)
     )
 }
 
@@ -67,14 +62,14 @@ function logExecute(node, options){
         '[Binge] ' +
         `${name(node.name)} ` +
         `${action('Install')} ` +
-        `${chalk.magenta('executing')} ` +
+        `${name(chalk.magenta('executing'))} ` +
         (node.hasNodeModules ? '' : '(first install)')
     )
 
     if(node.hasNodeModules && options.dryRun){
         console.log('    Reasons:')
         node.dependencies
-            .filter(triggers)
+            .filter(isTrigger)
             .forEach(dependency => logReason(node, dependency))
     }
 }
@@ -84,14 +79,6 @@ function logReason(node, dependency){
         console.log(
             '    ' +
             `${chalk.yellow(dependency.name)} missing`
-        )
-        return
-    }
-
-    if(needsBuild(dependency)) {
-        console.log(
-            '    ' +
-            `${chalk.yellow(dependency.name)} needs build`
         )
         return
     }

@@ -7,58 +7,54 @@ import rimraf from 'rimraf'
 
 import isStale from '../installed-dep/isStale'
 import isUnsatisfied from '../installed-dep/isUnsatisfied'
-import needsBuild from '../installed-dep/needsBuild'
 
-const defaultOptions = {
-    dryRun: false
-}
 
-export default function createTask(options = defaultOptions) {
+export default function createRinseTask(options = defaultOptions) {
 
     return (node, callback) => {
-                
-        const prunes = node.hasNodeModules
+
+        const rinses = node.hasNodeModules
             ? node.dependencies.filter(dependency => (
                 isStale(dependency) ||
-                isUnsatisfied(dependency) ||
-                needsBuild(dependency)
+                isUnsatisfied(dependency)
             ))
             : []
 
-        if(prunes.length === 0){
+        if(rinses.length === 0){
             console.log(
                 '[Binge] ' +
                 `${name(node.name)} ` +
-                `${action('Prune')} ` +
+                `${action('Rinse')} ` +
                 `${chalk.green('skipped')}`
             )
-            return callback(null)
         }
 
         async.map(
-            prunes,
+            node.dependencies,
             (dependency, done) => pruneDependency(node, dependency, done),
             callback
         )
 
         function pruneDependency(node, dependency, callback) {
-            log(node, dependency)
 
-            if(options.dryRun){
-                return callback(null)
+            if(isStale(dependency) || isUnsatisfied(dependency)){
+                log(node, dependency)
             }
 
-            const installedPath = path.join(
-                node.path,
-                'node_modules',
-                dependency.name
-            )
-            rimraf(installedPath, callback)
+            if(dependency.isFileVersion || isUnsatisfied(dependency)){
+                const installedPath = path.join(
+                    node.path,
+                    'node_modules',
+                    dependency.name
+                )
+                rimraf(installedPath, callback)
+            }
+            else {
+                callback(null)
+            }
         }
     }
 }
-
-
 
 function log(node, dependency){
 
@@ -68,12 +64,8 @@ function log(node, dependency){
     }
 
     if(isUnsatisfied(dependency)){
-        reason = `(is unsatisfied required ${dependency.version} ` +
+        reason = `(required ${dependency.version} ` +
             `installed ${dependency.installedPJson.version})`
-    }
-
-    if(needsBuild(dependency)) {
-        reason = `(needs build)`
     }
 
     invariant(
@@ -84,8 +76,8 @@ function log(node, dependency){
     console.log(
         '[Binge] ' +
         `${name(node.name)} ` +
-        `${action('Prune')} ` +
-        `${name(dependency.name)} ` +
+        `${action('Rinse')} ` +
+        `${name(chalk.magenta(dependency.name))} ` +
         reason
     )
 }

@@ -7,7 +7,7 @@ import pad from 'pad'
 
 export default function createTask(destNode, options){
 
-    return (srcNode, callback) => {
+    return (srcNode) => {
         console.log(
             `[Binge] ${name(srcNode.name)} ` +
             `${action('Watch')} ` +
@@ -56,7 +56,7 @@ export default function createTask(destNode, options){
                 'destFilePath expected to be absolute'
             )
 
-            console.log(`${srcFilePath} -> ${destFilePath}`)
+            //console.log(`${srcFilePath} -> ${destFilePath}`)
             fse.copy(srcFilePath, destFilePath, {clobber:true})
         }
     }
