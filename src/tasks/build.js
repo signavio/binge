@@ -27,7 +27,7 @@ export default function createTask(options = defaultOptions) {
             return callback(null)
         }
 
-        log(node.name, 'Build', chalk.magenta('executing'))
+        log(node.name, 'Build', chalk.magenta('Executing'))
 
         const opts = {
             cwd: node.path,

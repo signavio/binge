@@ -53,7 +53,7 @@ function logSkip(node){
         '[Binge] ' +
         `${name(node.name)} ` +
         `${action('Install')} ` +
-        `${chalk.green('skipped')} `
+        `${chalk.green('Skipped')} `
     )
 }
 
@@ -62,7 +62,7 @@ function logExecute(node, options){
         '[Binge] ' +
         `${name(node.name)} ` +
         `${action('Install')} ` +
-        `${name(chalk.magenta('executing'))} ` +
+        `${name(chalk.magenta('Executing'))} ` +
         (node.hasNodeModules ? '' : '(first install)')
     )
 

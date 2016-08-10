@@ -11,9 +11,8 @@ import createRinseTask from '../tasks/rinse'
 const CONCURRENCY = 8
 
 
-
 export default function(options){
-    
+
     readGraph('.', function(err, graph){
         if(err)end(err)
 

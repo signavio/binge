@@ -25,7 +25,7 @@ export default function createRinseTask(options = defaultOptions) {
                 '[Binge] ' +
                 `${name(node.name)} ` +
                 `${action('Rinse')} ` +
-                `${chalk.green('skipped')}`
+                `${chalk.green('Skipped')}`
             )
         }
 

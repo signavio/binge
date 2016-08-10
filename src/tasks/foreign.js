@@ -1,11 +1,6 @@
 import chalk from 'chalk'
 import pad from 'pad'
-
 import {spawn} from '../util/childProcess'
-
-const defaultOptions = {
-    dryRun: false
-}
 
 export default function() {
     return (node) => {
@@ -17,7 +12,7 @@ export default function() {
 
         if(unavailable){
             log(node.name, 'Dev', chalk.red('unavailable'))
-            return// callback(null)
+            return
         }
 
         const options = {

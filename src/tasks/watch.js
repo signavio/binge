@@ -11,7 +11,7 @@ export default function createTask(destNode, options){
         console.log(
             `[Binge] ${name(srcNode.name)} ` +
             `${action('Watch')} ` +
-            `${chalk.magenta('executing')}`
+            `${chalk.magenta('Executing')} `            
         )
 
         const srcDirPath = srcNode.path
@@ -25,9 +25,12 @@ export default function createTask(destNode, options){
             /.*package.json$/
         ]
 
-        chokidar
-            .watch(srcDirPath, {ignored})
-            .on('change', copyFile)
+        setTimeout(() => {
+            chokidar
+                .watch(srcDirPath, {ignored})
+                .on('change', copyFile)
+        }, 30000)
+
 
         function copyFile(srcFilePath){
             invariant(
@@ -56,7 +59,7 @@ export default function createTask(destNode, options){
                 'destFilePath expected to be absolute'
             )
 
-            //console.log(`${srcFilePath} -> ${destFilePath}`)
+            logCopy(srcFilePath, destFilePath)
             fse.copy(srcFilePath, destFilePath, {clobber:true})
         }
     }
@@ -68,4 +71,13 @@ function name(text){
 
 function action(action){
     return pad(action, 10)
+}
+
+function logCopy(srcPath, destPath){
+    const cwd = process.cwd()
+    srcPath = path.relative(cwd, srcPath)
+    destPath = path.relative(cwd, destPath)
+
+    console.log(`[Binge] ${chalk.yellow(destPath)} <- ${chalk.magenta(srcPath)}`)
+
 }
