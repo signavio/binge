@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import pad from 'pad'
 
-import {spawn} from '../util/childProcess'
+import { spawn } from '../util/childProcess'
 
 import isMissing from '../installed-dep/isMissing'
 import isStale from '../installed-dep/isStale'
@@ -9,33 +9,29 @@ import isUnsatisfied from '../installed-dep/isUnsatisfied'
 
 export default function createTask(options) {
     return (node, callback) => {
-
-        if(!shouldInstall(node)){
+        if (!shouldInstall(node)) {
             logSkip(node)
-        }
-        else {
+        } else {
             logExecute(node, options)
         }
 
         const spawnOptions = {
             cwd: node.path,
-            stdio: node.pipe === true
-                ? ['ignore', 'ignore', 'inherit']
-                : ['ignore', 'ignore', 'ignore']
+            stdio:
+                node.pipe === true
+                    ? ['ignore', 'ignore', 'inherit']
+                    : ['ignore', 'ignore', 'ignore'],
         }
 
         spawn('yarn', [], spawnOptions, callback)
     }
 }
 
-function shouldInstall(node){
-    return (
-        node.hasNodeModules === false ||
-        node.dependencies.some(isTrigger)
-    )
+function shouldInstall(node) {
+    return node.hasNodeModules === false || node.dependencies.some(isTrigger)
 }
 
-function isTrigger(dependency){
+function isTrigger(dependency) {
     return (
         isMissing(dependency) ||
         isStale(dependency) ||
@@ -43,69 +39,60 @@ function isTrigger(dependency){
     )
 }
 
-function logSkip(node){
+function logSkip(node) {
     console.log(
         '[Binge] ' +
-        `${name(node.name)} ` +
-        `${action('Install')} ` +
-        `${chalk.green('Skipped')} `
+            `${name(node.name)} ` +
+            `${action('Install')} ` +
+            `${chalk.green('Skipped')} `,
     )
 }
 
-function logExecute(node){
+function logExecute(node) {
     console.log(
         '[Binge] ' +
-        `${name(node.name)} ` +
-        `${action('Install')} ` +
-        `${name(chalk.magenta('Executing'))} ` +
-        (node.hasNodeModules ? '' : '(first install)')
+            `${name(node.name)} ` +
+            `${action('Install')} ` +
+            `${name(chalk.magenta('Executing'))} ` +
+            (node.hasNodeModules ? '' : '(first install)'),
     )
 
-    if(node.hasNodeModules){
+    if (node.hasNodeModules) {
         node.dependencies
             .filter(isTrigger)
             .forEach(dependency => reason(node, dependency))
     }
 }
 
-function reason(node, dependency){
-    if(isMissing(dependency)){
-        logReason(
-            dependency.name,
-            'missing'
-        )
+function reason(node, dependency) {
+    if (isMissing(dependency)) {
+        logReason(dependency.name, 'missing')
         return
     }
 
-    if(isStale(dependency)){
-        logReason(
-            dependency.name,
-            'is stale'
-        )
+    if (isStale(dependency)) {
+        logReason(dependency.name, 'is stale')
         return
     }
 
-    if(isUnsatisfied(dependency)){
+    if (isUnsatisfied(dependency)) {
         logReason(
             dependency.name,
-            `required ${dependency.version} installed ${dependency.installedPJson.version}`
+            `required ${dependency.version} installed ${dependency
+                .installedPJson.version}`,
         )
         return
     }
 }
 
-function logReason(t, r){
-    console.log(
-        '        ' +
-        name(t) +
-        ` (${r})`
-    )
+function logReason(t, r) {
+    console.log('        ' + name(t) + ` (${r})`)
 }
 
-function name(text){
+function name(text) {
     return chalk.yellow(pad(text, 25))
 }
 
-function action(action){
+function action(action) {
     return pad(action, 10)
 }

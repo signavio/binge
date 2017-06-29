@@ -1,8 +1,7 @@
 export default function isStale(dependency) {
+    const { isFileVersion, isInstalled, node, installedPJson } = dependency
 
-    const {isFileVersion, isInstalled, node, installedPJson} = dependency
-
-    if(!isFileVersion || !isInstalled){
+    if (!isFileVersion || !isInstalled) {
         //is not stale
         return false
     }
@@ -10,13 +9,13 @@ export default function isStale(dependency) {
     const required = Object.assign(
         {},
         node.packageJson.dependencies,
-        node.packageJson.devDependencies
+        node.packageJson.devDependencies,
     )
 
     const installed = Object.assign(
         {},
         installedPJson.dependencies,
-        installedPJson.devDependencies
+        installedPJson.devDependencies,
     )
 
     const all = Object.assign({}, installed, required)
@@ -25,5 +24,5 @@ export default function isStale(dependency) {
         return installed[name] === required[name]
     })
 
-    return !isMatch    
+    return !isMatch
 }

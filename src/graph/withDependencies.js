@@ -3,21 +3,16 @@ import readDependencies from '../node/dependencies'
 import read from './withHasNodeModules'
 
 export default function(rootPath, callback) {
-
     read(rootPath, (err, graph) => {
-       if(err)return callback(err)
+        if (err) return callback(err)
 
-       async.mapSeries(
-           graph,
-           augment,
-           err => callback(err, graph)
-       )
+        async.mapSeries(graph, augment, err => callback(err, graph))
     })
 }
 
-function augment(node, callback){
+function augment(node, callback) {
     readDependencies(node, (err, result) => {
-        if(!err){
+        if (!err) {
             node.dependencies = result
         }
         callback(err)

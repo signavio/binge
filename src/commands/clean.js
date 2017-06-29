@@ -6,34 +6,27 @@ import readGraph from '../graph/withValidation'
 
 const CONCURRENCY = 8
 
-export default function(){
+export default function() {
     readGraph('.', thenClean)
 }
 
-function thenClean(err, graph){
-    if(err)end()
+function thenClean(err, graph) {
+    if (err) end()
 
     const [rootNode] = graph
-    console.log("\n[Binge] Christmas Tree\n")
+    console.log('\n[Binge] Christmas Tree\n')
     console.log(archy(rootNode))
 
-    async.mapLimit(
-        graph,
-        CONCURRENCY,
-        createCleanTask(),
-        end
-    )
+    async.mapLimit(graph, CONCURRENCY, createCleanTask(), end)
 }
 
-
-function end(err){
-    if(err){
+function end(err) {
+    if (err) {
         console.log(err)
-        console.log("[Binge] " + chalk.red("Failure"))
+        console.log('[Binge] ' + chalk.red('Failure'))
         process.exit(1)
-    }
-    else {
-        console.log("[Binge] " + chalk.green("Success"))
+    } else {
+        console.log('[Binge] ' + chalk.green('Success'))
         process.exit(0)
     }
 }
