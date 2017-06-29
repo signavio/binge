@@ -12,6 +12,7 @@ var meow = require("meow")
 var cli = meow([
   "Usage",
   "  $ binge [command]",
+  /*
   "",
   "Commands:",
   "  bootstrap  Prune, Install, and Build local packages (each step with optimistic skips)",
@@ -23,22 +24,14 @@ var cli = meow([
   "  ls         Output the local package dependency tree",
   "",
   "Options:",
-  //"  --skip-install     TODO Skip the install step ('build' and 'watch' commands only)",
-  //"  --skip-prepublish  TODO Skip the prepublish step ('build' and 'watch' commands only)",
-  //"  --skip-connect     TODO Skip the connect step ('build' and 'watch' commands only)",
-  //"  --ignore [glob]    Ignores packages with names matching the given glob (Works only in combination with the 'bootstrap' command).",
   "  --cwd                Set the current working directory",
   "  --dry-run            Only works with the bootstrap command",
   "  --concurrency        TODO Limit the parallel factor that binge uses on async (defaults to 8)",
   "  --loud               TODO Output all available inforomation",
-  //"  --social (default)   TODO Output information about the current task and current step",
   "  --quiet              TODO Output only the final timing-success-failure statement",
   "  --silent             TODO No outputs"
-], {
-  alias: {
-
-  }
-})
+  */
+])
 
 require("signal-exit").unload()
 

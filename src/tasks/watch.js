@@ -11,7 +11,7 @@ export default function createTask(destNode, options){
         console.log(
             `[Binge] ${name(srcNode.name)} ` +
             `${action('Watch')} ` +
-            `${chalk.magenta('Executing')} `            
+            `${chalk.magenta('Executing')} `
         )
 
         const srcDirPath = srcNode.path
@@ -25,11 +25,11 @@ export default function createTask(destNode, options){
             /.*package.json$/
         ]
 
-        setTimeout(() => {
-            chokidar
-                .watch(srcDirPath, {ignored})
-                .on('change', copyFile)
-        }, 30000)
+        chokidar
+            .watch(srcDirPath, {ignored})
+            .on('change', copyFile)
+
+        setTimeout(() => {silent = false}, 30000)
 
 
         function copyFile(srcFilePath){
@@ -74,6 +74,8 @@ function action(action){
 }
 
 function logCopy(srcPath, destPath){
+    if(silent) return
+
     const cwd = process.cwd()
     srcPath = path.relative(cwd, srcPath)
     destPath = path.relative(cwd, destPath)
@@ -81,3 +83,5 @@ function logCopy(srcPath, destPath){
     console.log(`[Binge] ${chalk.yellow(destPath)} <- ${chalk.magenta(srcPath)}`)
 
 }
+
+let silent = true

@@ -1,7 +1,4 @@
-import async from 'async'
 import chalk from 'chalk'
-import fse from 'fs-extra'
-import invariant from 'invariant'
 import pad from 'pad'
 
 import {spawn} from '../util/childProcess'
@@ -32,8 +29,8 @@ export default function createTask(options = defaultOptions) {
         const opts = {
             cwd: node.path,
             stdio: ['ignore', 'ignore', 'inherit']
-            //stdio: ['ignore', 'ignore', 'ignore']
-            //stdio: options.showOutput === true
+            // stdio: ['ignore', 'ignore', 'ignore']
+            // stdio: options.showOutput === true
             //    ? ['ignore', 'ignore', 'inherit'] //pipe stdout
             //    : ['ignore', 'ignore', 'ignore']
         }

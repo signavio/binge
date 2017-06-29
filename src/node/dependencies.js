@@ -1,8 +1,6 @@
 import async from 'async'
-import fs from 'fs'
 import path from 'path'
 import readPackageJson from 'read-package-json'
-import semver from 'semver'
 
 
 export default function(node, callback){

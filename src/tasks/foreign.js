@@ -32,11 +32,3 @@ function log(name, action, status){
         `${status} `
     )
 }
-
-function name(text){
-    return chalk.yellow(pad(text, 25))
-}
-
-function action(action){
-    return pad(action, 10)
-}

@@ -9,7 +9,7 @@ import isStale from '../installed-dep/isStale'
 import isUnsatisfied from '../installed-dep/isUnsatisfied'
 
 
-export default function createRinseTask(options = defaultOptions) {
+export default function createRinseTask() {
 
     return (node, callback) => {
 

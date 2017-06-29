@@ -3,8 +3,7 @@ import fs from 'fs'
 import fse from 'fs-extra'
 import invariant from 'invariant'
 import path from 'path'
-
-import {spawn} from '../util/childProcess'
+import chalk from 'chalk'
 
 export default function (node, callback){
     allSrcItems(node, (err, srcItems) => {

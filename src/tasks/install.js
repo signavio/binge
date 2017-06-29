@@ -1,5 +1,4 @@
 import chalk from 'chalk'
-import rimraf from 'rimraf'
 import pad from 'pad'
 
 import {spawn} from '../util/childProcess'
@@ -8,11 +7,7 @@ import isMissing from '../installed-dep/isMissing'
 import isStale from '../installed-dep/isStale'
 import isUnsatisfied from '../installed-dep/isUnsatisfied'
 
-const defaultOptions = {
-    dryRun: false
-}
-
-export default function createTask(options = defaultOptions ) {
+export default function createTask(options) {
     return (node, callback) => {
 
         if(!shouldInstall(node)){
@@ -29,7 +24,7 @@ export default function createTask(options = defaultOptions ) {
                 : ['ignore', 'ignore', 'ignore']
         }
 
-        spawn('npm', ['install', '--silent'], spawnOptions, callback)
+        spawn('yarn', [], spawnOptions, callback)
     }
 }
 
@@ -57,7 +52,7 @@ function logSkip(node){
     )
 }
 
-function logExecute(node, options){
+function logExecute(node){
     console.log(
         '[Binge] ' +
         `${name(node.name)} ` +
@@ -66,40 +61,45 @@ function logExecute(node, options){
         (node.hasNodeModules ? '' : '(first install)')
     )
 
-    if(node.hasNodeModules && options.dryRun){
-        console.log('    Reasons:')
+    if(node.hasNodeModules){
         node.dependencies
             .filter(isTrigger)
-            .forEach(dependency => logReason(node, dependency))
+            .forEach(dependency => reason(node, dependency))
     }
 }
 
-function logReason(node, dependency){
+function reason(node, dependency){
     if(isMissing(dependency)){
-        console.log(
-            '    ' +
-            `${chalk.yellow(dependency.name)} missing`
+        logReason(
+            dependency.name,
+            'missing'
         )
         return
     }
 
     if(isStale(dependency)){
-        console.log(
-            '    ' +
-            `${chalk.yellow(dependency.name)} is stale`
+        logReason(
+            dependency.name,
+            'is stale'
         )
         return
     }
 
     if(isUnsatisfied(dependency)){
-        console.log(
-            '    ' +
-            `${name(dependency.name)} ` +
-            `required ${dependency.version} ` +
-            `installed ${dependency.installedPJson.version}`
+        logReason(
+            dependency.name,
+            `required ${dependency.version} installed ${dependency.installedPJson.version}`
         )
         return
     }
+}
+
+function logReason(t, r){
+    console.log(
+        '        ' +
+        name(t) +
+        ` (${r})`
+    )
 }
 
 function name(text){
