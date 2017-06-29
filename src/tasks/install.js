@@ -81,7 +81,6 @@ function reason(node, dependency) {
             `required ${dependency.version} installed ${dependency
                 .installedPJson.version}`,
         )
-        return
     }
 }
 

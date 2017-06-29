@@ -36,13 +36,13 @@ export default function(rootPath, callback) {
         const dependencies = allDependencies(node.packageJson)
 
         const paths = Object.keys(dependencies)
-            //Get the dependencies in a {name, version} tuples
+            // Get the dependencies in a {name, version} tuples
             .map(key => dependencies[key])
-            //Filter out the published dependencies
+            // Filter out the published dependencies
             .filter(isFileVersion)
-            //Convert to physical paths
+            // Convert to physical paths
             .map(version => version.substring('file:'.length))
-            //Go from relative path, into absolute path
+            // Go from relative path, into absolute path
             .map(relativePath =>
                 path.resolve(path.join(node.path, relativePath)),
             )

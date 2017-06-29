@@ -1,4 +1,3 @@
-import async from 'async'
 import read from './withValidation'
 import reachable from './reachable'
 

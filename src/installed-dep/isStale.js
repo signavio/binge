@@ -2,7 +2,7 @@ export default function isStale(dependency) {
     const { isFileVersion, isInstalled, node, installedPJson } = dependency
 
     if (!isFileVersion || !isInstalled) {
-        //is not stale
+        // is not stale
         return false
     }
 

@@ -38,6 +38,6 @@ export function layer(startNode) {
 }
 
 export function flat(startNode) {
-    //flatten the layers into a single array
+    // flatten the layers into a single array
     return Array.prototype.concat.apply([], layer(startNode))
 }

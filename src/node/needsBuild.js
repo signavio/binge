@@ -66,7 +66,7 @@ function isFileUpToDate(node, item, callback) {
 
         const srcStats = item.stats
 
-        //might be the source directory or other directories. Shouldn't affect the result
+        // might be the source directory or other directories. Shouldn't affect the result
         if (!destStats.isFile()) {
             console.log(
                 chalk.yellow('Warning') +

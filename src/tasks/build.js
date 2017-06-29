@@ -10,8 +10,8 @@ const defaultOptions = {
 export default function createTask(options = defaultOptions) {
     return (node, callback) => {
         if (node.path === process.cwd()) {
-            //skip for the parent module
-            //TODO tag the root node
+            // skip for the parent module
+            // TODO tag the root node
             return callback(null)
         }
 

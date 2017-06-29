@@ -1,5 +1,4 @@
 import fs from 'fs'
-import path from 'path'
 
 export default function(src, callback) {
     fs.readFile(src, { encoding: 'utf8' }, (err, data) => {

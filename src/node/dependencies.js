@@ -27,14 +27,14 @@ export default function(node, callback) {
     })
 
     const reachableDependencies = node.reachable
-        //remove the ones already added
+        // remove the ones already added
         .filter(
             childNode =>
                 !ownDependencies.find(
                     dependency => dependency.name === childNode.name,
                 ),
         )
-        //added the non directly reachable
+        // added the non directly reachable
         .map(childNode => ({
             isFileVersion: true,
             name: childNode.name,

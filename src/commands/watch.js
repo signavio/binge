@@ -1,9 +1,6 @@
-import async from 'async'
 import chalk from 'chalk'
-import archy from '../util/archy'
 
 import readGraph from '../graph/withValidation'
-import { layer as layerTopology } from '../graph/topology'
 import createForeignTask from '../tasks/foreign'
 import createWatchTask from '../tasks/watch'
 
