@@ -6,7 +6,7 @@ export function spawn(command, args, opts, callback) {
     const childProcess = crossSpawn(
         command,
         args,
-        Object.assign({ stdio: 'inherit' }, opts),
+        Object.assign({ stdio: 'inherit' }, opts)
     )
         .on('error', e => {
             callback(e)
@@ -14,7 +14,7 @@ export function spawn(command, args, opts, callback) {
         .on('exit', code => {
             callback(
                 code &&
-                    (stderr || `Command failed: ${command} ${args.join(' ')}`),
+                    (stderr || `Command failed: ${command} ${args.join(' ')}`)
             )
         })
 

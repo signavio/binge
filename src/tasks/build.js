@@ -47,6 +47,6 @@ function log(name, action, status) {
         '[Binge] ' +
             `${chalk.yellow(pad(name, 25))} ` +
             `${pad(action, 10)} ` +
-            `${status} `,
+            `${status} `
     )
 }

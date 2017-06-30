@@ -9,13 +9,13 @@ export default function isStale(dependency) {
     const required = Object.assign(
         {},
         node.packageJson.dependencies,
-        node.packageJson.devDependencies,
+        node.packageJson.devDependencies
     )
 
     const installed = Object.assign(
         {},
         installedPJson.dependencies,
-        installedPJson.devDependencies,
+        installedPJson.devDependencies
     )
 
     const all = Object.assign({}, installed, required)

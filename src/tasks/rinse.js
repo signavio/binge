@@ -1,3 +1,4 @@
+/*
 import async from 'async'
 import chalk from 'chalk'
 import invariant from 'invariant'
@@ -81,3 +82,5 @@ function name(text) {
 function action(action) {
     return pad(action, 10)
 }
+
+*/

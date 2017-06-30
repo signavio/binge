@@ -44,7 +44,7 @@ function logSkip(node) {
         '[Binge] ' +
             `${name(node.name)} ` +
             `${action('Install')} ` +
-            `${chalk.green('Skipped')} `,
+            `${chalk.green('Skipped')} `
     )
 }
 
@@ -54,7 +54,7 @@ function logExecute(node) {
             `${name(node.name)} ` +
             `${action('Install')} ` +
             `${name(chalk.magenta('Executing'))} ` +
-            (node.hasNodeModules ? '' : '(first install)'),
+            (node.hasNodeModules ? '' : '(first install)')
     )
 
     if (node.hasNodeModules) {
@@ -79,7 +79,7 @@ function reason(node, dependency) {
         logReason(
             dependency.name,
             `required ${dependency.version} installed ${dependency
-                .installedPJson.version}`,
+                .installedPJson.version}`
         )
     }
 }

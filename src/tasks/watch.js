@@ -10,13 +10,13 @@ export default function createTask(destNode, options) {
         console.log(
             `[Binge] ${name(srcNode.name)} ` +
                 `${action('Watch')} ` +
-                `${chalk.magenta('Executing')} `,
+                `${chalk.magenta('Executing')} `
         )
 
         const srcDirPath = srcNode.path
         invariant(
             path.isAbsolute(srcDirPath),
-            'Expected absolute path for the source destNode',
+            'Expected absolute path for the source destNode'
         )
 
         const ignored = [...srcNode.npmIgnore, /.*package.json$/]
@@ -30,28 +30,28 @@ export default function createTask(destNode, options) {
         function copyFile(srcFilePath) {
             invariant(
                 srcFilePath.startsWith(srcDirPath),
-                'Resource expected to be a child of srcNode',
+                'Resource expected to be a child of srcNode'
             )
 
             const internalFilePath = srcFilePath.substring(
                 srcDirPath.length,
-                srcFilePath.length,
+                srcFilePath.length
             )
             invariant(
                 path.isAbsolute(srcFilePath),
-                'srcFilePath expected to be absolute',
+                'srcFilePath expected to be absolute'
             )
 
             const destFilePath = path.join(
                 destNode.path,
                 'node_modules',
                 srcNode.name,
-                internalFilePath,
+                internalFilePath
             )
 
             invariant(
                 path.isAbsolute(destFilePath),
-                'destFilePath expected to be absolute',
+                'destFilePath expected to be absolute'
             )
 
             logCopy(srcFilePath, destFilePath)
@@ -76,7 +76,7 @@ function logCopy(srcPath, destPath) {
     destPath = path.relative(cwd, destPath)
 
     console.log(
-        `[Binge] ${chalk.yellow(destPath)} <- ${chalk.magenta(srcPath)}`,
+        `[Binge] ${chalk.yellow(destPath)} <- ${chalk.magenta(srcPath)}`
     )
 }
 

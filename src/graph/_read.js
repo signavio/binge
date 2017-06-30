@@ -11,25 +11,34 @@ export default function(rootPath, callback) {
     rootPath = path.resolve(rootPath)
 
     const cache = {}
-    readNode(rootPath, thenExpand)
 
-    function thenExpand(err) {
-        if (err) {
-            return callback(err)
+    function readNode(pkgPath, callback) {
+        if (cache[pkgPath]) {
+            return callback(null, cache[pkgPath])
         }
 
-        const nodes = unexpandedNodes()
-        if (!nodes.length) {
-            return callback(null, cache[rootPath])
-        }
+        const packageJsonPath = path.join(pkgPath, 'package.json')
+        const npmIgnorePath = path.join(pkgPath, '.npmignore')
+        async.parallel(
+            [
+                done => readPackageJson(packageJsonPath, done),
+                done => readIgnoreFile(npmIgnorePath, done),
+            ],
+            (err, [packageJson, npmIgnore] = []) => {
+                if (err) {
+                    return callback(err)
+                }
 
-        async.map(nodes, expandNode, thenExpand)
-    }
-
-    function unexpandedNodes() {
-        return Object.keys(cache)
-            .map(key => cache[key])
-            .filter(node => !(node.children instanceof Array))
+                const node = (cache[pkgPath] = {
+                    name: packageJson.name,
+                    path: pkgPath,
+                    packageJson,
+                    npmIgnore,
+                    status: {},
+                })
+                callback(null, node)
+            }
+        )
     }
 
     function expandNode(node, callback) {
@@ -44,7 +53,7 @@ export default function(rootPath, callback) {
             .map(version => version.substring('file:'.length))
             // Go from relative path, into absolute path
             .map(relativePath =>
-                path.resolve(path.join(node.path, relativePath)),
+                path.resolve(path.join(node.path, relativePath))
             )
 
         async.map(paths, readNode, (err, nodes) => {
@@ -55,48 +64,35 @@ export default function(rootPath, callback) {
         })
     }
 
-    function readNode(pkgPath, callback) {
-        if (cache[pkgPath]) {
-            return callback(null, cache[pkgPath])
+    function tryEnd(err) {
+        if (err) {
+            return callback(err)
         }
 
-        const packageJsonPath = path.join(pkgPath, 'package.json')
-        const npmIgnorePath = path.join(pkgPath, '.npmignore')
-        async.parallel(
-            [
-                done => readPackageJson(packageJsonPath, done),
-                done => readIgnoreFile(npmIgnorePath, done),
-            ],
-            cacheNode,
-        )
+        const unexpandedNodes = Object.keys(cache)
+            .map(key => cache[key])
+            .filter(node => !(node.children instanceof Array))
 
-        function cacheNode(err, [packageJson, npmIgnore] = []) {
-            if (err) return callback(err)
-
-            const node = (cache[pkgPath] = {
-                name: packageJson.name,
-                path: pkgPath,
-                packageJson,
-                npmIgnore,
-                status: {},
-            })
-            callback(null, node)
+        if (!unexpandedNodes.length) {
+            return callback(null, cache[rootPath])
         }
+
+        async.map(unexpandedNodes, expandNode, tryEnd)
     }
+
+    readNode(rootPath, tryEnd)
 }
 
 function allDependencies(packageJson) {
     return Object.assign(
         {},
         packageJson.dependencies,
-        packageJson.devDependencies,
+        packageJson.devDependencies
     )
 }
 
 function isFileVersion(version) {
     return (
-        typeof version === 'string' &&
-        version.toLowerCase().startsWith('file:') &&
-        version.indexOf('bluetooth') === -1
+        typeof version === 'string' && version.toLowerCase().startsWith('file:')
     )
 }

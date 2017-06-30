@@ -1,3 +1,4 @@
+/*
 import async from 'async'
 import chalk from 'chalk'
 import archy from '../util/archy'
@@ -30,3 +31,4 @@ function end(err) {
         process.exit(0)
     }
 }
+*/

@@ -30,7 +30,7 @@ export default function(options) {
                 done => installLayer(layer, done),
                 done => buildLayer(layer, done),
             ],
-            callback,
+            callback
         )
     }
 

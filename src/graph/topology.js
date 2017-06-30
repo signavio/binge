@@ -2,9 +2,7 @@
  * Returns layers of nodes.
  *
  * Each layer is organized by dependency level. Layers are are topologically
- * relevant. Nodes in the same layer can be solved concurrently in safe manner,
- * from the dependency point of view
- *
+ * relevant. Nodes in the same layer can be safely solved concurrently
  */
 
 import reachable from './reachable'
