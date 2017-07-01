@@ -5,7 +5,7 @@
  * relevant. Nodes in the same layer can be safely solved concurrently
  */
 
-import reachable from './reachable'
+import reachable from './node/reachable'
 
 export function layer(startNode) {
     let pending = [startNode, ...reachable(startNode)]

@@ -1,6 +1,7 @@
+import invariant from 'invariant'
 import path from 'path'
 import async from 'async'
-import readPackageJson from 'read-package-json'
+import readPackageJson from '../util/readPackageJson'
 import readIgnoreFile from '../util/readIgnoreFile'
 
 /*
@@ -42,7 +43,11 @@ export default function(rootPath, callback) {
     }
 
     function expandNode(node, callback) {
-        const dependencies = allDependencies(node.packageJson)
+        const dependencies = Object.assign(
+            {},
+            node.packageJson.dependencies,
+            node.packageJson.devDependencies
+        )
 
         const paths = Object.keys(dependencies)
             // Get the dependencies in a {name, version} tuples
@@ -56,11 +61,39 @@ export default function(rootPath, callback) {
                 path.resolve(path.join(node.path, relativePath))
             )
 
+        const names = Object.keys(dependencies)
+            // Get the dependencies in {name, version}
+            .map(key => ({ name: key, version: dependencies[key] }))
+            .filter(({ version }) => isFileVersion(version))
+            .map(({ name }) => name)
+
         async.map(paths, readNode, (err, nodes) => {
-            if (!err) {
-                node.children = nodes
+            if (err) {
+                return callback(err)
             }
-            callback(err)
+
+            node.children = nodes
+
+            invariant(
+                nodes.length === names.length,
+                'mismatch on loaded nodes length'
+            )
+
+            if (!names.every((name, index) => name === nodes[index].name)) {
+                const name = names.find(
+                    (name, index) => name !== nodes[index].name
+                )
+                const node = nodes.find(
+                    (node, index) => node.name !== names[index]
+                )
+                callback(
+                    new Error(
+                        `Referencing package with '${name}' but its real name is '${node.name}'`
+                    )
+                )
+            } else {
+                callback(null)
+            }
         })
     }
 
@@ -81,14 +114,6 @@ export default function(rootPath, callback) {
     }
 
     readNode(rootPath, tryEnd)
-}
-
-function allDependencies(packageJson) {
-    return Object.assign(
-        {},
-        packageJson.dependencies,
-        packageJson.devDependencies
-    )
 }
 
 function isFileVersion(version) {

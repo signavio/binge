@@ -2,16 +2,13 @@ import async from 'async'
 import chalk from 'chalk'
 
 import archy from '../util/archy'
-import readGraph from '../graph/withDependencies'
+import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
-import createBuildTask from '../tasks/build'
-import createInstallTask from '../tasks/install'
-import createRinseTask from '../tasks/rinse'
-
-const CONCURRENCY = 8
+import createPruneTask from '../tasks/prune'
 
 export default function(options) {
-    readGraph('.', function(err, graph) {
+    process.chdir('/Users/Cris/development/signavio/client/bdmsimulation')
+    createGraph('.', function(err, graph) {
         if (err) end(err)
 
         const [rootNode] = graph
@@ -24,6 +21,9 @@ export default function(options) {
     })
 
     function executeLayer(layer, callback) {
+        async.map(layer, executeNode, callback)
+
+        /*
         async.series(
             [
                 done => rinseLayer(layer, done),
@@ -32,8 +32,23 @@ export default function(options) {
             ],
             callback
         )
+        */
     }
 
+    function executeNode(node, callback) {
+        console.log(node.name)
+        async.series(
+            [
+                done => createPruneTask()(node, done),
+                // done => rinseLayer(node, done),
+                // done => installLayer(layer, done),
+                // done => buildLayer(layer, done),
+            ],
+            callback
+        )
+    }
+
+    /*
     function rinseLayer(nodes, callback) {
         async.mapLimit(nodes, CONCURRENCY, createRinseTask(options), callback)
     }
@@ -47,6 +62,7 @@ export default function(options) {
     function buildLayer(nodes, callback) {
         async.mapLimit(nodes, CONCURRENCY, createBuildTask(options), callback)
     }
+    */
 }
 
 function end(err) {

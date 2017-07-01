@@ -14,10 +14,12 @@ const commands = {
 export default commands
 */
 
-import graph from './commands/graph'
+import ls from './commands/ls'
+import bootstrap from './commands/bootstrap'
 
 const commands = {
-    graph,
+    bootstrap,
+    ls,
 }
 
 export default commands
