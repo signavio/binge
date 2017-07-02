@@ -1,3 +1,4 @@
+import os from 'os'
 import async from 'async'
 import chalk from 'chalk'
 
@@ -5,6 +6,11 @@ import archy from '../util/archy'
 import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
 import createPruneTask from '../tasks/prune'
+import createInstallTask from '../tasks/install'
+import createBridgeTask from '../tasks/bridge'
+import createBuildTask from '../tasks/build'
+
+const CONCURRENCY = os.cpus().length
 
 export default function(options) {
     process.chdir('/Users/Cris/development/signavio/client/bdmsimulation')
@@ -17,52 +23,53 @@ export default function(options) {
         console.log('\n[Binge] Christmas Tree\n')
         console.log(archy(rootNode))
 
-        async.mapSeries(layers, executeLayer, end)
-    })
+        // all in parallel prune + install
+        // layers map.series
+        // each layer in parallel build + bridge
 
-    function executeLayer(layer, callback) {
-        async.map(layer, executeNode, callback)
-
-        /*
         async.series(
             [
-                done => rinseLayer(layer, done),
-                done => installLayer(layer, done),
-                done => buildLayer(layer, done),
+                done => pruneAndInstall(graph, done),
+                done => buildAndBridge(layers, done),
             ],
-            callback
+            end
         )
-        */
+    })
+
+    function pruneAndInstall(nodes, callback) {
+        async.mapLimit(nodes, CONCURRENCY, pruneAndInstallNode, callback)
     }
 
-    function executeNode(node, callback) {
-        console.log(node.name)
+    function pruneAndInstallNode(node, callback) {
+        console.log('prune and install ' + node.name)
         async.series(
             [
                 done => createPruneTask()(node, done),
-                // done => rinseLayer(node, done),
-                // done => installLayer(layer, done),
-                // done => buildLayer(layer, done),
+                done => createInstallTask()(node, done),
             ],
             callback
         )
     }
 
-    /*
-    function rinseLayer(nodes, callback) {
-        async.mapLimit(nodes, CONCURRENCY, createRinseTask(options), callback)
+    function buildAndBridge(layers, callback) {
+        console.log('build and bridge')
+        async.mapSeries(layers, buildAndBridgeLayer, callback)
     }
 
-    function installLayer(nodes, callback) {
-        nodes[nodes.length - 1].pipe = true
-
-        async.mapLimit(nodes, CONCURRENCY, createInstallTask(options), callback)
+    function buildAndBridgeLayer(layer, callback) {
+        async.mapLimit(layer, CONCURRENCY, buildAndBridgeNode, callback)
     }
 
-    function buildLayer(nodes, callback) {
-        async.mapLimit(nodes, CONCURRENCY, createBuildTask(options), callback)
+    function buildAndBridgeNode(node, callback) {
+        console.log('build and bridge ' + node.name)
+        async.series(
+            [
+                done => createBuildTask()(node, done),
+                done => createBridgeTask()(node, done),
+            ],
+            callback
+        )
     }
-    */
 }
 
 function end(err) {

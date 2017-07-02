@@ -4,6 +4,7 @@ import fse from 'fs-extra'
 import invariant from 'invariant'
 import path from 'path'
 import pad from 'pad'
+import { spawn } from '../util/childProcess'
 
 export default function createTask(destNode, options) {
     return srcNode => {
@@ -22,6 +23,18 @@ export default function createTask(destNode, options) {
         const ignored = [...srcNode.npmIgnore, /.*package.json$/]
 
         chokidar.watch(srcDirPath, { ignored }).on('change', copyFile)
+
+        const available =
+            srcNode.packageJson.scripts && srcNode.packageJson.scripts.dev
+
+        invariant(available, 'no watch task found')
+
+        const options = {
+            cwd: srcNode.path,
+            stdio: ['ignore', 'ignore', 'inherit'],
+        }
+
+        spawn('npm', ['run', 'dev'], options, function() {})
 
         setTimeout(() => {
             silent = false

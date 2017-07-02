@@ -1,11 +1,11 @@
 import chalk from 'chalk'
 
-import readGraph from '../graph/withValidation'
-import createForeignTask from '../tasks/foreign'
+import createGraph from '../graph/create'
 import createWatchTask from '../tasks/watch'
 
 export default function(callback) {
-    readGraph('.', thenWatch)
+    process.chdir('/Users/Cris/development/signavio/client/bdmsimulation')
+    createGraph('.', thenWatch)
 }
 
 function thenWatch(err, graph) {
@@ -13,7 +13,6 @@ function thenWatch(err, graph) {
 
     const [rootNode, ...rest] = graph
     rest.forEach(createWatchTask(rootNode))
-    rest.forEach(createForeignTask())
 }
 
 function end(err) {
