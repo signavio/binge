@@ -12,6 +12,7 @@ export default function(rootPath, callback) {
     rootPath = path.resolve(rootPath)
 
     const cache = {}
+    readNode(rootPath, tryEnd)
 
     function readNode(pkgPath, callback) {
         if (cache[pkgPath]) {
@@ -42,6 +43,22 @@ export default function(rootPath, callback) {
         )
     }
 
+    function tryEnd(err) {
+        if (err) {
+            return callback(err)
+        }
+
+        const unexpandedNodes = Object.keys(cache)
+            .map(key => cache[key])
+            .filter(node => !(node.children instanceof Array))
+
+        if (!unexpandedNodes.length) {
+            return callback(null, cache[rootPath])
+        }
+
+        async.mapSeries(unexpandedNodes, expandNode, tryEnd)
+    }
+
     function expandNode(node, callback) {
         const dependencies = Object.assign(
             {},
@@ -67,7 +84,7 @@ export default function(rootPath, callback) {
             .filter(({ version }) => isFileVersion(version))
             .map(({ name }) => name)
 
-        async.map(paths, readNode, (err, nodes) => {
+        async.mapSeries(paths, readNode, (err, nodes) => {
             if (err) {
                 return callback(err)
             }
@@ -79,45 +96,30 @@ export default function(rootPath, callback) {
                 'mismatch on loaded nodes length'
             )
 
-            if (!names.every((name, index) => name === nodes[index].name)) {
-                const name = names.find(
-                    (name, index) => name !== nodes[index].name
-                )
-                const node = nodes.find(
-                    (node, index) => node.name !== names[index]
-                )
-                callback(
-                    new Error(
-                        `Referencing package with '${name}' but its real name is '${node.name}'`
-                    )
-                )
+            if (isWrongLocalName(names, nodes)) {
+                callback(errorWrongLocalName(names, nodes))
             } else {
                 callback(null)
             }
         })
     }
-
-    function tryEnd(err) {
-        if (err) {
-            return callback(err)
-        }
-
-        const unexpandedNodes = Object.keys(cache)
-            .map(key => cache[key])
-            .filter(node => !(node.children instanceof Array))
-
-        if (!unexpandedNodes.length) {
-            return callback(null, cache[rootPath])
-        }
-
-        async.map(unexpandedNodes, expandNode, tryEnd)
-    }
-
-    readNode(rootPath, tryEnd)
 }
 
 function isFileVersion(version) {
     return (
         typeof version === 'string' && version.toLowerCase().startsWith('file:')
+    )
+}
+
+function isWrongLocalName(names, nodes) {
+    return !names.every((name, index) => name === nodes[index].name)
+}
+
+function errorWrongLocalName(names, nodes) {
+    const name = names.find((name, index) => name !== nodes[index].name)
+    const node = nodes.find((node, index) => node.name !== names[index])
+
+    return new Error(
+        `Referencing package with '${name}' but its real name is '${node.name}'`
     )
 }

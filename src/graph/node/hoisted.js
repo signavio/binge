@@ -26,8 +26,6 @@ function collect(selector, pointers) {
         .map(pointers => {
             const versions = pointers.map(({ version }) => version)
 
-            // console.log(versions + ' ->  ' + String(reconcileVersion(versions)))
-
             return {
                 name: pointers[0].name,
                 version: reconcileVersion(versions),

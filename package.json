@@ -25,6 +25,7 @@
     "karma": "^1.7.0",
     "meow": "^3.7.0",
     "pad": "^1.0.0",
+    "read-package-json": "^2.0.10",
     "semver": "^5.0.0",
     "semver-intersect": "1.1.0",
     "signal-exit": "^3.0.2"

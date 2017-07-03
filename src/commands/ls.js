@@ -1,11 +1,9 @@
-// import async from 'async'
 import chalk from 'chalk'
 
 import createGraph from '../graph/create'
-// import { layer as layerTopology } from '../graph/topology'
+import archy from '../util/archy'
 
 export default function(options) {
-    process.chdir('/Users/Cris/development/signavio/client/apagar')
     createGraph('.', function(err, graph) {
         if (err) {
             console.log(err)
@@ -14,6 +12,10 @@ export default function(options) {
         }
 
         const [rootNode] = graph
+
+        console.log('\n[Binge] Christmas Tree\n')
+        console.log(archy(rootNode))
+
         printStats(rootNode)
         console.log('[Binge] ' + chalk.green('Success'))
         process.exit(0)
@@ -64,33 +66,3 @@ function printStats(node) {
         })
     })
 }
-
-/*
-import chalk from 'chalk'
-import archy from '../util/archy'
-import readGraph from '../graph/withValidation'
-
-export default function() {
-    readGraph('.', thenChristmasTree)
-}
-
-function thenChristmasTree(err, graph) {
-    if (err) end(err)
-
-    const [rootNode] = graph
-    console.log('\n[Binge] Christmas Tree\n')
-    console.log(archy(rootNode))
-    end()
-}
-
-function end(err) {
-    if (err) {
-        console.log(err)
-        console.log('[Binge] ' + chalk.red('Failure'))
-        process.exit(1)
-    } else {
-        console.log('[Binge] ' + chalk.green('Success'))
-        process.exit(0)
-    }
-}
-*/

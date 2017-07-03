@@ -5,7 +5,6 @@ import path from 'path'
 import createGraph from '../graph/create'
 
 export default function(options) {
-    process.chdir('/Users/Cris/development/signavio/client/bdmsimulation')
     createGraph('.', function(err, graph) {
         if (err) end(err)
         async.mapLimit(

@@ -4,7 +4,8 @@ import path from 'path'
 import invariant from 'invariant'
 
 export default function(options) {
-    return (node, callback) => {
+    return (node, reporter, callback) => {
+        reporter.update(`bridging ${node.name}`)
         async.map(
             node.reachable,
             (childNode, done) => bridge(node, childNode, done),

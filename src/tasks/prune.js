@@ -3,7 +3,8 @@ import path from 'path'
 import fse from 'fs-extra'
 
 export default function createRinseTask() {
-    return (node, callback) => {
+    return (node, reporter, callback) => {
+        reporter.update(`pruning ${node.name}`)
         async.map(
             node.reachable,
             (childNode, done) => prune(node, childNode, done),

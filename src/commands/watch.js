@@ -4,7 +4,6 @@ import createGraph from '../graph/create'
 import createWatchTask from '../tasks/watch'
 
 export default function(callback) {
-    process.chdir('/Users/Cris/development/signavio/client/bdmsimulation')
     createGraph('.', thenWatch)
 }
 

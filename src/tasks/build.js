@@ -1,13 +1,14 @@
 import { spawn } from '../util/childProcess'
 
 export default function createTask(options) {
-    return (node, callback) => {
+    return (node, reporter, callback) => {
         if (node.path === process.cwd()) {
-            console.log('SKIP for ' + node.name)
             // skip for the parent module
             // TODO tag the root node
             return callback(null)
         }
+
+        reporter.update(`building ${node.name}`)
 
         const unavailable =
             node.packageJson.scripts && !node.packageJson.scripts.build
