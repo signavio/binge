@@ -7,7 +7,7 @@ export default function(options) {
     createGraph('.', function(err, graph) {
         if (err) {
             console.log(err)
-            console.log('[Binge] ' + chalk.red('Failure'))
+            console.log(chalk.red('Failure'))
             process.exit(1)
         }
 
@@ -17,7 +17,7 @@ export default function(options) {
         console.log(archy(rootNode))
 
         printStats(rootNode)
-        console.log('[Binge] ' + chalk.green('Success'))
+        console.log(chalk.green('Success'))
         process.exit(0)
     })
 }

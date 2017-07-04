@@ -14,20 +14,11 @@ var cli = meow([
     'Usage',
     '  $ binge [command]',
     'Commands:',
-    '  bootstrap  [Install,Build, Deploy] all reachable local packages, into the local node_modules',
-    '  ls         Output the local package dependency tree, and hoisted dependency state',
-    '  nuke       Remove the node_modules directory from all local packages',
-    '  watch      Watches all local packages',
-    /*
-  "",
-  "Commands:",
-  "  bootstrap  Prune, Install, and Build local packages (each step with optimistic skips)",
-  "  watch      Watches file dependencies, and copies them to the current package",
-  "  clean      Remove the node_modules directory from all local packages",
-  "  run        TODO - Run npm script in each package",
-  "  exec       TODO - Run a command in each package",
-  "  harmony    TODO - Print a tree with all non harmonized dependencies",
-  "  ls         Output the local package dependency tree",
+    '  bootstrap  [Install,Build,Deploy] the local package tree into ./node_modules',
+    '  ls         Prints the local package tree. Prints the hoisting algorithm result',
+    '  nuke       rm -rf node_modules, for all local packages in the tree',
+    '  watch      watch all local packages in the tree, into ./node_modules',
+    /* 
   "",
   "Options:",
   "  --cwd                Set the current working directory",
@@ -45,12 +36,11 @@ var commandName = cli.input[0]
 var command = binge[commandName]
 
 process.on('exit', () => {
-    console.log('---------- ----------')
-    console.log('Binge')
+    console.log('---------- -----------------')
+    console.log('Binge (Eating Local Modules)')
     console.log(`version:   ${packageJson.version}`)
     console.timeEnd('execution')
-    console.log('---------- ----------')
-    console.log()
+    console.log('---------- -----------------')
 })
 console.time('execution')
 

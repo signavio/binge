@@ -17,10 +17,10 @@ function thenWatch(err, graph) {
 function end(err) {
     if (err) {
         console.log(err)
-        console.log('[Binge] ' + chalk.red('Failure'))
+        console.log(chalk.red('Failure'))
         process.exit(1)
     } else {
-        console.log('[Binge] ' + chalk.green('Success'))
+        console.log(chalk.green('Success'))
         process.exit(0)
     }
 }

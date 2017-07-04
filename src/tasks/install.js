@@ -5,13 +5,15 @@ import invariant from 'invariant'
 import { spawn } from '../util/childProcess'
 
 export default function createTask(options) {
-    return (node, reporter, callback) => {
+    return (node, callback) => {
+        if (node.isDummy === true) {
+            return callback(null)
+        }
+
         invariant(
             Object.keys(node.hoisted.unreconciled).length === 0,
-            'Install task should only be called in hoistable trees'
+            `Install task should only be called in hoistable trees (${node.name})`
         )
-
-        reporter.update(`installing ${node.name}`)
 
         readOriginal(node, (err, data) => {
             if (err) {

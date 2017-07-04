@@ -19,15 +19,6 @@ export default function(options) {
         if (err) end(err)
 
         const [rootNode] = graph
-        /*
-        if (Object.keys(rootNode.hoisted.unreconciled).length > 0) {
-            end(
-                new Error(
-                    'Unreconciled dependencies on the package tree. Run binge ls for more'
-                )
-            )
-        }
-        */
 
         const layers = layerTopology(rootNode).reverse()
 
