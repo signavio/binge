@@ -7,7 +7,7 @@
     "build": "npm run clean && babel src -d lib",
     "clean": "rimraf lib",
     "dev": "npm run clean && babel -w src -d lib",
-    "lint": "eslint src",
+    "lint": "eslint src test",
     "test": "mocha",
     "prepublish": "npm run lint && npm run prettier:check && npm run build",
     "prettier": "prettier --write --tab-width 4 --no-semi --single-quote --trailing-comma es5 \"./src/**/*.js\"",
