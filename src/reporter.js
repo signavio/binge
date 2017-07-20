@@ -1,5 +1,4 @@
 import readline from 'readline'
-// import createSpinner, { SPRITES } from './spinner'
 import createSpinner from './spinner'
 import invariant from 'invariant'
 
@@ -7,19 +6,6 @@ const CLEAR_WHOLE_LINE = 0
 const CLEAR_RIGHT_OF_CURSOR = 1
 
 const stdout = process.stdout
-
-/*
-activitySet: title => {
-    activity: name => {
-        done: () => {
-
-        }
-    },
-    clear: () => {
-
-    }
-}
-*/
 
 export default function createReporter() {
     let stop = []

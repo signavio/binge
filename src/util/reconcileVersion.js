@@ -2,7 +2,7 @@ import invariant from 'invariant'
 import semver from 'semver'
 import { intersect } from 'semver-intersect'
 
-export default function createTask(rawVersions) {
+export default function(rawVersions) {
     const versions = rawVersions
         .map(rawVersion => semver.valid(rawVersion))
         // remove nulls

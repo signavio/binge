@@ -18,7 +18,7 @@ var cli = meow([
     '  ls         Prints the local package tree. Prints the hoisting algorithm result',
     '  nuke       rm -rf node_modules, for all local packages in the tree',
     '  watch      watch all local packages in the tree, into ./node_modules',
-    /* 
+    /*
   "",
   "Options:",
   "  --cwd                Set the current working directory",

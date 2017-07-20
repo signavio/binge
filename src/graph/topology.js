@@ -12,7 +12,7 @@ export function layer(startNode) {
     let result = []
 
     /*
-     * isTight: A node with one or more pending (pending) children
+     * isTight: A node with one or more pending children
      * isLoose: A node with no pending children
      * tighten: Remove all loose nodes from the unsewpt
      * loosen: Get all the loose nodes (the next layer)

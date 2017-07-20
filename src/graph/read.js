@@ -84,6 +84,10 @@ export default function(rootPath, callback) {
             .filter(({ version }) => isFileVersion(version))
             .map(({ name }) => name)
 
+        /*
+         * Cannot trigger this in parallel otherwise, could have several nodes
+         * being read in parallel
+         */
         async.mapSeries(paths, readNode, (err, nodes) => {
             if (err) {
                 return callback(err)
