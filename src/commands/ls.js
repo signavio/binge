@@ -1,10 +1,11 @@
 import chalk from 'chalk'
+import path from 'path'
 
 import createGraph from '../graph/create'
 import archy from '../util/archy'
 
 export default function(options) {
-    createGraph('.', function(err, graph) {
+    createGraph(path.resolve('.'), function(err, graph) {
         if (err) {
             console.log(err)
             console.log(chalk.red('Failure'))

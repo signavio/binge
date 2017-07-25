@@ -1,6 +1,7 @@
 import os from 'os'
 import async from 'async'
 import chalk from 'chalk'
+import path from 'path'
 
 import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
@@ -14,20 +15,12 @@ import createReporter from '../reporter'
 const CONCURRENCY = os.cpus().length
 
 export default function(options) {
+    let rootNode
     const reporter = createReporter()
-    createGraph('.', function(err, graph) {
+    createGraph(path.resolve('.'), function(err, graph) {
         if (err) end(err)
 
-        const [rootNode] = graph
-        /*
-        if (Object.keys(rootNode.hoisted.unreconciled).length > 0) {
-            end(
-                new Error(
-                    'Unreconciled dependencies on the package tree. Run binge ls for more'
-                )
-            )
-        }
-        */
+        rootNode = graph[0]
 
         const layers = layerTopology(rootNode).reverse()
 
@@ -52,8 +45,8 @@ export default function(options) {
         const done = reporter.task(node.name)
         async.series(
             [
-                done => createPruneTask()(node, done),
-                done => createInstallTask()(node, done),
+                done => createPruneTask(rootNode)(node, done),
+                done => createInstallTask(rootNode)(node, done),
             ],
             err => {
                 done()
@@ -78,8 +71,8 @@ export default function(options) {
         const done = reporter.task(node.name)
         async.series(
             [
-                done => createBuildTask()(node, done),
-                done => createBridgeTask()(node, done),
+                done => createBuildTask(rootNode)(node, done),
+                done => createBridgeTask(rootNode)(node, done),
             ],
             err => {
                 done()

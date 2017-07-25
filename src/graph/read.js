@@ -3,13 +3,17 @@ import path from 'path'
 import async from 'async'
 import readPackageJson from '../util/readPackageJson'
 import readIgnoreFile from '../util/readIgnoreFile'
+import readRCFile from '../util/readRCFile'
 
 /*
  * Do not call directly. Always call at least readValidation
  * that function validates the graph, and performs a cycle check
  */
-export default function(rootPath, callback) {
-    rootPath = path.resolve(rootPath)
+export default function readGraph(rootPath, callback) {
+    invariant(
+        path.isAbsolute(rootPath),
+        `Expects absolute path. Got this instead: ${rootPath}`
+    )
 
     const cache = {}
     readNode(rootPath, tryEnd)
@@ -19,25 +23,27 @@ export default function(rootPath, callback) {
             return callback(null, cache[pkgPath])
         }
 
-        const packageJsonPath = path.join(pkgPath, 'package.json')
-        const npmIgnorePath = path.join(pkgPath, '.npmignore')
         async.parallel(
             [
-                done => readPackageJson(packageJsonPath, done),
-                done => readIgnoreFile(npmIgnorePath, done),
+                done => readPackageJson(pkgPath, done),
+                done => readIgnoreFile(pkgPath, done),
+                done => readRCFile(pkgPath, done),
             ],
-            (err, [packageJson, npmIgnore] = []) => {
+            (err, [packageJson, npmIgnore, rcConfig] = []) => {
                 if (err) {
                     return callback(err)
                 }
 
-                const node = (cache[pkgPath] = {
-                    name: packageJson.name,
-                    path: pkgPath,
-                    packageJson,
-                    npmIgnore,
-                    status: {},
-                })
+                const node = (cache[pkgPath] = Object.assign(
+                    {
+                        name: packageJson.name,
+                        path: pkgPath,
+                        packageJson,
+                        npmIgnore,
+                    },
+                    rcConfig
+                ))
+
                 callback(null, node)
             }
         )
@@ -67,13 +73,13 @@ export default function(rootPath, callback) {
         )
 
         const paths = Object.keys(dependencies)
-            // Get the dependencies in a {name, version} tuples
+            // Map to version
             .map(key => dependencies[key])
             // Filter out the published dependencies
             .filter(isFileVersion)
             // Convert to physical paths
             .map(version => version.substring('file:'.length))
-            // Go from relative path, into absolute path
+            // Map to absolute path
             .map(relativePath =>
                 path.resolve(path.join(node.path, relativePath))
             )
@@ -86,7 +92,10 @@ export default function(rootPath, callback) {
 
         /*
          * Cannot trigger this in parallel otherwise, could have several nodes
-         * being read in parallel
+         * being read concurrently. (There is a gap before reading from the
+         * cache and actually writting the result there)
+         *
+         * And that gap is not safe since it yields to go to disk
          */
         async.mapSeries(paths, readNode, (err, nodes) => {
             if (err) {

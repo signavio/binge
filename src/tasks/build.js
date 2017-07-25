@@ -1,8 +1,12 @@
 import { spawn } from '../util/childProcess'
 
-export default function createTask(options) {
+export default function createTask(rootNode) {
     return (node, callback) => {
-        if (node.isDummy === true || node.isRoot === true) {
+        if (
+            node.isDummy === true ||
+            node.isRoot === true ||
+            node === rootNode
+        ) {
             return callback(null)
         }
 
@@ -14,9 +18,8 @@ export default function createTask(options) {
         } else {
             const spawnOpts = {
                 cwd: node.path,
-                stdio: ['ignore', 'ignore', 'ignore'],
             }
-            spawn('npm', ['run', 'build'], spawnOpts, callback)
+            spawn('yarn', ['run', 'build'], spawnOpts, callback)
         }
     }
 }

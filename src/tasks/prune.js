@@ -2,7 +2,7 @@ import async from 'async'
 import path from 'path'
 import fse from 'fs-extra'
 
-export default function createRinseTask() {
+export default () => {
     return (node, callback) => {
         if (node.isDummy === true) {
             return callback(null)

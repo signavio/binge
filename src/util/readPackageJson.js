@@ -1,7 +1,9 @@
-export default function(packageJsonPath, callback) {
+import path from 'path'
+
+export default function(pkgPath, callback) {
     let packageJson
     try {
-        packageJson = require(packageJsonPath)
+        packageJson = require(path.join(pkgPath, 'package.json'))
     } catch (e) {
         packageJson = e
     }

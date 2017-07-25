@@ -3,7 +3,7 @@ import fse from 'fs-extra'
 import path from 'path'
 import invariant from 'invariant'
 
-export default function(options) {
+export default function() {
     return (node, callback) => {
         if (node.isDummy === true) {
             return callback(null)

@@ -7,7 +7,7 @@ import createReporter from '../reporter'
 
 export default function(options) {
     const reporter = createReporter()
-    createGraph('.', function(err, graph) {
+    createGraph(path.resolve('.'), function(err, graph) {
         if (err) end(err)
         reporter.series('rm -rf node_modules')
         async.mapLimit(

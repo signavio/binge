@@ -18,16 +18,6 @@ var cli = meow([
     '  ls         Prints the local package tree. Prints the hoisting algorithm result',
     '  nuke       rm -rf node_modules, for all local packages in the tree',
     '  watch      watch all local packages in the tree, into ./node_modules',
-    /*
-  "",
-  "Options:",
-  "  --cwd                Set the current working directory",
-  "  --dry-run            Only works with the bootstrap command",
-  "  --concurrency        TODO Limit the parallel factor that binge uses on async (defaults to 8)",
-  "  --loud               TODO Output all available inforomation",
-  "  --quiet              TODO Output only the final timing-success-failure statement",
-  "  --silent             TODO No outputs"
-  */
 ])
 
 require('signal-exit').unload()

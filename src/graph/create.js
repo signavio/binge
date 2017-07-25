@@ -1,7 +1,6 @@
 import read from './read'
 import reachable from './node/reachable'
 import hoisted from './node/hoisted'
-import isDummy from './node/isDummy'
 import { flat as flatTopology } from './topology'
 
 export default function(rootPath, callback) {
@@ -17,16 +16,6 @@ export default function(rootPath, callback) {
             result.forEach(node => {
                 node.reachable = reachable(node)
                 node.hoisted = hoisted(node)
-                node.isDummy = false
-                node.isRoot = false
-            })
-
-            const isRootDummy = isDummy(rootNode)
-            rootNode.isDummy = isRootDummy
-            rootNode.isRoot = !isDummy(rootNode)
-            rootNode.children.forEach(node => {
-                node.isDummy = false
-                node.isRoot = isRootDummy
             })
             callback(null, result)
         }

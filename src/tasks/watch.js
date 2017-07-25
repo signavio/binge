@@ -6,7 +6,7 @@ import path from 'path'
 import pad from 'pad'
 import { spawn } from '../util/childProcess'
 
-export default function createTask(destNode, options) {
+export default function createTask(destNode) {
     return srcNode => {
         console.log(
             `[Binge] ${name(srcNode.name)} ` +
@@ -34,7 +34,7 @@ export default function createTask(destNode, options) {
             stdio: ['ignore', 'ignore', 'inherit'],
         }
 
-        spawn('npm', ['run', 'dev'], options, function() {})
+        spawn('yarn', ['run', 'dev'], options, function() {})
 
         setTimeout(() => {
             silent = false

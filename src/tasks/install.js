@@ -4,7 +4,7 @@ import path from 'path'
 import invariant from 'invariant'
 import { spawn } from '../util/childProcess'
 
-export default function createTask(options) {
+export default function createTask(rootNode) {
     return (node, callback) => {
         if (node.isDummy === true) {
             return callback(null)
@@ -35,11 +35,6 @@ export default function createTask(options) {
     }
 }
 
-function readOriginal(node, callback) {
-    const packageJsonPath = path.join(node.path, 'package.json')
-    fse.readFile(packageJsonPath, { encoding: 'utf-8' }, callback)
-}
-
 function writeHoisted(node, callback) {
     const collect = bag =>
         Object.keys(bag).reduce(
@@ -64,19 +59,21 @@ function writeHoisted(node, callback) {
     })
 
     const data = JSON.stringify(hoistedPackageJson)
-    const packageJsonPath = path.join(node.path, 'package.json')
-    fse.writeFile(packageJsonPath, data, 'utf8', callback)
+    fse.writeFile(packageJsonPath(node), data, 'utf8', callback)
 }
 
 function yarnInstall(node, callback) {
-    const spawnOptions = {
-        cwd: node.path,
-        stdio: ['ignore', 'ignore', 'ignore'],
-    }
-    spawn('yarn', ['install'], spawnOptions, callback)
+    spawn('yarn', ['install'], { cwd: node.path }, callback)
+}
+
+function readOriginal(node, callback) {
+    fse.readFile(packageJsonPath(node), 'utf8', callback)
 }
 
 function restoreOriginal(node, data, callback) {
-    const packageJsonPath = path.join(node.path, 'package.json')
-    fse.writeFile(packageJsonPath, data, 'utf8', callback)
+    fse.writeFile(packageJsonPath(node), data, 'utf8', callback)
+}
+
+function packageJsonPath(node) {
+    return path.join(node.path, 'package.json')
 }

@@ -1,10 +1,11 @@
 import chalk from 'chalk'
+import path from 'path'
 
 import createGraph from '../graph/create'
 import createWatchTask from '../tasks/watch'
 
 export default function(callback) {
-    createGraph('.', thenWatch)
+    createGraph(path.resolve('.'), thenWatch)
 }
 
 function thenWatch(err, graph) {
