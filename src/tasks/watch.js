@@ -4,14 +4,14 @@ import fse from 'fs-extra'
 import invariant from 'invariant'
 import path from 'path'
 import pad from 'pad'
+import { spawn } from '../util/childProcess'
 
-export default function createTask(destNode, options){
-
-    return (srcNode) => {
+export default function createTask(destNode) {
+    return srcNode => {
         console.log(
             `[Binge] ${name(srcNode.name)} ` +
-            `${action('Watch')} ` +
-            `${chalk.magenta('Executing')} `            
+                `${action('Watch')} ` +
+                `${chalk.magenta('Executing')} `
         )
 
         const srcDirPath = srcNode.path
@@ -20,19 +20,27 @@ export default function createTask(destNode, options){
             'Expected absolute path for the source destNode'
         )
 
-        const ignored = [
-            ...srcNode.npmIgnore,
-            /.*package.json$/
-        ]
+        const ignored = [...srcNode.npmIgnore, /.*package.json$/]
+
+        chokidar.watch(srcDirPath, { ignored }).on('change', copyFile)
+
+        const available =
+            srcNode.packageJson.scripts && srcNode.packageJson.scripts.dev
+
+        invariant(available, 'no watch task found')
+
+        const options = {
+            cwd: srcNode.path,
+            stdio: ['ignore', 'ignore', 'inherit'],
+        }
+
+        spawn('yarn', ['run', 'dev'], options, function() {})
 
         setTimeout(() => {
-            chokidar
-                .watch(srcDirPath, {ignored})
-                .on('change', copyFile)
+            silent = false
         }, 30000)
 
-
-        function copyFile(srcFilePath){
+        function copyFile(srcFilePath) {
             invariant(
                 srcFilePath.startsWith(srcDirPath),
                 'Resource expected to be a child of srcNode'
@@ -60,24 +68,29 @@ export default function createTask(destNode, options){
             )
 
             logCopy(srcFilePath, destFilePath)
-            fse.copy(srcFilePath, destFilePath, {clobber:true})
+            fse.copy(srcFilePath, destFilePath, { clobber: true })
         }
     }
 }
 
-function name(text){
+function name(text) {
     return chalk.yellow(pad(text, 25))
 }
 
-function action(action){
+function action(action) {
     return pad(action, 10)
 }
 
-function logCopy(srcPath, destPath){
+function logCopy(srcPath, destPath) {
+    if (silent) return
+
     const cwd = process.cwd()
     srcPath = path.relative(cwd, srcPath)
     destPath = path.relative(cwd, destPath)
 
-    console.log(`[Binge] ${chalk.yellow(destPath)} <- ${chalk.magenta(srcPath)}`)
-
+    console.log(
+        `[Binge] ${chalk.yellow(destPath)} <- ${chalk.magenta(srcPath)}`
+    )
 }
+
+let silent = true

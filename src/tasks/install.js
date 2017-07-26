@@ -1,111 +1,79 @@
-import chalk from 'chalk'
-import rimraf from 'rimraf'
-import pad from 'pad'
+import async from 'async'
+import fse from 'fs-extra'
+import path from 'path'
+import invariant from 'invariant'
+import { spawn } from '../util/childProcess'
 
-import {spawn} from '../util/childProcess'
-
-import isMissing from '../installed-dep/isMissing'
-import isStale from '../installed-dep/isStale'
-import isUnsatisfied from '../installed-dep/isUnsatisfied'
-
-const defaultOptions = {
-    dryRun: false
-}
-
-export default function createTask(options = defaultOptions ) {
+export default function createTask(rootNode) {
     return (node, callback) => {
-
-        if(!shouldInstall(node)){
-            logSkip(node)
-        }
-        else {
-            logExecute(node, options)
+        if (node.isDummy === true) {
+            return callback(null)
         }
 
-        const spawnOptions = {
-            cwd: node.path,
-            stdio: node.pipe === true
-                ? ['ignore', 'ignore', 'inherit']
-                : ['ignore', 'ignore', 'ignore']
-        }
-
-        spawn('npm', ['install', '--silent'], spawnOptions, callback)
-    }
-}
-
-function shouldInstall(node){
-    return (
-        node.hasNodeModules === false ||
-        node.dependencies.some(isTrigger)
-    )
-}
-
-function isTrigger(dependency){
-    return (
-        isMissing(dependency) ||
-        isStale(dependency) ||
-        isUnsatisfied(dependency)
-    )
-}
-
-function logSkip(node){
-    console.log(
-        '[Binge] ' +
-        `${name(node.name)} ` +
-        `${action('Install')} ` +
-        `${chalk.green('Skipped')} `
-    )
-}
-
-function logExecute(node, options){
-    console.log(
-        '[Binge] ' +
-        `${name(node.name)} ` +
-        `${action('Install')} ` +
-        `${name(chalk.magenta('Executing'))} ` +
-        (node.hasNodeModules ? '' : '(first install)')
-    )
-
-    if(node.hasNodeModules && options.dryRun){
-        console.log('    Reasons:')
-        node.dependencies
-            .filter(isTrigger)
-            .forEach(dependency => logReason(node, dependency))
-    }
-}
-
-function logReason(node, dependency){
-    if(isMissing(dependency)){
-        console.log(
-            '    ' +
-            `${chalk.yellow(dependency.name)} missing`
+        invariant(
+            Object.keys(node.hoisted.unreconciled).length === 0,
+            `Install task should only be called in hoistable trees (${node.name})`
         )
-        return
-    }
 
-    if(isStale(dependency)){
-        console.log(
-            '    ' +
-            `${chalk.yellow(dependency.name)} is stale`
-        )
-        return
-    }
+        readOriginal(node, (err, data) => {
+            if (err) {
+                return callback(err)
+            }
 
-    if(isUnsatisfied(dependency)){
-        console.log(
-            '    ' +
-            `${name(dependency.name)} ` +
-            `required ${dependency.version} ` +
-            `installed ${dependency.installedPJson.version}`
-        )
-        return
+            async.series(
+                [
+                    done => writeHoisted(node, done),
+                    done => yarnInstall(node, done),
+                ],
+                err => {
+                    restoreOriginal(node, data, errRestore => {
+                        callback(err || errRestore)
+                    })
+                }
+            )
+        })
     }
 }
 
-function name(text){
-    return chalk.yellow(pad(text, 25))
+function writeHoisted(node, callback) {
+    const collect = bag =>
+        Object.keys(bag).reduce(
+            (result, key) => ({
+                ...result,
+                [key]: bag[key].version,
+            }),
+            {}
+        )
+
+    const hoistedDependencies = collect(node.hoisted.ok)
+    const reconciledDependencies = collect(node.hoisted.reconciled)
+    const dependencies = Object.assign(
+        {},
+        hoistedDependencies,
+        reconciledDependencies
+    )
+
+    const hoistedPackageJson = Object.assign({}, node.packageJson, {
+        dependencies: dependencies,
+        devDependencies: {},
+    })
+
+    const data = JSON.stringify(hoistedPackageJson)
+    fse.writeFile(packageJsonPath(node), data, 'utf8', callback)
 }
 
-function action(action){
-    return pad(action, 10)
+function yarnInstall(node, callback) {
+    spawn('yarn', ['install'], { cwd: node.path }, callback)
+}
+
+function readOriginal(node, callback) {
+    fse.readFile(packageJsonPath(node), 'utf8', callback)
+}
+
+function restoreOriginal(node, data, callback) {
+    fse.writeFile(packageJsonPath(node), data, 'utf8', callback)
+}
+
+function packageJsonPath(node) {
+    return path.join(node.path, 'package.json')
 }

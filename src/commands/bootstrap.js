@@ -1,81 +1,94 @@
+import os from 'os'
 import async from 'async'
 import chalk from 'chalk'
+import path from 'path'
 
-import archy from '../util/archy'
-import readGraph from '../graph/withDependencies'
-import {layer as layerTopology} from '../graph/topology'
-import createBuildTask from '../tasks/build'
+import createGraph from '../graph/create'
+import { layer as layerTopology } from '../graph/topology'
+import createPruneTask from '../tasks/prune'
 import createInstallTask from '../tasks/install'
-import createRinseTask from '../tasks/rinse'
+import createBridgeTask from '../tasks/bridge'
+import createBuildTask from '../tasks/build'
 
-const CONCURRENCY = 8
+import createReporter from '../reporter'
 
+const CONCURRENCY = os.cpus().length
 
-export default function(options){
+export default function(options) {
+    let rootNode
+    const reporter = createReporter()
+    createGraph(path.resolve('.'), function(err, graph) {
+        if (err) end(err)
 
-    readGraph('.', function(err, graph){
-        if(err)end(err)
+        rootNode = graph[0]
 
-        const [rootNode] = graph
         const layers = layerTopology(rootNode).reverse()
 
-        console.log("\n[Binge] Christmas Tree\n")
-        console.log(archy(rootNode))
-
-        async.mapSeries(
-            layers,
-            executeLayer,
+        async.series(
+            [
+                done => pruneAndInstall(graph, done),
+                done => buildAndBridge(layers, done),
+            ],
             end
         )
     })
 
-    function executeLayer(layer, callback) {
-        async.series([
-            done => rinseLayer(layer, done),
-            done => installLayer(layer, done),
-            done => buildLayer(layer, done)
-        ], callback)
+    function pruneAndInstall(nodes, callback) {
+        reporter.series('Installing...')
+        async.mapLimit(nodes, CONCURRENCY, pruneAndInstallNode, err => {
+            reporter.clear()
+            callback(err)
+        })
     }
 
-    function rinseLayer(nodes, callback){
-        async.mapLimit(
-            nodes,
-            CONCURRENCY,
-            createRinseTask(options),
-            callback
+    function pruneAndInstallNode(node, callback) {
+        const done = reporter.task(node.name)
+        async.series(
+            [
+                done => createPruneTask(rootNode)(node, done),
+                done => createInstallTask(rootNode)(node, done),
+            ],
+            err => {
+                done()
+                callback(err)
+            }
         )
     }
 
-    function installLayer(nodes, callback) {
-
-        nodes[nodes.length - 1].pipe = true
-
-        async.mapLimit(
-            nodes,
-            CONCURRENCY,
-            createInstallTask(options),
-            callback
-        )
+    function buildAndBridge(layers, callback) {
+        async.mapSeries(layers, buildAndBridgeLayer, callback)
     }
 
-    function buildLayer(nodes, callback) {
-        async.mapLimit(
-            nodes,
-            CONCURRENCY,
-            createBuildTask(options),
-            callback
+    function buildAndBridgeLayer(layer, callback) {
+        reporter.series(`Building Layer...`)
+        async.mapLimit(layer, CONCURRENCY, buildAndBridgeNode, err => {
+            reporter.clear()
+            callback(err)
+        })
+    }
+
+    function buildAndBridgeNode(node, callback) {
+        const done = reporter.task(node.name)
+        async.series(
+            [
+                done => createBuildTask(rootNode)(node, done),
+                done => createBridgeTask(rootNode)(node, done),
+            ],
+            err => {
+                done()
+                callback(err)
+            }
         )
     }
 }
 
-function end(err){
-    if(err){
+function end(err) {
+    if (err) {
         console.log(err)
-        console.log("[Binge] " + chalk.red("Failure"))
+        console.log(chalk.red('Failure'))
         process.exit(1)
-    }
-    else {
-        console.log("[Binge] " + chalk.green("Success"))
+    } else {
+        console.log(chalk.green('Success'))
         process.exit(0)
     }
 }

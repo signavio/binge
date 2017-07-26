@@ -1,3 +1,6 @@
-src
-test
-tmp
+/src
+/test
+.babelrc
+.editorconfig
+.eslintrc.js
+.gitignore

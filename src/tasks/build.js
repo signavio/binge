@@ -1,57 +1,25 @@
-import async from 'async'
-import chalk from 'chalk'
-import fse from 'fs-extra'
-import invariant from 'invariant'
-import pad from 'pad'
+import { spawn } from '../util/childProcess'
 
-import {spawn} from '../util/childProcess'
-
-const defaultOptions = {
-    dryRun: false
-}
-
-export default function createTask(options = defaultOptions) {
-
+export default function createTask(rootNode) {
     return (node, callback) => {
-
-        if(node.path === process.cwd()){
-            //skip for the parent module
-            //TODO tag the root node
+        if (
+            node.isDummy === true ||
+            node.isRoot === true ||
+            node === rootNode
+        ) {
             return callback(null)
         }
 
-        const unavailable = node.packageJson.scripts && !node.packageJson.scripts.build
+        const unavailable =
+            node.packageJson.scripts && !node.packageJson.scripts.build
 
-        if(unavailable){
-            log(node.name, 'Build', chalk.red('unavailable'))
+        if (unavailable) {
             return callback(null)
-        }
-
-        log(node.name, 'Build', chalk.magenta('Executing'))
-
-        const opts = {
-            cwd: node.path,
-            stdio: ['ignore', 'ignore', 'inherit']
-            //stdio: ['ignore', 'ignore', 'ignore']
-            //stdio: options.showOutput === true
-            //    ? ['ignore', 'ignore', 'inherit'] //pipe stdout
-            //    : ['ignore', 'ignore', 'ignore']
-        }
-
-        if(!options.dryRun){
-            spawn('npm', ['run', 'build'], opts, callback)
-        }
-        else {
-            callback(null)
+        } else {
+            const spawnOpts = {
+                cwd: node.path,
+            }
+            spawn('yarn', ['run', 'build'], spawnOpts, callback)
         }
     }
-}
-
-function log(name, action, status){
-    console.log(
-        '[Binge] ' +
-        `${chalk.yellow(pad(name, 25))} ` +
-        `${pad(action, 10)} ` +
-        `${status} `
-    )
 }
