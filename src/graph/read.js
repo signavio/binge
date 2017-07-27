@@ -1,7 +1,8 @@
+import async from 'async'
+import fs from 'fs'
 import invariant from 'invariant'
 import path from 'path'
-import async from 'async'
-import readPackageJson from '../util/readPackageJson'
+
 import readIgnoreFile from '../util/readIgnoreFile'
 import readRCFile from '../util/readRCFile'
 
@@ -26,10 +27,11 @@ export default function readGraph(rootPath, callback) {
         async.parallel(
             [
                 done => readPackageJson(pkgPath, done),
+                done => readPackageJsonData(pkgPath, done),
                 done => readIgnoreFile(pkgPath, done),
                 done => readRCFile(pkgPath, done),
             ],
-            (err, [packageJson, npmIgnore, rcConfig] = []) => {
+            (err, [packageJson, packageJsonData, npmIgnore, rcConfig] = []) => {
                 if (err) {
                     return callback(err)
                 }
@@ -39,6 +41,7 @@ export default function readGraph(rootPath, callback) {
                         name: packageJson.name,
                         path: pkgPath,
                         packageJson,
+                        packageJsonData,
                         npmIgnore,
                     },
                     rcConfig
@@ -135,4 +138,22 @@ function errorWrongLocalName(names, nodes) {
     return new Error(
         `Referencing package with '${name}' but its real name is '${node.name}'`
     )
+}
+
+function readPackageJson(pkgPath, callback) {
+    let packageJson
+    try {
+        packageJson = require(path.join(pkgPath, 'package.json'))
+    } catch (e) {
+        packageJson = e
+    }
+
+    const error = packageJson instanceof Error ? packageJson : null
+    const result = packageJson instanceof Error ? null : packageJson
+
+    callback(error, result)
+}
+
+function readPackageJsonData(pkgPath, callback) {
+    fs.readFile(path.join(pkgPath, 'package.json'), 'utf8', callback)
 }

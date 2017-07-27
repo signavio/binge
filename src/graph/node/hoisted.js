@@ -6,11 +6,11 @@ export default function(node) {
 
     const pointers = hoistPointers(node)
 
-    return {
+    return sanityCheck({
         ok: collect(isOk, pointers),
         reconciled: collect(isReconciled, pointers),
         unreconciled: collect(isUnreconciled, pointers),
-    }
+    })
 }
 
 function collect(selector, pointers) {
@@ -85,4 +85,18 @@ function isFileVersion(version) {
     return (
         typeof version === 'string' && version.toLowerCase().startsWith('file:')
     )
+}
+
+function sanityCheck(result) {
+    const oNames = Object.keys(result.ok)
+    const rNames = Object.keys(result.reconciled)
+    const uNames = Object.keys(result.unreconciled)
+
+    invariant(
+        oNames.every(name => ![...rNames, ...uNames].includes(name)) &&
+            rNames.every(name => ![...oNames, ...uNames].includes(name)),
+        'Unexpected overlap in hoisting'
+    )
+
+    return result
 }

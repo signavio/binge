@@ -1,4 +1,4 @@
-import async from 'async'
+// import async from 'async'
 import fse from 'fs-extra'
 import path from 'path'
 import invariant from 'invariant'
@@ -15,27 +15,48 @@ export default function createTask(rootNode) {
             `Install task should only be called in hoistable trees (${node.name})`
         )
 
-        readOriginal(node, (err, data) => {
-            if (err) {
-                return callback(err)
-            }
+        const hoistErr = hoist(node)
+        if (hoistErr) {
+            return callback(hoistErr)
+        }
 
-            async.series(
-                [
-                    done => writeHoisted(node, done),
-                    done => yarnInstall(node, done),
-                ],
-                err => {
-                    restoreOriginal(node, data, errRestore => {
-                        callback(err || errRestore)
-                    })
-                }
-            )
-        })
+        const child = spawn('yarn', ['install'], { cwd: node.path }, callback)
+
+        const handleExit = () => {
+            removeAll()
+            unhoist(node)
+            child.kill()
+        }
+
+        const handleChildExit = () => {
+            removeAll()
+            unhoist(node)
+        }
+
+        const handleSuspend = () => {
+            removeAll()
+            unhoist(node)
+            child.kill()
+            process.exit(1)
+        }
+
+        const removeAll = () => {
+            process.removeListener('exit', handleExit)
+            process.removeListener('SIGINT', handleSuspend)
+            child.removeListener('exit', handleChildExit)
+        }
+
+        process.on('exit', handleExit)
+        process.on('SIGINT', handleSuspend)
+        child.on('exit', handleChildExit)
     }
 }
 
-function writeHoisted(node, callback) {
+function packageJsonPath(node) {
+    return path.join(node.path, 'package.json')
+}
+
+function hoist(node) {
     const collect = bag =>
         Object.keys(bag).reduce(
             (result, key) => ({
@@ -45,12 +66,10 @@ function writeHoisted(node, callback) {
             {}
         )
 
-    const hoistedDependencies = collect(node.hoisted.ok)
-    const reconciledDependencies = collect(node.hoisted.reconciled)
     const dependencies = Object.assign(
         {},
-        hoistedDependencies,
-        reconciledDependencies
+        collect(node.hoisted.ok),
+        collect(node.hoisted.reconciled)
     )
 
     const hoistedPackageJson = Object.assign({}, node.packageJson, {
@@ -59,21 +78,19 @@ function writeHoisted(node, callback) {
     })
 
     const data = JSON.stringify(hoistedPackageJson)
-    fse.writeFile(packageJsonPath(node), data, 'utf8', callback)
+    try {
+        fse.writeFileSync(packageJsonPath(node), data, 'utf8')
+        return null
+    } catch (e) {
+        return e
+    }
 }
 
-function yarnInstall(node, callback) {
-    spawn('yarn', ['install'], { cwd: node.path }, callback)
-}
-
-function readOriginal(node, callback) {
-    fse.readFile(packageJsonPath(node), 'utf8', callback)
-}
-
-function restoreOriginal(node, data, callback) {
-    fse.writeFile(packageJsonPath(node), data, 'utf8', callback)
-}
-
-function packageJsonPath(node) {
-    return path.join(node.path, 'package.json')
+function unhoist(node) {
+    try {
+        fse.writeFileSync(packageJsonPath(node), node.packageJsonData, 'utf8')
+        return null
+    } catch (e) {
+        return e
+    }
 }
