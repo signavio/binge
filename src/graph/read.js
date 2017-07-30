@@ -27,11 +27,10 @@ export default function readGraph(rootPath, callback) {
         async.parallel(
             [
                 done => readPackageJson(pkgPath, done),
-                done => readPackageJsonData(pkgPath, done),
                 done => readIgnoreFile(pkgPath, done),
                 done => readRCFile(pkgPath, done),
             ],
-            (err, [packageJson, packageJsonData, npmIgnore, rcConfig] = []) => {
+            (err, [packageJson, npmIgnore, rcConfig] = []) => {
                 if (err) {
                     return callback(err)
                 }
@@ -41,7 +40,6 @@ export default function readGraph(rootPath, callback) {
                         name: packageJson.name,
                         path: pkgPath,
                         packageJson,
-                        packageJsonData,
                         npmIgnore,
                     },
                     rcConfig
@@ -143,7 +141,9 @@ function errorWrongLocalName(names, nodes) {
 function readPackageJson(pkgPath, callback) {
     let packageJson
     try {
-        packageJson = require(path.join(pkgPath, 'package.json'))
+        packageJson = JSON.parse(
+            fs.readFileSync(path.join(pkgPath, 'package.json'), 'utf8')
+        )
     } catch (e) {
         packageJson = e
     }
@@ -152,8 +152,4 @@ function readPackageJson(pkgPath, callback) {
     const result = packageJson instanceof Error ? null : packageJson
 
     callback(error, result)
-}
-
-function readPackageJsonData(pkgPath, callback) {
-    fs.readFile(path.join(pkgPath, 'package.json'), 'utf8', callback)
 }

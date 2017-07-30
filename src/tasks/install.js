@@ -2,9 +2,11 @@
 import fse from 'fs-extra'
 import path from 'path'
 import invariant from 'invariant'
-import { spawn } from '../util/childProcess'
 
-export default function createTask(rootNode) {
+import { spawn } from '../util/childProcess'
+import patchPackageJson from '../util/patch'
+
+export default function createTask() {
     return (node, callback) => {
         if (node.isDummy === true) {
             return callback(null)
@@ -52,34 +54,11 @@ export default function createTask(rootNode) {
     }
 }
 
-function packageJsonPath(node) {
-    return path.join(node.path, 'package.json')
-}
-
 function hoist(node) {
-    const collect = bag =>
-        Object.keys(bag).reduce(
-            (result, key) => ({
-                ...result,
-                [key]: bag[key].version,
-            }),
-            {}
-        )
-
-    const dependencies = Object.assign(
-        {},
-        collect(node.hoisted.ok),
-        collect(node.hoisted.reconciled)
-    )
-
-    const hoistedPackageJson = Object.assign({}, node.packageJson, {
-        dependencies: dependencies,
-        devDependencies: {},
-    })
-
-    const data = JSON.stringify(hoistedPackageJson)
+    const dataPath = path.join(node.path, 'package.json')
+    const data = JSON.stringify(patchPackageJson(node))
     try {
-        fse.writeFileSync(packageJsonPath(node), data, 'utf8')
+        fse.writeFileSync(dataPath, data, 'utf8')
         return null
     } catch (e) {
         return e
@@ -87,8 +66,13 @@ function hoist(node) {
 }
 
 function unhoist(node) {
+    const dataPath = path.join(node.path, 'package.json')
     try {
-        fse.writeFileSync(packageJsonPath(node), node.packageJsonData, 'utf8')
+        fse.writeFileSync(
+            dataPath,
+            JSON.stringify(node.packageJson, null, 2),
+            'utf8'
+        )
         return null
     } catch (e) {
         return e
