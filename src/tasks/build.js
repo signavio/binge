@@ -1,4 +1,4 @@
-import { spawn } from '../util/childProcess'
+import spawnYarn from '../util/spawnYarn'
 
 export default function createTask(rootNode) {
     return (node, callback) => {
@@ -16,10 +16,10 @@ export default function createTask(rootNode) {
         if (unavailable) {
             return callback(null)
         } else {
-            const spawnOpts = {
+            const options = {
                 cwd: node.path,
             }
-            spawn('yarn', ['run', 'build'], spawnOpts, callback)
+            spawnYarn(['run', 'build'], options, callback)
         }
     }
 }

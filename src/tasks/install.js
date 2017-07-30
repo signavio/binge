@@ -1,9 +1,8 @@
-// import async from 'async'
 import fse from 'fs-extra'
 import path from 'path'
 import invariant from 'invariant'
 
-import { spawn } from '../util/childProcess'
+import spawnYarn from '../util/spawnYarn'
 import patchPackageJson from '../util/patch'
 
 export default function createTask() {
@@ -22,7 +21,7 @@ export default function createTask() {
             return callback(hoistErr)
         }
 
-        const child = spawn('yarn', ['install'], { cwd: node.path }, callback)
+        const child = spawnYarn(['install'], { cwd: node.path }, callback)
 
         const handleExit = () => {
             removeAll()

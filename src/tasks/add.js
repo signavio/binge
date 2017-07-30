@@ -1,9 +1,8 @@
-// import async from 'async'
 import fse from 'fs-extra'
 import path from 'path'
 import invariant from 'invariant'
 
-import { spawn } from '../util/childProcess'
+import spawnYarn from '../util/spawnYarn'
 import patchPackageJson from '../util/patch'
 
 export default function(node, args, callback) {
@@ -27,33 +26,25 @@ export default function(node, args, callback) {
     // 3- Collect the changes after running yarn
     // 4- Update the versions on the original package.json
 
-    const child = spawn(
-        'yarn',
-        args,
-        { cwd: node.path, stdio: 'inherit' },
-        err => {
-            removeAll()
-            if (err) {
-                unhoist(node)
-                callback(err)
-                return
-            }
-
-            const postPackageJson = Object.assign(
-                { dependencies: {}, devDependencies: {} },
-                JSON.parse(
-                    fse.readFileSync(
-                        path.join(node.path, 'package.json'),
-                        'utf8'
-                    )
-                )
-            )
-
-            const changes = inferChanges(node, prePackageJson, postPackageJson)
-            unhoistWithChanges(node, changes)
-            callback(null, changes)
+    const child = spawnYarn(args, { cwd: node.path, stdio: 'inherit' }, err => {
+        removeAll()
+        if (err) {
+            unhoist(node)
+            callback(err)
+            return
         }
-    )
+
+        const postPackageJson = Object.assign(
+            { dependencies: {}, devDependencies: {} },
+            JSON.parse(
+                fse.readFileSync(path.join(node.path, 'package.json'), 'utf8')
+            )
+        )
+
+        const changes = inferChanges(node, prePackageJson, postPackageJson)
+        unhoistWithChanges(node, changes)
+        callback(null, changes)
+    })
 
     function handleExit() {
         removeAll()
