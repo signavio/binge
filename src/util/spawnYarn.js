@@ -25,5 +25,5 @@ function fromBinaries(args, options, callback) {
 function findYarnPath() {
     const parts = process.execPath.split(path.sep)
     const basePath = parts.slice(0, parts.indexOf('.gradle') + 1).join(path.sep)
-    return path.join(basePath, 'yarn', 'bin', 'yarn.js')
+    return path.join(basePath, 'yarn', 'node_modules', 'yarn', 'bin', 'yarn.js')
 }
