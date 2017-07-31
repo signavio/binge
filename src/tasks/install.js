@@ -1,10 +1,11 @@
-import async from 'async'
 import fse from 'fs-extra'
 import path from 'path'
 import invariant from 'invariant'
-import { spawn } from '../util/childProcess'
 
-export default function createTask(rootNode) {
+import spawnYarn from '../util/spawnYarn'
+import patchPackageJson from '../util/patch'
+
+export default function createTask() {
     return (node, callback) => {
         if (node.isDummy === true) {
             return callback(null)
@@ -15,65 +16,64 @@ export default function createTask(rootNode) {
             `Install task should only be called in hoistable trees (${node.name})`
         )
 
-        readOriginal(node, (err, data) => {
-            if (err) {
-                return callback(err)
-            }
+        const hoistErr = hoist(node)
+        if (hoistErr) {
+            return callback(hoistErr)
+        }
 
-            async.series(
-                [
-                    done => writeHoisted(node, done),
-                    done => yarnInstall(node, done),
-                ],
-                err => {
-                    restoreOriginal(node, data, errRestore => {
-                        callback(err || errRestore)
-                    })
-                }
-            )
-        })
+        const child = spawnYarn(['install'], { cwd: node.path }, callback)
+
+        const handleExit = () => {
+            removeAll()
+            unhoist(node)
+            child.kill()
+        }
+
+        const handleChildExit = () => {
+            removeAll()
+            unhoist(node)
+        }
+
+        const handleSuspend = () => {
+            removeAll()
+            unhoist(node)
+            child.kill()
+            process.exit(1)
+        }
+
+        const removeAll = () => {
+            process.removeListener('exit', handleExit)
+            process.removeListener('SIGINT', handleSuspend)
+            child.removeListener('exit', handleChildExit)
+        }
+
+        process.on('exit', handleExit)
+        process.on('SIGINT', handleSuspend)
+        child.on('exit', handleChildExit)
     }
 }
 
-function writeHoisted(node, callback) {
-    const collect = bag =>
-        Object.keys(bag).reduce(
-            (result, key) => ({
-                ...result,
-                [key]: bag[key].version,
-            }),
-            {}
+function hoist(node) {
+    const dataPath = path.join(node.path, 'package.json')
+    const data = JSON.stringify(patchPackageJson(node))
+    try {
+        fse.writeFileSync(dataPath, data, 'utf8')
+        return null
+    } catch (e) {
+        return e
+    }
+}
+
+function unhoist(node) {
+    const dataPath = path.join(node.path, 'package.json')
+    try {
+        fse.writeFileSync(
+            dataPath,
+            JSON.stringify(node.packageJson, null, 2),
+            'utf8'
         )
-
-    const hoistedDependencies = collect(node.hoisted.ok)
-    const reconciledDependencies = collect(node.hoisted.reconciled)
-    const dependencies = Object.assign(
-        {},
-        hoistedDependencies,
-        reconciledDependencies
-    )
-
-    const hoistedPackageJson = Object.assign({}, node.packageJson, {
-        dependencies: dependencies,
-        devDependencies: {},
-    })
-
-    const data = JSON.stringify(hoistedPackageJson)
-    fse.writeFile(packageJsonPath(node), data, 'utf8', callback)
-}
-
-function yarnInstall(node, callback) {
-    spawn('yarn', ['install'], { cwd: node.path }, callback)
-}
-
-function readOriginal(node, callback) {
-    fse.readFile(packageJsonPath(node), 'utf8', callback)
-}
-
-function restoreOriginal(node, data, callback) {
-    fse.writeFile(packageJsonPath(node), data, 'utf8', callback)
-}
-
-function packageJsonPath(node) {
-    return path.join(node.path, 'package.json')
+        return null
+    } catch (e) {
+        return e
+    }
 }

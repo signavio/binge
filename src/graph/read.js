@@ -1,7 +1,8 @@
+import async from 'async'
+import fs from 'fs'
 import invariant from 'invariant'
 import path from 'path'
-import async from 'async'
-import readPackageJson from '../util/readPackageJson'
+
 import readIgnoreFile from '../util/readIgnoreFile'
 import readRCFile from '../util/readRCFile'
 
@@ -135,4 +136,20 @@ function errorWrongLocalName(names, nodes) {
     return new Error(
         `Referencing package with '${name}' but its real name is '${node.name}'`
     )
+}
+
+function readPackageJson(pkgPath, callback) {
+    let packageJson
+    try {
+        packageJson = JSON.parse(
+            fs.readFileSync(path.join(pkgPath, 'package.json'), 'utf8')
+        )
+    } catch (e) {
+        packageJson = e
+    }
+
+    const error = packageJson instanceof Error ? packageJson : null
+    const result = packageJson instanceof Error ? null : packageJson
+
+    callback(error, result)
 }
