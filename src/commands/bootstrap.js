@@ -35,7 +35,7 @@ export default function(options) {
 
     function pruneAndInstall(nodes, callback) {
         reporter.series('Installing...')
-        async.mapLimit(nodes, CONCURRENCY, pruneAndInstallNode, err => {
+        async.mapLimit(nodes, 1, pruneAndInstallNode, err => {
             reporter.clear()
             callback(err)
         })
