@@ -12,7 +12,7 @@ import createBuildTask from '../tasks/build'
 
 import createReporter from '../reporter'
 
-const CONCURRENCY = os.cpus().length
+const CONCURRENCY = Math.max(os.cpus().length - 1, 1)
 
 export default function(options) {
     let rootNode
@@ -26,12 +26,21 @@ export default function(options) {
 
         async.series(
             [
+                done => ensureHoist(rootNode, done),
                 done => pruneAndInstall(graph, done),
                 done => buildAndBridge(layers, done),
             ],
             end
         )
     })
+
+    function ensureHoist(node, callback) {
+        reporter.series('Hoisting...')
+        createInstallTask()(node, err => {
+            reporter.clear()
+            callback(err)
+        })
+    }
 
     function pruneAndInstall(nodes, callback) {
         reporter.series('Installing...')

@@ -33,10 +33,8 @@ function collect(selector, pointers) {
             }
         })
         .reduce(
-            (result, dependency) => ({
-                ...result,
-                [dependency.name]: dependency,
-            }),
+            (result, dependency) =>
+                Object.assign(result, { [dependency.name]: dependency }),
             {}
         )
 }
