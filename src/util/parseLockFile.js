@@ -134,7 +134,7 @@ function* tokenise(input) {
         } else if (input[0] === ',') {
             yield buildToken(TOKEN_TYPES.comma)
             chop++
-        } else if (/^[a-zA-Z\/-]/g.test(input)) {
+        } else if (/^[a-zA-Z/-]/g.test(input)) {
             let name = ''
             for (let i = 0; i < input.length; i++) {
                 const char = input[i]
