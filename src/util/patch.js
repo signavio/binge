@@ -1,10 +1,7 @@
 export default function hoist(node) {
     const collect = bag =>
         Object.keys(bag).reduce(
-            (result, key) => ({
-                ...result,
-                [key]: bag[key].version,
-            }),
+            (result, key) => Object.assign(result, { [key]: bag[key].version }),
             {}
         )
 

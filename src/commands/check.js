@@ -15,9 +15,9 @@ export default function(options) {
     createGraph(path.resolve('.'), function(err, nodes) {
         if (err) end(err)
         reporter.series('Checking...')
-        async.mapLimit(nodes, CONCURRENCY, checkNode, err => {
+        async.mapLimit(nodes, CONCURRENCY, checkNode, (err, result) => {
             reporter.clear()
-            end(err)
+            end(err, result)
         })
     })
 
@@ -29,12 +29,15 @@ export default function(options) {
         })
     }
 
-    function end(err) {
+    function end(err, result) {
         if (err) {
             console.log(err)
             console.log(chalk.red('failure'))
             process.exit(1)
         } else {
+            console.log(
+                `Checked ${result.length} local-packages for lock consistency`
+            )
             console.log(chalk.green('success'))
             process.exit(0)
         }
