@@ -1,18 +1,18 @@
 import async from 'async'
 import path from 'path'
 import fse from 'fs-extra'
+import { CONCURRENCY } from '../constants'
 
-export default () => {
-    return (node, callback) => {
-        if (node.isDummy === true) {
-            return callback(null)
-        }
-        async.map(
-            node.reachable,
-            (childNode, done) => prune(node, childNode, done),
-            callback
-        )
+export default (node, callback) => {
+    if (node.isDummy === true) {
+        return callback(null)
     }
+    async.mapLimit(
+        node.reachable,
+        CONCURRENCY,
+        (childNode, done) => prune(node, childNode, done),
+        callback
+    )
 }
 
 function prune(node, childNode, callback) {

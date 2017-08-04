@@ -1,25 +1,24 @@
-import os from 'os'
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
 import pad from 'pad'
 
 import createGraph from '../graph/create'
-import createInstallTask from '../tasks/install'
-import add from '../tasks/add'
-import addIfPresent from '../tasks/addIfPresent'
 import createReporter from '../reporter'
+import taskInstall from '../tasks/install'
+import taskAdd from '../tasks/add'
+import addIfPresent from '../tasks/addIfPresent'
 
-const CONCURRENCY = os.cpus().length
+import { CONCURRENCY } from '../constants'
 
 export default function(options) {
     const reporter = createReporter()
     createGraph(path.resolve('.'), function(err, nodes) {
         if (err) end(err)
-        const [rootNode, ...restNodes] = nodes
+        const [entryNode, ...restNodes] = nodes
         const args = process.argv.slice(process.argv.indexOf('add'))
 
-        add(rootNode, args, (err, rootChanges) => {
+        taskAdd(entryNode, args, (err, rootChanges) => {
             if (err) end(err)
 
             const changes = restNodes.reduce(
@@ -49,7 +48,7 @@ export default function(options) {
 
     function installNode(node, callback) {
         const done = reporter.task(node.name)
-        createInstallTask()(node, err => {
+        taskInstall(node, err => {
             done()
             callback(err)
         })

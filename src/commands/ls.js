@@ -5,19 +5,19 @@ import createGraph from '../graph/create'
 import archy from '../util/archy'
 
 export default function(options) {
-    createGraph(path.resolve('.'), function(err, graph) {
+    createGraph(path.resolve('.'), function(err, nodes) {
         if (err) {
             console.log(err)
             console.log(chalk.red('Failure'))
             process.exit(1)
         }
 
-        const [rootNode] = graph
+        const [entryNode] = nodes
 
         console.log('\n[Binge] Christmas Tree\n')
-        console.log(archy(rootNode))
+        console.log(archy(entryNode))
 
-        printStats(rootNode)
+        printStats(entryNode)
         console.log(chalk.green('Success'))
         process.exit(0)
     })

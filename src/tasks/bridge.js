@@ -3,18 +3,19 @@ import fse from 'fs-extra'
 import path from 'path'
 import invariant from 'invariant'
 
-export default function() {
-    return (node, callback) => {
-        if (node.isDummy === true) {
-            return callback(null)
-        }
+import { CONCURRENCY } from '../constants'
 
-        async.map(
-            node.reachable,
-            (childNode, done) => bridge(node, childNode, done),
-            callback
-        )
+export default function(node, callback) {
+    if (node.isDummy === true) {
+        return callback(null)
     }
+
+    async.mapLimit(
+        node.reachable,
+        CONCURRENCY,
+        (childNode, done) => bridge(node, childNode, done),
+        callback
+    )
 }
 
 function bridge(node, childNode, callback) {

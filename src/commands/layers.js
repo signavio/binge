@@ -5,12 +5,11 @@ import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
 
 export default function(options) {
-    let rootNode
     createGraph(path.resolve('.'), function(err, graph) {
         if (err) end(err)
 
-        rootNode = graph[0]
-        const layers = layerTopology(rootNode)
+        const entryNode = graph[0]
+        const layers = layerTopology(entryNode)
         layers.forEach((layer, index) => {
             console.log(padLeft(`layer ${index + 1}`, index * 2))
             layer.forEach(node =>

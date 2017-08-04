@@ -1,42 +1,41 @@
-import os from 'os'
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
 
 import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
-import createPruneTask from '../tasks/prune'
-import createInstallTask from '../tasks/install'
-import createBridgeTask from '../tasks/bridge'
-import createBuildTask from '../tasks/build'
+import taskPrune from '../tasks/prune'
+import taskInstall from '../tasks/install'
+import taskBridge from '../tasks/bridge'
+import taskBuild from '../tasks/build'
 
 import createReporter from '../reporter'
 
-const CONCURRENCY = Math.max(os.cpus().length - 1, 1)
+import { CONCURRENCY } from '../constants'
 
 export default function(options) {
-    let rootNode
+    let entryNode
     const reporter = createReporter()
-    createGraph(path.resolve('.'), function(err, graph) {
+    createGraph(path.resolve('.'), function(err, nodes) {
         if (err) end(err)
 
-        rootNode = graph[0]
+        entryNode = nodes[0]
 
-        const layers = layerTopology(rootNode).reverse()
+        const layers = layerTopology(entryNode).reverse()
 
         async.series(
             [
-                done => ensureHoist(rootNode, done),
-                done => pruneAndInstall(graph, done),
+                done => ensureHoist(done),
+                done => pruneAndInstall(nodes, done),
                 done => buildAndBridge(layers, done),
             ],
             end
         )
     })
 
-    function ensureHoist(node, callback) {
+    function ensureHoist(callback) {
         reporter.series('Hoisting...')
-        createInstallTask()(node, err => {
+        taskInstall(entryNode, err => {
             reporter.clear()
             callback(err)
         })
@@ -53,10 +52,7 @@ export default function(options) {
     function pruneAndInstallNode(node, callback) {
         const done = reporter.task(node.name)
         async.series(
-            [
-                done => createPruneTask(rootNode)(node, done),
-                done => createInstallTask(rootNode)(node, done),
-            ],
+            [done => taskPrune(node, done), done => taskInstall(node, done)],
             err => {
                 done()
                 callback(err)
@@ -80,8 +76,8 @@ export default function(options) {
         const done = reporter.task(node.name)
         async.series(
             [
-                done => createBuildTask(rootNode)(node, done),
-                done => createBridgeTask(rootNode)(node, done),
+                done => taskBridge(node, done),
+                done => taskBuild(node, entryNode, done),
             ],
             err => {
                 done()

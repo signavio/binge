@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import path from 'path'
 
 import createGraph from '../graph/create'
-import createWatchTask from '../tasks/watch'
+import taskWatch from '../tasks/watch'
 
 export default function(callback) {
     createGraph(path.resolve('.'), thenWatch)
@@ -11,8 +11,8 @@ export default function(callback) {
 function thenWatch(err, graph) {
     if (err) end()
 
-    const [rootNode, ...rest] = graph
-    rest.forEach(createWatchTask(rootNode))
+    const [entryNode, ...rest] = graph
+    rest.forEach(node => taskWatch(entryNode, node))
 }
 
 function end(err) {

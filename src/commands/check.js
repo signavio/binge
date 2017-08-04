@@ -1,14 +1,12 @@
-import os from 'os'
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
 
 import createGraph from '../graph/create'
 import checkTask from '../tasks/check'
-
 import createReporter from '../reporter'
 
-const CONCURRENCY = os.cpus().length - 1
+import { CONCURRENCY } from '../constants'
 
 export default function(options) {
     const reporter = createReporter()

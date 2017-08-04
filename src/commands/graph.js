@@ -12,9 +12,9 @@ export default function(options) {
             process.exit(1)
         }
 
-        const [rootNode] = graph
+        const [entryNode] = graph
 
         console.log('\n[Binge] Christmas Tree\n')
-        console.log(archy(rootNode))
+        console.log(archy(entryNode))
     })
 }
