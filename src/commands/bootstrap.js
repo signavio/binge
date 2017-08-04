@@ -1,6 +1,7 @@
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
+import invariant from 'invariant'
 
 import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
@@ -25,15 +26,20 @@ export default function(options) {
 
         async.series(
             [
-                done => ensureHoist(done),
+                installConcurrency(options) > 1
+                    ? done => ensureHoist(done)
+                    : null,
                 done => pruneAndInstall(nodes, done),
                 done => buildAndBridge(layers, done),
-            ],
+            ].filter(Boolean),
             end
         )
     })
 
     function ensureHoist(callback) {
+        /*
+         * TODO the ensure hoist should go on all the top level root nodes
+         */
         reporter.series('Hoisting...')
         taskInstall(entryNode, err => {
             reporter.clear()
@@ -42,11 +48,18 @@ export default function(options) {
     }
 
     function pruneAndInstall(nodes, callback) {
-        reporter.series('Installing...')
-        async.mapLimit(nodes, CONCURRENCY, pruneAndInstallNode, err => {
-            reporter.clear()
-            callback(err)
-        })
+        reporter.series(
+            `Installing (max parallel ${installConcurrency(options)})...`
+        )
+        async.mapLimit(
+            nodes,
+            installConcurrency(options),
+            pruneAndInstallNode,
+            err => {
+                reporter.clear()
+                callback(err)
+            }
+        )
     }
 
     function pruneAndInstallNode(node, callback) {
@@ -85,6 +98,17 @@ export default function(options) {
             }
         )
     }
+}
+
+function installConcurrency(options) {
+    const c =
+        typeof options.installConcurrency === 'number'
+            ? options.installConcurrency
+            : CONCURRENCY
+
+    invariant(typeof c === 'number', 'Concurrency must be a number')
+
+    return Math.max(c, 1)
 }
 
 function end(err) {
