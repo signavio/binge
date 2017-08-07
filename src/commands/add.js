@@ -48,7 +48,7 @@ export default function(options) {
 
     function installNode(node, callback) {
         const done = reporter.task(node.name)
-        taskInstall(node, err => {
+        taskInstall(node, options, err => {
             done()
             callback(err)
         })

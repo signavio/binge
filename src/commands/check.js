@@ -3,7 +3,8 @@ import chalk from 'chalk'
 import path from 'path'
 
 import createGraph from '../graph/create'
-import checkTask from '../tasks/check'
+import checkNpmTask from '../tasks/checkNpm'
+import checkYarnTask from '../tasks/checkYarn'
 import createReporter from '../reporter'
 
 import { CONCURRENCY } from '../constants'
@@ -21,6 +22,7 @@ export default function(options) {
 
     function checkNode(node, callback) {
         const done = reporter.task(node.name)
+        const checkTask = options.useNpm ? checkNpmTask : checkYarnTask
         checkTask(node, err => {
             done()
             callback(err)
