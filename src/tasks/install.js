@@ -1,26 +1,28 @@
 import fse from 'fs-extra'
 import path from 'path'
-import invariant from 'invariant'
 
+import spawnNpm from '../util/spawnNpm'
 import spawnYarn from '../util/spawnYarn'
 import patchPackageJson from '../util/patch'
 
-export default function(node, callback) {
+export default function(node, options, callback) {
     if (node.isDummy === true) {
-        return callback(null)
+        callback(null)
+        return
     }
 
-    invariant(
-        Object.keys(node.hoisted.unreconciled).length === 0,
-        `Install task should only be called in hoistable trees (${node.name})`
-    )
+    if (Object.keys(node.hoisted.unreconciled).length) {
+        callback(makeError(node, 'Cannot install an unhoistable node'))
+        return
+    }
 
     const hoistErr = hoist(node)
     if (hoistErr) {
         return callback(hoistErr)
     }
 
-    const child = spawnYarn(['install'], { cwd: node.path }, callback)
+    const spawn = options.useNpm ? spawnNpm : spawnYarn
+    const child = spawn(['install'], { cwd: node.path }, callback)
 
     const handleExit = () => {
         removeAll()
@@ -74,4 +76,13 @@ function unhoist(node) {
     } catch (e) {
         return e
     }
+}
+
+function makeError(node, title, detail = '') {
+    return new Error(
+        `\n[Binge] ${title}\n` +
+            `[Binge] Node name: ${node.name}\n` +
+            `[Binge] Node path: ${node.path}\n` +
+            (detail ? `[Binge] ${detail}` : '')
+    )
 }
