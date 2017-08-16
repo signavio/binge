@@ -26,11 +26,14 @@ function fromBinaries(args, options, callback) {
 function findNpmPath() {
     const parts = process.execPath.split(path.sep)
 
-    // +3 cuz it is ./gradle/nodejs/<version>/lib/node_modules/npm/bin/npm-cli.js
-    const basePath = parts.slice(0, parts.indexOf('.gradle') + 3).join(path.sep)
+    // OLD path
+    // /.gradle/nodejs/<version>/lib/node_modules/npm/bin/npm-cli.js
+    // NEW path
+    // /.gradle/npm/node_modules/npm/bin/npm-cli.js
+    const basePath = parts.slice(0, parts.indexOf('.gradle') + 1).join(path.sep)
     return path.join(
         basePath,
-        'lib',
+        'npm',
         'node_modules',
         'npm',
         'bin',
