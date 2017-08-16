@@ -14,11 +14,18 @@ var cli = meow([
     'Usage',
     '  $ binge [command]',
     'Commands:',
-    '  add        Adds a package to the current package - via yarn . Harmonizes the local tree to account for this change',
-    '  bootstrap  [Install,Build,Deploy] the local package tree into ./node_modules',
-    '  ls         Prints the local package tree. Prints the hoisting algorithm result',
-    '  nuke       rm -rf node_modules, for all local packages in the tree',
-    '  watch      Watch all local packages in the tree, into ./node_modules',
+    '  add        Adds a package to the current package.json, recursively harmonizes local-packages for this change',
+    '  bootstrap  Recursively [Install,Bridge,Build] the local package tree',
+    '             --use-npm -> to use npm5 instead of yarn',
+    '             --install-concurrency {NUMBER} -> to limit the number of installs spawned in parallel',
+    '  check      Recursively checks the local-package tree for lockfile sync',
+    '             --use-npm -> to use npm5 instead of yarn',
+    '  copy       Copies a file recursively into each of the local-packages',
+    '             --dest-name {NAME} -> to use a different destination name',
+    '             --skip-root -> to skip root local-packages',
+    '  ls         Prints the local package tree. Prints the hoisting algorithm output',
+    '  nuke       Recursively removes modules (rm -rf node_modules) from the local-package tree',
+    '  watch      Build and watch the local-package tree',
 ])
 
 require('signal-exit').unload()
@@ -42,5 +49,5 @@ if (!command) {
 
     cli.showHelp()
 } else {
-    command(cli.flags)
+    command(cli.flags, cli.input)
 }
