@@ -2,7 +2,6 @@ import fse from 'fs-extra'
 import path from 'path'
 
 import spawnNpm from '../util/spawnNpm'
-import spawnYarn from '../util/spawnYarn'
 import patchPackageJson from '../util/patch'
 
 export default function(node, options, callback) {
@@ -21,8 +20,7 @@ export default function(node, options, callback) {
         return callback(hoistErr)
     }
 
-    const spawn = options.useNpm ? spawnNpm : spawnYarn
-    const child = spawn(['install'], { cwd: node.path }, callback)
+    const child = spawnNpm(['install'], { cwd: node.path }, callback)
 
     const handleExit = () => {
         removeAll()

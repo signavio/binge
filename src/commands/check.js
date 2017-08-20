@@ -4,7 +4,6 @@ import path from 'path'
 
 import createGraph from '../graph/create'
 import checkNpmTask from '../tasks/checkNpm'
-import checkYarnTask from '../tasks/checkYarn'
 import createReporter from '../reporter'
 
 import { CONCURRENCY } from '../constants'
@@ -22,8 +21,7 @@ export default function(options) {
 
     function checkNode(node, callback) {
         const done = reporter.task(node.name)
-        const checkTask = options.useNpm ? checkNpmTask : checkYarnTask
-        checkTask(node, err => {
+        checkNpmTask(node, err => {
             done()
             callback(err)
         })
@@ -36,7 +34,7 @@ export default function(options) {
             process.exit(1)
         } else {
             console.log(
-                `Checked ${result.length} local-packages for lock consistency`
+                `Checked ${result.length} local-packages for lock consistency and sync`
             )
             console.log(chalk.green('success'))
             process.exit(0)
