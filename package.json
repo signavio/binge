@@ -14,6 +14,7 @@
     "prettier:check": "prettier --list-different --tab-width 4 --no-semi --single-quote --trailing-comma es5 '{bin/**/*.js,src/**/*.js,test/**/*.js}'"
   },
   "author": "Cristovao Honorato",
+  "repository": "https://github.com/CristovaoHonorato/binge",
   "license": "ISC",
   "dependencies": {
     "async": "2.5.0",

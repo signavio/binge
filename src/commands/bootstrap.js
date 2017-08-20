@@ -26,26 +26,12 @@ export default function(options) {
 
         async.series(
             [
-                options.useNpm || installConcurrency(options) === 1
-                    ? null
-                    : done => warmup(done),
                 done => pruneAndInstall(nodes, done),
                 done => buildAndBridge(layers, done),
             ].filter(Boolean),
             end
         )
     })
-
-    function warmup(callback) {
-        /*
-         * TODO Warmup all root nodes, if starting from a dummy?
-         */
-        reporter.series('Warming up cache...')
-        taskInstall(entryNode, options, err => {
-            reporter.clear()
-            callback(err)
-        })
-    }
 
     function pruneAndInstall(nodes, callback) {
         reporter.series(

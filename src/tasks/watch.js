@@ -33,7 +33,7 @@ export default function createTask(destNode, srcNode) {
         stdio: ['ignore', 'ignore', 'inherit'],
     }
 
-    spawn('yarn', ['run', 'dev'], options, function() {})
+    spawn('npm', ['run', 'dev'], options, function() {})
 
     setTimeout(() => {
         silent = false
