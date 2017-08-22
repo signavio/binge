@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import flattenReachable from '../../src/lock-file/flattenReachable'
 
-describe.only('lock-file', () => {
+describe('lock-file', () => {
     describe('flattenReachable', () => {
         it('Reaches the whole tree', () => {
             const packageLock = {
