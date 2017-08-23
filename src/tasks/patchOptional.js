@@ -1,6 +1,6 @@
-import async from 'async'
+import fs from 'fs'
 import path from 'path'
-import fse from 'fs-extra'
+import { equals as arrayEquals } from '../util/array'
 import inSync from '../lock-file/inSync'
 import flatten from '../lock-file/flatten'
 import flattenReachable from '../lock-file/flattenReachable'
@@ -10,53 +10,60 @@ export default (node, callback) => {
         return callback(null)
     }
 
-    const syncData = inSync(node)
+    const allHoisted = {
+        ...node.hoisted.ok,
+        ...node.hoisted.reconciled,
+    }
+    const entryDependencies = Object.keys(allHoisted).reduce(
+        (result, name) => ({
+            ...result,
+            [name]: allHoisted[name].version,
+        }),
+        {}
+    )
 
-    /*
-     * The node didn't statr in sync
-     */
-    if (!syncData.result) {
+    const syncData = inSync(node.packageLock, entryDependencies)
+
+    // The node didn't statr in sync
+    if (syncData.result !== true) {
         return callback(null)
     }
 
-    readPackageLock(
-        node.path,
-        (
-            err,
-            ({ packageLock, packageLockData }) => {
-                if (err) {
-                    callback(null)
-                    return
-                }
+    readPackageLock(node.path, (err, { packageLock, packageLockData }) => {
+        if (err) {
+            callback(null)
+            return
+        }
 
-                tryToPatch(syncData, packageLock)
-                callback(null)
-            }
-        )
-    )
+        if (shouldPatch(syncData, packageLock)) {
+            fs.writeFile(
+                path.join(node.path, 'package-lock.json'),
+                node.packageLockData,
+                'utf8',
+                callback
+            )
+        } else {
+            callback(null)
+        }
+    })
 }
 
-function tryToPatch(node, syncData, newPackageLock) {
+export function shouldPatch(syncData, newPackageLock) {
     const all = flatten(newPackageLock)
-    if (all.length === syncData.all.length) {
-        return
+    if (all.length === syncData.lockEntries.all.length) {
+        return false
     }
 
+    const entryEquals = (e1, e2) =>
+        e1.name === e2.name &&
+        e1.version === e2.version &&
+        arrayEquals(e1.path, e2.path)
+
     const isHit = target => lockEntry =>
-        target.some(
-            targetLockEntry =>
-                lockEntry.name === targetLockEntry.name &&
-                lockEntry.version === targetLockEntry.version &&
-                lockEntry.bundled === targetLockEntry.bundled
-        )
+        target.some(targetLockEntry => entryEquals(lockEntry, targetLockEntry))
 
     const isMiss = target => lockEntry =>
-        !target.some(
-            targetLockEntry =>
-                lockEntry.name === targetLockEntry.name &&
-                lockEntry.version === targetLockEntry.version &&
-                lockEntry.bundled === targetLockEntry.bundled
-        )
+        !target.some(targetLockEntry => entryEquals(lockEntry, targetLockEntry))
 
     /*
      * If there are only removed things.
@@ -67,22 +74,23 @@ function tryToPatch(node, syncData, newPackageLock) {
      */
     const isContained = all.every(isHit(syncData.lockEntries.all))
     if (!isContained) {
-        return
+        return false
     }
 
     const removed = syncData.lockEntries.all.filter(isMiss(all))
-    const removedOptional = removed.filter(e => e.optional)
-    const removedReachabled = flattenReachable(
-        newPackageLock,
-        all,
-        removedOptional
-    )
-    const optionalSubGraphRemoved =
-        removed.length === removedReachable.length &&
-        removed.every(isHit(removedReachable))
 
-    if (optionalSubGraphRemoved) {
-    }
+    // starting from the removed optional, what is reachable
+    const removedReachable = flattenReachable(
+        syncData.lockEntries.all,
+        removed.filter(e => e.optional)
+    )
+    // Not sure how this behaves on linux. Quick hack that will be removed
+    // .filter(lockEntry => lockEntry.name !== 'nan')
+
+    return (
+        removedReachable.length === removed.length &&
+        removedReachable.every(lockEntry => removed.includes(lockEntry))
+    )
 }
 
 function readPackageLock(pkgPath, callback) {

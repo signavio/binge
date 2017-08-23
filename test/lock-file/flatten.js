@@ -46,10 +46,12 @@ describe('lock-file', () => {
             const expected = [
                 {
                     name: 'acorn',
+                    path: [],
                     version: '5.1.1',
                 },
                 {
                     name: 'acorn-jsx',
+                    path: [],
                     version: '3.0.1',
                     requires: {
                         acorn: '3.3.0',
@@ -63,6 +65,7 @@ describe('lock-file', () => {
                 {
                     name: 'ajv',
                     version: '5.2.2',
+                    path: [],
                     requires: {
                         'fast-deep-equal': '1.0.0',
                         'json-stable-stringify': '1.0.1',
@@ -71,10 +74,12 @@ describe('lock-file', () => {
 
                 {
                     name: 'fast-deep-equal',
+                    path: [],
                     version: '1.0.0',
                 },
                 {
                     name: 'json-stable-stringify',
+                    path: [],
                     version: '1.0.1',
                     requires: {
                         jsonify: '0.0.0',
@@ -82,10 +87,12 @@ describe('lock-file', () => {
                 },
                 {
                     name: 'jsonify',
+                    path: [],
                     version: '0.0.0',
                 },
                 {
                     name: 'acorn',
+                    path: ['acorn-jsx'],
                     version: '3.3.0',
                 },
             ]

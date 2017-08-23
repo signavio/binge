@@ -7,6 +7,7 @@ import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
 import taskPrune from '../tasks/prune'
 import taskInstall from '../tasks/install'
+import taskPatchOptional from '../tasks/patchOptional'
 import taskBridge from '../tasks/bridge'
 import taskBuild from '../tasks/build'
 
@@ -54,6 +55,7 @@ export default function(options) {
             [
                 done => taskPrune(node, done),
                 done => taskInstall(node, options, done),
+                done => taskPatchOptional(node, done),
             ],
             err => {
                 done()

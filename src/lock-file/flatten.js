@@ -1,49 +1,47 @@
 import invariant from 'invariant'
+import { drop as arrayDrop, equals as arrayEquals } from '../util/array'
 
 export default function(packageLock) {
     // return sanityCheck(flatten(packageLock, []))
-    return flatten(packageLock, [])
+    return flatten(packageLock, [], [])
 }
 
-function flatten(packageLock, result) {
+function flatten(packageLock, path, result) {
     const lockEntries = Object.keys(
         packageLock.dependencies || {}
     ).map(name => ({
         name,
+        path,
         ...packageLock.dependencies[name],
     }))
 
-    const nextResult = [
-        ...result,
-        ...lockEntries.filter(lockEntry => !wasSeen(result, lockEntry)),
-    ]
+    const nextResult = [...result, ...lockEntries]
 
     return lockEntries.reduce(
-        (result, lockEntry) => flatten(lockEntry, result),
+        (result, lockEntry) =>
+            flatten(lockEntry, [...path, lockEntry.name], result),
         nextResult
     )
 }
-function wasSeen(seen, lockEntry) {
-    return seen.some(({ name, version, bundled }) => {
-        return (
-            name === lockEntry.name &&
-            version === lockEntry.version &&
-            bundled === lockEntry.bundled
-        )
-    })
-}
 
-function sanityCheck(result) {
-    function arrayDrop(a, index) {
-        return [...a.slice(0, index), ...a.slice(index + 1, a.length + 1)]
+export function sanityCheck(lockEntries) {
+    function wasSeen(seen, lockEntry) {
+        return seen.some(({ name, version, bundled, path }) => {
+            return (
+                name === lockEntry.name &&
+                version === lockEntry.version &&
+                bundled === lockEntry.bundled &&
+                arrayEquals(path, lockEntry.path)
+            )
+        })
     }
 
-    result.forEach((lockEntry, index) => {
+    lockEntries.forEach((lockEntry, index) => {
         invariant(
-            !wasSeen(arrayDrop(result, index), lockEntry),
+            !wasSeen(arrayDrop(lockEntries, index), lockEntry),
             `Flatten ${lockEntry.name} has a duplicate`
         )
     })
 
-    return result
+    return lockEntries
 }

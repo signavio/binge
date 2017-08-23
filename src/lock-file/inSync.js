@@ -1,29 +1,18 @@
-import invariant from 'invariant'
 import semver from 'semver'
 import flatten from '../lock-file/flatten'
 import flattenReachable from '../lock-file/flattenReachable'
 
-export default function(node) {
-    invariant(
-        !node.isDummy,
-        'lock-file/inSync should not be called for dummy node'
-    )
-
-    if (!node.packageLock) {
+export default function(packageLock, entryDependencies) {
+    if (!packageLock) {
         return {
             result: false,
         }
     }
 
-    const entryDependencies = {
-        ...node.hoisted.ok,
-        ...node.hoisted.reconciled,
-    }
-
-    const all = flatten(node.packageLock)
-    const reachable = flattenReachable(node.packageLock, all, entryDependencies)
-    const bypass = findBypass(node)
-    const changed = findChanged(node)
+    const all = flatten(packageLock)
+    const reachable = flattenReachable(all, entryDependencies)
+    const bypass = findBypass(packageLock)
+    const changed = findChanged(packageLock, entryDependencies)
     const removed = findRemoved(all, reachable)
     const result =
         bypass.length === 0 && changed.length === 0 && changed.length === 0
@@ -40,32 +29,28 @@ export default function(node) {
     }
 }
 
-function findChanged(node) {
-    const { packageLock } = node
+function findChanged(packageLock, entryDependencies) {
     const collect = bag =>
         Object.keys(bag).map(key => ({
             name: key,
-            version: bag[key].version,
+            version: bag[key],
         }))
 
-    const isMissing = dependency =>
-        packageLock.dependencies && !packageLock.dependencies[dependency.name]
+    const isMissing = entry =>
+        packageLock.dependencies && !packageLock.dependencies[entry.name]
 
-    const isMismatch = dependency =>
+    const isMismatch = entry =>
         packageLock.dependencies &&
         !semver.satisfies(
-            packageLock.dependencies[dependency.name].version,
-            dependency.version
+            packageLock.dependencies[entry.name].version,
+            entry.version
         )
 
-    const wanted = [
-        ...collect(node.hoisted.ok),
-        ...collect(node.hoisted.reconciled),
-    ]
+    const wanted = collect(entryDependencies)
 
-    const missing = wanted.filter(isMissing).map(dependency => ({
-        name: dependency.name,
-        version: dependency.version,
+    const missing = wanted.filter(isMissing).map(entry => ({
+        name: entry.name,
+        version: entry.version,
         versionLock: 'none',
     }))
 
@@ -73,10 +58,10 @@ function findChanged(node) {
         return missing
     }
 
-    return wanted.filter(isMismatch).map(dependency => ({
-        name: dependency.name,
-        version: dependency.version,
-        versionLock: packageLock.dependencies[dependency.name].version,
+    return wanted.filter(isMismatch).map(entry => ({
+        name: entry.name,
+        version: entry.version,
+        versionLock: packageLock.dependencies[entry.name].version,
     }))
 }
 
@@ -85,19 +70,10 @@ function findRemoved(all, reachable) {
         return []
     }
 
-    const isExtraneous = lockEntry =>
-        !reachable.some(
-            rLockEntry =>
-                lockEntry.name === rLockEntry.name &&
-                lockEntry.version === rLockEntry.version &&
-                lockEntry.bundled === rLockEntry.bundled
-        )
-
-    return all.filter(isExtraneous)
+    return all.filter(lockEntry => !reachable.includes(lockEntry))
 }
 
-function findBypass(node) {
-    const { packageLock } = node
+function findBypass(packageLock) {
     return Object.keys(packageLock.dependencies || {})
         .map(name => ({
             name,

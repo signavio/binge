@@ -1,12 +1,4 @@
-export default function resolve(packageLock, path, name) {
-    if (!packageLock || !packageLock.dependencies) {
-        return null
-    }
-
-    if (!path.length) {
-        return packageLock.dependencies[name] || null
-    }
-
+export default function resolve(all, path, name) {
     /*
      * Recreates the node module resolution algorithm, but in the lock file
      *
@@ -16,18 +8,26 @@ export default function resolve(packageLock, path, name) {
      * Deeper takes precedence to upper levels -> implicit on the multiplex
      * order
      */
+    all = all.filter(lockEntry => lockEntry.name === name)
 
     return (
         multiplex(path)
-            .map(([firstPath, ...restPath]) =>
-                resolve(packageLock.dependencies[firstPath], restPath, name)
+            .map(path =>
+                all.find(lockEntry => arrayEquals(lockEntry.path, path))
             )
-            .find(Boolean) ||
-        resolve(packageLock, [], name) ||
-        null
+            .find(Boolean) || null
     )
 }
 
 function multiplex(path) {
-    return [...path.map((e, index) => path.slice(index))]
+    return [...path.map((e, index) => path.slice(0, path.length - index)), []]
+}
+
+function arrayEquals(a1, a2) {
+    return (
+        a1 instanceof Array &&
+        a2 instanceof Array &&
+        a1.length === a2.length &&
+        a1.every((e, index) => e === a2[index])
+    )
 }

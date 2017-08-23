@@ -34,7 +34,22 @@ export default function(node, callback) {
         return
     }
 
-    const { bypass, changed, removed } = inSync(node)
+    const allHoisted = {
+        ...node.hoisted.ok,
+        ...node.hoisted.reconciled,
+    }
+    const entryDependencies = Object.keys(allHoisted).reduce(
+        (result, name) => ({
+            ...result,
+            [name]: allHoisted[name].version,
+        }),
+        {}
+    )
+
+    const { bypass, changed, removed } = inSync(
+        node.packageLock,
+        entryDependencies
+    )
 
     if (bypass.length) {
         callback(
