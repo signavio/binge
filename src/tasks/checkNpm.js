@@ -1,6 +1,4 @@
-import fse from 'fs-extra'
-import path from 'path'
-import semver from 'semver'
+import inSync from '../lock-file/inSync'
 
 const SUPPORTED_LOCK_VERSION = 1
 
@@ -15,114 +13,82 @@ export default function(node, callback) {
         return
     }
 
-    let lockfileRaw
-    try {
-        lockfileRaw = fse.readFileSync(
-            path.join(node.path, 'package-lock.json'),
-            'utf8'
+    if (node.packageLockError) {
+        callback(
+            makeError(
+                node,
+                'package-lock.json is corrupted!',
+                `Raw Error:\n${node.packageLockError}`
+            )
         )
-    } catch (e) {
+        return
+    }
+
+    if (!node.packageLock) {
         callback(makeError(node, 'package-lock.json not found!'))
         return
     }
 
-    let lockfile
-    try {
-        lockfile = JSON.parse(lockfileRaw)
-    } catch (e) {
-        callback(
-            makeError(
-                node,
-                'package-lock.json seems to be corrupted!',
-                `Raw Error:\n${e}`
-            )
-        )
-        return
-    }
-
-    if (lockfile.lockfileVersion !== SUPPORTED_LOCK_VERSION) {
+    if (node.packageLock.lockfileVersion !== SUPPORTED_LOCK_VERSION) {
         callback(makeError(node, 'Unsupported package-lock.json version'))
         return
     }
 
-    const unsynced = findUnsynced(node, lockfile)
-    if (unsynced) {
+    const allHoisted = {
+        ...node.hoisted.ok,
+        ...node.hoisted.reconciled,
+    }
+    const entryDependencies = Object.keys(allHoisted).reduce(
+        (result, name) => ({
+            ...result,
+            [name]: allHoisted[name].version,
+        }),
+        {}
+    )
+
+    const { bypass, changed, removed } = inSync(
+        node.packageLock,
+        entryDependencies
+    )
+
+    if (bypass.length) {
         callback(
             makeError(
                 node,
-                'Unsynced dependency',
-                `dependency '${unsynced.name}' wanted ${unsynced.version} but on the lock file found: ${unsynced.versionLock}`
+                'Binge was bypassed (file link in package-lock file)',
+                `Found ${bypass[0]
+                    .name} in ${node.name}'s package-lock.json. Remove the lock file and re-execute bootstrap`
             )
         )
         return
     }
 
-    const bypass = findBypass(node, lockfile)
-    if (bypass) {
+    if (changed.length) {
         callback(
             makeError(
                 node,
-                'Binge was bypassed (file link in package-lock file)',
-                `Found ${bypass.name} in ${node.name}'s package-lock.json. Remove the lock file and re-execute bootstrap`
+                'Unsynced dependency',
+                `dependency '${changed[0].name}' wanted ${changed[0]
+                    .version} but on the lock file found: ${changed[0]
+                    .versionLock}`
+            )
+        )
+        return
+    }
+
+    if (removed.length) {
+        const names = trim(removed.map(e => e.name).join(', '), 30)
+        callback(
+            makeError(
+                node,
+                'Removed dependencies',
+                `dependencies ${names} were deleted, but they are still on the lock file`
             )
         )
         return
     }
 
     callback(null)
-}
-
-function findUnsynced(node, lockfile) {
-    const collect = bag =>
-        Object.keys(bag).map(key => ({
-            name: key,
-            version: bag[key].version,
-        }))
-
-    const isMissing = wantedEntry =>
-        lockfile.dependencies && !lockfile.dependencies[wantedEntry.name]
-
-    const isMismatch = wantedEntry =>
-        lockfile.dependencies &&
-        !semver.satisfies(
-            lockfile.dependencies[wantedEntry.name].version,
-            wantedEntry.version
-        )
-
-    const wanted = [
-        ...collect(node.hoisted.ok),
-        ...collect(node.hoisted.reconciled),
-    ]
-
-    const missing = wanted.find(isMissing)
-    if (missing) {
-        return {
-            name: missing.name,
-            version: missing.version,
-            versionLock: 'none',
-        }
-    }
-
-    const mismatch = wanted.find(isMismatch)
-    if (mismatch) {
-        return {
-            name: mismatch.name,
-            version: mismatch.version,
-            versionLock: lockfile.dependencies[mismatch.name].version,
-        }
-    }
-
-    return null
-}
-
-function findBypass(node, lockfile) {
-    const name = Object.keys(lockfile.dependencies || {}).find(
-        key =>
-            typeof lockfile.dependencies[key].version === 'string' &&
-            lockfile.dependencies[key].version.startsWith('file:')
-    )
-
-    return name ? { name } : null
 }
 
 function makeError(node, title, detail = '') {
@@ -132,4 +98,8 @@ function makeError(node, title, detail = '') {
             `[Binge] Node path: ${node.path}\n` +
             (detail ? `[Binge] ${detail}` : '')
     )
+}
+
+function trim(str, length) {
+    return str.length > length ? `${str.slice(0, length - 3)}...` : str
 }
