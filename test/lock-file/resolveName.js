@@ -125,5 +125,47 @@ describe('lock-file', () => {
                 version: '3.3.0',
             })
         })
+
+        it('Partially hoisted, still with unflat version', () => {
+            const packageLock = {
+                lockfileVersion: 1,
+                dependencies: {
+                    acorn: {
+                        version: '5.0.0',
+                    },
+                    karma: {
+                        requires: {
+                            wd: '3.0.1',
+                            q: '1.5.0',
+                        },
+                    },
+                    wd: {
+                        version: '3.0.1',
+                        requires: {
+                            q: '1.4.0',
+                        },
+                        dependencies: {
+                            q: {
+                                version: '1.4.0',
+                            },
+                        },
+                    },
+                    q: {
+                        version: '1.5.0',
+                    },
+                    // etc...
+                },
+            }
+
+            expect(resolveName(packageLock, ['karma'], 'q')).to.deep.equal({
+                version: '1.5.0',
+            })
+
+            expect(
+                resolveName(packageLock, ['karma', 'wd'], 'q')
+            ).to.deep.equal({
+                version: '1.4.0',
+            })
+        })
     })
 })

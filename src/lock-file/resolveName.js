@@ -1,45 +1,33 @@
-import invariant from 'invariant'
-
-export default function resolve(...args) {
-    assertArgs(...args)
-
-    // Deeper takes precedence to current level
-    return resolveDeeper(...args) || resolveCurrent(...args) || null
-}
-
-function resolveDeeper(packageLock, path, name) {
-    const [pathFirst, ...pathRest] = path
-
-    // Nowhere deeper to go
-    if (!pathFirst) {
+export default function resolve(packageLock, path, name) {
+    if (!packageLock || !packageLock.dependencies) {
         return null
     }
 
-    // If the current node has no local dependencies
-    if (!packageLock.dependencies) {
-        return null
+    if (!path.length) {
+        return packageLock.dependencies[name] || null
     }
 
-    // If the current node doesn't have the required name
-    if (!packageLock.dependencies[pathFirst]) {
-        return null
-    }
+    /*
+     * Recreates the node module resolution algorithm, but in the lock file
+     *
+     * Creates all combinations of paths. Tries to find the link as deep as
+     * possible, and then bubbles up
+     *
+     * Deeper takes precedence to upper levels -> implicit on the multiplex
+     * order
+     */
 
-    return resolve(packageLock.dependencies[pathFirst], pathRest, name)
+    return (
+        multiplex(path)
+            .map(([firstPath, ...restPath]) =>
+                resolve(packageLock.dependencies[firstPath], restPath, name)
+            )
+            .find(Boolean) ||
+        resolve(packageLock, [], name) ||
+        null
+    )
 }
 
-function resolveCurrent(packageLock, path, name) {
-    return (packageLock.dependencies && packageLock.dependencies[name]) || null
-}
-
-function assertArgs(packageLock, path, name) {
-    invariant(isPlainObject(packageLock), 'Should always be an object')
-
-    invariant(Array.isArray(path), 'Should always be an Array')
-
-    invariant(typeof name === 'string' && name, 'Should be a non empty string')
-}
-
-function isPlainObject(o) {
-    return Object.prototype.toString.call(o) === '[object Object]'
+function multiplex(path) {
+    return [...path.map((e, index) => path.slice(index))]
 }

@@ -27,23 +27,26 @@ export default function readGraph(rootPath, callback) {
         async.parallel(
             [
                 done => readPackageJson(pkgPath, done),
+                done => readPackageLock(pkgPath, done),
                 done => readIgnoreFile(pkgPath, done),
                 done => readRCFile(pkgPath, done),
             ],
-            (err, [packageJson, npmIgnore, rcConfig] = []) => {
+            (
+                err,
+                [packageJson, packageLockFields, npmIgnore, rcConfig] = []
+            ) => {
                 if (err) {
                     return callback(err)
                 }
 
-                const node = (cache[pkgPath] = Object.assign(
-                    {
-                        name: packageJson.name,
-                        path: pkgPath,
-                        packageJson,
-                        npmIgnore,
-                    },
-                    rcConfig
-                ))
+                const node = (cache[pkgPath] = {
+                    name: packageJson.name,
+                    path: pkgPath,
+                    packageJson,
+                    ...packageLockFields,
+                    npmIgnore,
+                    rcConfig,
+                })
 
                 callback(null, node)
             }
@@ -152,4 +155,31 @@ function readPackageJson(pkgPath, callback) {
     const result = packageJson instanceof Error ? null : packageJson
 
     callback(error, result)
+}
+
+function readPackageLock(pkgPath, callback) {
+    const filePath = path.join(pkgPath, 'package-lock.json')
+
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            callback(null, {
+                packageLock: null,
+                packageLockData: null,
+                packageLockError: null,
+            })
+            return
+        }
+
+        let packageLock
+        let packageLockError
+        try {
+            packageLock = JSON.parse(data)
+            packageLockError = null
+        } catch (e) {
+            packageLock = null
+            packageLockError = e
+        }
+
+        callback(null, { packageLock, packageLockData: data, packageLockError })
+    })
 }

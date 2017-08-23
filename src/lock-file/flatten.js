@@ -1,7 +1,8 @@
 import invariant from 'invariant'
 
 export default function(packageLock) {
-    return sanityCheck(flatten(packageLock, []))
+    // return sanityCheck(flatten(packageLock, []))
+    return flatten(packageLock, [])
 }
 
 function flatten(packageLock, result) {
@@ -12,11 +13,10 @@ function flatten(packageLock, result) {
         ...packageLock.dependencies[name],
     }))
 
-    const nextResult = lockEntries.reduce(
-        (result, lockEntry) =>
-            wasSeen(result, lockEntry) ? result : [...result, lockEntry],
-        result
-    )
+    const nextResult = [
+        ...result,
+        ...lockEntries.filter(lockEntry => !wasSeen(result, lockEntry)),
+    ]
 
     return lockEntries.reduce(
         (result, lockEntry) => flatten(lockEntry, result),
@@ -24,8 +24,12 @@ function flatten(packageLock, result) {
     )
 }
 function wasSeen(seen, lockEntry) {
-    return seen.some(({ name, version }) => {
-        return name === lockEntry.name && version === lockEntry.version
+    return seen.some(({ name, version, bundled }) => {
+        return (
+            name === lockEntry.name &&
+            version === lockEntry.version &&
+            bundled === lockEntry.bundled
+        )
     })
 }
 
