@@ -73,7 +73,7 @@ export function shouldPatch(allPrev, allNext, logger) {
     // from the deleted, get the optional, and regerate the reachable graph
     const deletedReachable = flattenReachable(
         deleted,
-        deleted.filter((bundled, optional) => !bundled && optional)
+        deleted.filter(({ bundled, optional }) => !bundled && optional)
     )
     logger(
         `shouldPatch - final ${deleted.length ===
