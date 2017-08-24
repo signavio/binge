@@ -33,16 +33,16 @@ export default function readGraph(rootPath, callback) {
             ],
             (
                 err,
-                [packageJson, packageLockFields, npmIgnore, rcConfig] = []
+                [packageJsonFields, packageLockFields, npmIgnore, rcConfig] = []
             ) => {
                 if (err) {
                     return callback(err)
                 }
 
                 const node = (cache[pkgPath] = {
-                    name: packageJson.name,
+                    name: packageJsonFields.packageJson.name,
                     path: pkgPath,
-                    packageJson,
+                    ...packageJsonFields,
                     ...packageLockFields,
                     npmIgnore,
                     rcConfig,
@@ -142,19 +142,28 @@ function errorWrongLocalName(names, nodes) {
 }
 
 function readPackageJson(pkgPath, callback) {
-    let packageJson
-    try {
-        packageJson = JSON.parse(
-            fs.readFileSync(path.join(pkgPath, 'package.json'), 'utf8')
-        )
-    } catch (e) {
-        packageJson = e
-    }
+    const filePath = path.join(pkgPath, 'package.json')
 
-    const error = packageJson instanceof Error ? packageJson : null
-    const result = packageJson instanceof Error ? null : packageJson
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            callback(err)
+            return
+        }
 
-    callback(error, result)
+        let packageJson
+        let packageJsonData
+        try {
+            packageJson = JSON.parse(data)
+            packageJsonData = data
+            err = null
+        } catch (e) {
+            packageJson = null
+            packageJsonData = null
+            err = e
+        }
+
+        callback(err, { packageJson, packageJsonData })
+    })
 }
 
 function readPackageLock(pkgPath, callback) {

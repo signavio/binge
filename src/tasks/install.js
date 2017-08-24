@@ -20,7 +20,12 @@ export default function(node, options, callback) {
         return callback(hoistErr)
     }
 
-    const child = spawnNpm(['install'], { cwd: node.path }, callback)
+    const child = spawnNpm(['install'], { cwd: node.path }, (...args) => {
+        removeAll()
+        unhoist(node)
+        // eslint-disable-next-line standard/no-callback-literal
+        callback(...args)
+    })
 
     const handleExit = () => {
         removeAll()
@@ -65,11 +70,7 @@ function hoist(node) {
 function unhoist(node) {
     const dataPath = path.join(node.path, 'package.json')
     try {
-        fse.writeFileSync(
-            dataPath,
-            JSON.stringify(node.packageJson, null, 2),
-            'utf8'
-        )
+        fse.writeFileSync(dataPath, node.packageJsonData, 'utf8')
         return null
     } catch (e) {
         return e

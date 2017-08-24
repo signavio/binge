@@ -25,11 +25,13 @@ function collect(selector, pointers) {
         .filter(selector)
         .map(pointers => {
             const versions = pointers.map(({ version }) => version)
+            const isDev = pointers.some(({ isDev }) => isDev)
 
             return {
                 name: pointers[0].name,
                 version: reconcileVersion(versions),
                 pointers,
+                isDev,
             }
         })
         .reduce(
@@ -42,7 +44,7 @@ function collect(selector, pointers) {
 function hoistPointers(node) {
     return [
         ...toPointer(node.packageJson.dependencies, node.name),
-        ...toPointer(node.packageJson.devDependencies, node.name),
+        ...toPointer(node.packageJson.devDependencies, node.name, true),
         ...node.reachable.reduce(
             (result, childNode) => [
                 ...result,
@@ -56,13 +58,14 @@ function hoistPointers(node) {
     ]
 }
 
-function toPointer(rawDependencies = {}, referer) {
+function toPointer(rawDependencies = {}, referer, isDev = false) {
     return Object.keys(rawDependencies)
         .filter(name => !isFileVersion(rawDependencies[name]))
         .map(name => ({
             referer,
             name,
             version: rawDependencies[name],
+            isDev,
         }))
 }
 
