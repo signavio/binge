@@ -1,14 +1,16 @@
-import fs from 'fs'
+import fse from 'fs-extra'
 import path from 'path'
 import { equals as arrayEquals } from '../util/array'
 import inSync from '../lock-file/inSync'
 import flatten from '../lock-file/flatten'
 import flattenReachable from '../lock-file/flattenReachable'
 
-export default (node, callback) => {
+export default (node, options, callback) => {
     if (node.isDummy === true) {
         return callback(null)
     }
+
+    const logger = createLogger(node, options)
 
     const allHoisted = {
         ...node.hoisted.ok,
@@ -26,17 +28,23 @@ export default (node, callback) => {
 
     // The node didn't statr in sync
     if (syncData.result !== true) {
-        return callback(null)
+        logger(`Not previously in sync`)
+        callback(null)
+        return
     }
 
     readPackageLock(node.path, (err, { packageLock, packageLockData }) => {
         if (err) {
+            logger(`Error reading new packageLock\n${err}`)
             callback(null)
             return
         }
 
-        if (shouldPatch(syncData, packageLock)) {
-            fs.writeFile(
+        const allPrev = syncData.lockEntries.all
+        const allNext = flatten(packageLock)
+
+        if (shouldPatch(allPrev, allNext, logger)) {
+            fse.writeFile(
                 path.join(node.path, 'package-lock.json'),
                 node.packageLockData,
                 'utf8',
@@ -48,55 +56,61 @@ export default (node, callback) => {
     })
 }
 
-export function shouldPatch(syncData, newPackageLock) {
-    const all = flatten(newPackageLock)
-    if (all.length === syncData.lockEntries.all.length) {
+export function shouldPatch(allPrev, allNext, logger) {
+    const contained = filterContained(allPrev, allNext)
+    if (allPrev.length === contained.length) {
+        logger(`Nothing changed (${contained.length} ${allNext.length})`)
         return false
     }
 
-    const entryEquals = (e1, e2) =>
-        e1.name === e2.name &&
-        e1.version === e2.version &&
-        arrayEquals(e1.path, e2.path)
-
-    const isHit = target => lockEntry =>
-        target.some(targetLockEntry => entryEquals(lockEntry, targetLockEntry))
-
-    const isMiss = target => lockEntry =>
-        !target.some(targetLockEntry => entryEquals(lockEntry, targetLockEntry))
-
-    /*
-     * If there are only removed things.
-     * And the removed things, if we start from the optional removed, spans the
-     * whole removed set.
-     *
-     * Then replace the package-lock with the new one
-     */
-    const isContained = all.every(isHit(syncData.lockEntries.all))
-    if (!isContained) {
+    const added = filterNotContained(allPrev, allNext)
+    if (added.length) {
+        logger(`Some stuff was added (${added.length})`)
         return false
     }
 
-    const removed = syncData.lockEntries.all.filter(isMiss(all))
-
-    // starting from the removed optional, what is reachable
-    const removedReachable = flattenReachable(
-        syncData.lockEntries.all,
-        removed.filter(e => e.optional)
+    const deleted = filterNotContained(allNext, allPrev)
+    // from the deleted, get the optional, and regerate the reachable graph
+    const deletedReachable = flattenReachable(
+        deleted,
+        deleted.filter((bundled, optional) => !bundled && optional)
     )
-    // Not sure how this behaves on linux. Quick hack that will be removed
-    // .filter(lockEntry => lockEntry.name !== 'nan')
+    logger(
+        `shouldPatch - final ${deleted.length ===
+            deletedReachable.length} (${deleted.length} ${deletedReachable.length})`
+    )
+    return deleted.length === deletedReachable.length
+}
 
+function filterContained(lockEntriesTarget, lockEntriesSource) {
+    return lockEntriesSource.filter(lockEntry1 =>
+        lockEntriesTarget.some(lockEntry2 =>
+            entryEquals(lockEntry1, lockEntry2)
+        )
+    )
+}
+
+function filterNotContained(lockEntriesTarget, lockEntriesSource) {
+    return lockEntriesSource.filter(
+        lockEntry1 =>
+            !lockEntriesTarget.some(lockEntry2 =>
+                entryEquals(lockEntry1, lockEntry2)
+            )
+    )
+}
+
+function entryEquals(lockEntry1, lockEntry2) {
     return (
-        removedReachable.length === removed.length &&
-        removedReachable.every(lockEntry => removed.includes(lockEntry))
+        lockEntry1.name === lockEntry2.name &&
+        lockEntry1.version === lockEntry2.version &&
+        arrayEquals(lockEntry1.path, lockEntry2.path)
     )
 }
 
 function readPackageLock(pkgPath, callback) {
     const filePath = path.join(pkgPath, 'package-lock.json')
 
-    fs.readFile(filePath, 'utf8', (err, data) => {
+    fse.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
             callback(null, { packageLock: null, packageLockData: null })
             return
@@ -111,4 +125,16 @@ function readPackageLock(pkgPath, callback) {
 
         callback(null, { packageLock, packageLockData: data })
     })
+}
+
+function createLogger(node, options) {
+    if (!options.log) {
+        return () => {}
+    }
+
+    const logFilePath = path.join(node.path, 'binge.log')
+    fse.removeSync(logFilePath)
+    return message => {
+        fse.appendFileSync(logFilePath, `[patchOptional] ${message}\n`)
+    }
 }

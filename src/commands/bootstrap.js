@@ -55,7 +55,7 @@ export default function(options) {
             [
                 done => taskPrune(node, done),
                 done => taskInstall(node, options, done),
-                done => taskPatchOptional(node, done),
+                done => taskPatchOptional(node, options, done),
             ],
             err => {
                 done()
