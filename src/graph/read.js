@@ -45,7 +45,7 @@ export default function readGraph(rootPath, callback) {
                     ...packageJsonFields,
                     ...packageLockFields,
                     npmIgnore,
-                    rcConfig,
+                    ...rcConfig,
                 })
 
                 callback(null, node)

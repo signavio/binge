@@ -9,7 +9,7 @@ export default function(node, callback) {
     }
 
     if (Object.keys(node.hoisted.unreconciled).length > 0) {
-        callback(node, makeError(node, 'Cannot check an unhoistable tree'))
+        callback(makeError(node, 'Cannot check an unhoistable tree'))
         return
     }
 
