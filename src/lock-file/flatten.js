@@ -19,7 +19,7 @@ function flatten(packageLock, path, result) {
 
     return lockEntries.reduce(
         (result, lockEntry) =>
-            flatten(lockEntry, [].concat(path, lockEntry.name), result),
+            flatten(lockEntry, [...path, lockEntry.name], result),
         nextResult
     )
 }

@@ -1,10 +1,9 @@
 import { expect } from 'chai'
-import resolveName from '../../src/lock-file/resolveName'
+import resolve from '../../src/lock-file/resolve'
 
 describe('lock-file', () => {
-    describe('resolveName', () => {
+    describe('resolve', () => {
         it('Without path resolves and finds from top level', () => {
-            /*
             const packageLock = {
                 lockfileVersion: 1,
                 dependencies: {
@@ -25,32 +24,25 @@ describe('lock-file', () => {
                     // etc...
                 },
             }
-            */
 
-            // auto generated from above
-            const all = [
-                { name: 'acorn', path: [], version: '5.1.1' },
-                {
-                    name: 'acorn-jsx',
-                    path: [],
-                    version: '3.0.1',
-                    requires: { acorn: '3.3.0' },
-                    dependencies: { acorn: { version: '3.3.0' } },
-                },
-                { name: 'acorn', path: ['acorn-jsx'], version: '3.3.0' },
-            ]
-
-            expect(resolveName(all, [], 'acorn-jsx')).to.deep.equal({
+            expect(resolve(packageLock, [], 'acorn-jsx')).to.deep.equal({
                 name: 'acorn-jsx',
-                path: [],
-                version: '3.0.1',
-                requires: { acorn: '3.3.0' },
-                dependencies: { acorn: { version: '3.3.0' } },
+                lockEntry: {
+                    version: '3.0.1',
+                    requires: {
+                        acorn: '3.3.0',
+                    },
+                    dependencies: {
+                        acorn: {
+                            version: '3.3.0',
+                        },
+                    },
+                },
+                realPath: [],
             })
         })
 
         it('Without path misses from top level only', () => {
-            /*
             const packageLock = {
                 lockfileVersion: 1,
                 dependencies: {
@@ -68,23 +60,11 @@ describe('lock-file', () => {
                     // etc...
                 },
             }
-            */
-            const all = [
-                {
-                    name: 'acorn-jsx',
-                    path: [],
-                    version: '3.0.1',
-                    requires: { acorn: '3.3.0' },
-                    dependencies: { acorn: { version: '3.3.0' } },
-                },
-                { name: 'acorn', path: ['acorn-jsx'], version: '3.3.0' },
-            ]
 
-            expect(resolveName(all, [], 'acorn')).to.equal(null)
+            expect(resolve(packageLock, [], 'acorn')).to.equal(null)
         })
 
         it('Broken path, still resolves from top level', () => {
-            /*
             const packageLock = {
                 lockfileVersion: 1,
                 dependencies: {
@@ -105,33 +85,27 @@ describe('lock-file', () => {
                     // etc...
                 },
             }
-            */
-
-            const all = [
-                { name: 'acorn', path: [], version: '5.1.1' },
-                {
-                    name: 'acorn-jsx',
-                    path: [],
-                    version: '3.0.1',
-                    requires: { acorn: '3.3.0' },
-                    dependencies: { acorn: { version: '3.3.0' } },
-                },
-                { name: 'acorn', path: ['acorn-jsx'], version: '3.3.0' },
-            ]
 
             expect(
-                resolveName(all, ['abcd', 'def'], 'acorn-jsx')
+                resolve(packageLock, ['abcd', 'def'], 'acorn-jsx')
             ).to.deep.equal({
                 name: 'acorn-jsx',
-                path: [],
-                version: '3.0.1',
-                requires: { acorn: '3.3.0' },
-                dependencies: { acorn: { version: '3.3.0' } },
+                lockEntry: {
+                    version: '3.0.1',
+                    requires: {
+                        acorn: '3.3.0',
+                    },
+                    dependencies: {
+                        acorn: {
+                            version: '3.3.0',
+                        },
+                    },
+                },
+                realPath: [],
             })
         })
 
         it('Ignores higher, uses nested entry', () => {
-            /*
             const packageLock = {
                 lockfileVersion: 1,
                 dependencies: {
@@ -152,30 +126,17 @@ describe('lock-file', () => {
                     // etc...
                 },
             }
-            */
 
-            // auto generated from above
-            const all = [
-                { name: 'acorn', path: [], version: '5.1.1' },
-                {
-                    name: 'acorn-jsx',
-                    path: [],
-                    version: '3.0.1',
-                    requires: { acorn: '3.3.0' },
-                    dependencies: { acorn: { version: '3.3.0' } },
-                },
-                { name: 'acorn', path: ['acorn-jsx'], version: '3.3.0' },
-            ]
-
-            expect(resolveName(all, ['acorn-jsx'], 'acorn')).to.deep.equal({
+            expect(resolve(packageLock, ['acorn-jsx'], 'acorn')).to.deep.equal({
                 name: 'acorn',
-                path: ['acorn-jsx'],
-                version: '3.3.0',
+                lockEntry: {
+                    version: '3.3.0',
+                },
+                realPath: ['acorn-jsx'],
             })
         })
 
         it('Partially hoisted, still with unflat version', () => {
-            /*
             const packageLock = {
                 lockfileVersion: 1,
                 dependencies: {
@@ -205,42 +166,25 @@ describe('lock-file', () => {
                     // etc...
                 },
             }
-            */
 
-            // auto generated from above
-            const all = [
-                { name: 'acorn', path: [], version: '5.0.0' },
-                {
-                    name: 'karma',
-                    path: [],
-                    requires: { wd: '3.0.1', q: '1.5.0' },
-                },
-                {
-                    name: 'wd',
-                    path: [],
-                    version: '3.0.1',
-                    requires: { q: '1.4.0' },
-                    dependencies: { q: { version: '1.4.0' } },
-                },
-                { name: 'q', path: [], version: '1.5.0' },
-                { name: 'q', path: ['wd'], version: '1.4.0' },
-            ]
-
-            expect(resolveName(all, ['karma'], 'q')).to.deep.equal({
+            expect(resolve(packageLock, ['karma'], 'q')).to.deep.equal({
                 name: 'q',
-                path: [],
-                version: '1.5.0',
+                lockEntry: {
+                    version: '1.5.0',
+                },
+                realPath: [],
             })
 
-            expect(resolveName(all, ['wd'], 'q')).to.deep.equal({
+            expect(resolve(packageLock, ['wd'], 'q')).to.deep.equal({
                 name: 'q',
-                path: ['wd'],
-                version: '1.4.0',
+                lockEntry: {
+                    version: '1.4.0',
+                },
+                realPath: ['wd'],
             })
         })
 
         it('Comes from a bug', () => {
-            /*
             const packageLock = {
                 lockfileVersion: 1,
                 dependencies: {
@@ -273,56 +217,31 @@ describe('lock-file', () => {
                     // etc...
                 },
             }
-            */
-            // autogenerated from above
-            const all = [
-                { name: 'cliui', path: [], version: '2.1.0' },
-                {
-                    name: 'yargs',
-                    path: [],
-                    version: '3.10.0',
-                    requires: { cliui: '2.1.0' },
-                },
-                {
-                    name: 'webpack',
-                    path: [],
-                    version: '2.3.3',
-                    requires: { yargs: '6.6.0' },
-                    dependencies: {
-                        cliui: { version: '3.2.0' },
-                        yargs: {
-                            version: '6.6.0',
-                            requires: { cliui: '3.2.0' },
-                        },
-                    },
-                },
-                { name: 'cliui', path: ['webpack'], version: '3.2.0' },
-                {
-                    name: 'yargs',
-                    path: ['webpack'],
-                    version: '6.6.0',
-                    requires: { cliui: '3.2.0' },
-                },
-            ]
 
             expect(
-                resolveName(all, ['webpack', 'yargs'], 'cliui')
+                resolve(packageLock, ['webpack', 'yargs'], 'cliui')
             ).to.deep.equal({
                 name: 'cliui',
-                path: ['webpack'],
-                version: '3.2.0',
+                lockEntry: {
+                    version: '3.2.0',
+                },
+                realPath: ['webpack'],
             })
 
-            expect(resolveName(all, ['yargs'], 'cliui')).to.deep.equal({
+            expect(resolve(packageLock, ['yargs'], 'cliui')).to.deep.equal({
                 name: 'cliui',
-                path: [],
-                version: '2.1.0',
+                lockEntry: {
+                    version: '2.1.0',
+                },
+                realPath: [],
             })
 
-            expect(resolveName(all, [], 'cliui')).to.deep.equal({
+            expect(resolve(packageLock, [], 'cliui')).to.deep.equal({
                 name: 'cliui',
-                path: [],
-                version: '2.1.0',
+                lockEntry: {
+                    version: '2.1.0',
+                },
+                realPath: [],
             })
         })
     })
