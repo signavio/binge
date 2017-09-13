@@ -1,9 +1,6 @@
 import fse from 'fs-extra'
 import path from 'path'
-import { equals as arrayEquals } from '../util/array'
-import inSync from '../lock-file/inSync'
-import flatten from '../lock-file/flatten'
-import flattenReachable from '../lock-file/flattenReachable'
+import patch from '../lock-file/patchOptional'
 
 export default (node, options, callback) => {
     if (node.isDummy === true) {
@@ -12,23 +9,9 @@ export default (node, options, callback) => {
 
     const logger = createLogger(node, options)
 
-    const allHoisted = {
-        ...node.hoisted.ok,
-        ...node.hoisted.reconciled,
-    }
-    const entryDependencies = Object.keys(allHoisted).reduce(
-        (result, name) => ({
-            ...result,
-            [name]: allHoisted[name].version,
-        }),
-        {}
-    )
-
-    const syncData = inSync(node.packageLock, entryDependencies)
-
     // The node didn't statr in sync
-    if (syncData.result !== true) {
-        logger(`Not previously in sync`)
+    if (!node.packageLock) {
+        logger(`No prev packageLock found`)
         callback(null)
         return
     }
@@ -40,13 +23,16 @@ export default (node, options, callback) => {
             return
         }
 
-        const allPrev = syncData.lockEntries.all
-        const allNext = flatten(packageLock)
+        const prevPackageLock = node.packageLock
+        const nextPackageLock = packageLock
 
-        if (shouldPatch(allPrev, allNext, logger)) {
+        const patchedPackageLock = patch(prevPackageLock, nextPackageLock)
+
+        // immutable
+        if (nextPackageLock !== patchedPackageLock) {
             fse.writeFile(
                 path.join(node.path, 'package-lock.json'),
-                node.packageLockData,
+                `${JSON.stringify(patchedPackageLock, null, 2)}\n`,
                 'utf8',
                 callback
             )
@@ -56,7 +42,8 @@ export default (node, options, callback) => {
     })
 }
 
-export function shouldPatch(allPrev, allNext, logger) {
+/*
+function shouldPatch(allPrev, allNext, logger) {
     const contained = filterContained(allPrev, allNext)
     if (allPrev.length === contained.length) {
         logger(`Nothing changed (${contained.length} ${allNext.length})`)
@@ -106,6 +93,7 @@ function entryEquals(lockEntry1, lockEntry2) {
         arrayEquals(lockEntry1.path, lockEntry2.path)
     )
 }
+*/
 
 function readPackageLock(pkgPath, callback) {
     const filePath = path.join(pkgPath, 'package-lock.json')

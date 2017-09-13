@@ -10,12 +10,12 @@ export default function(packageLock, entryDependencies) {
     }
 
     const all = flatten(packageLock)
-    const reachable = flattenReachable(all, entryDependencies)
+    const reachable = flattenReachable(packageLock, entryDependencies)
     const bypass = findBypass(packageLock)
     const changed = findChanged(packageLock, entryDependencies)
     const removed = findRemoved(all, reachable)
     const result =
-        bypass.length === 0 && changed.length === 0 && changed.length === 0
+        bypass.length === 0 && changed.length === 0 && removed.length === 0
 
     return {
         lockEntries: {
