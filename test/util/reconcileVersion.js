@@ -24,5 +24,17 @@ describe('util', () => {
         it('Version plus x range incompatible', () => {
             expect(reconcileVersion(['3.1.1', '2.x.x'])).to.equal(null)
         })
+
+        it('Range range goes to the higher', () => {
+            expect(reconcileVersion(['^3.1.1', '~3.5.3'])).to.equal('3.5.3')
+        })
+
+        it('Single range', () => {
+            expect(reconcileVersion('^3.1.1')).to.equal('3.1.1')
+        })
+
+        it('Single version', () => {
+            expect(reconcileVersion('2.3.4')).to.equal('2.3.4')
+        })
     })
 })

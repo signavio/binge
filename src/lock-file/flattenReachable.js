@@ -15,7 +15,8 @@ export default function(packageLock, entryDependencies) {
               .filter(Boolean)
 
     function walk(seen, pending) {
-        sanityCheck(seen, pending)
+        // Slow code bellow
+        // sanityCheck(seen, pending)
 
         // If there is nothing pending, return the flat list
         const [firstPending, ...restPending] = pending
@@ -87,6 +88,7 @@ function nextPending(seen, pending, children) {
     ]
 }
 
+// eslint-disable-next-line no-unused-vars
 function sanityCheck(seen, pending) {
     invariant(
         [...seen, ...pending.map(({ lockEntry }) => lockEntry)].every(

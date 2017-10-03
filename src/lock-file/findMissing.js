@@ -1,10 +1,11 @@
-import invariant from 'invariant'
+// import invariant from 'invariant'
 import { equals as arrayEquals } from '../util/array'
 import resolve from './resolve'
 
 export default function(prevPackageLock, nextPackageLock) {
     function walk(seen, pending) {
-        sanityCheck(seen, pending)
+        // Do not uncomment. This is slow
+        // sanityCheck(seen, pending)
 
         // If there is nothing pending, return the flat list
         const [firstPending, ...restPending] = pending
@@ -12,6 +13,7 @@ export default function(prevPackageLock, nextPackageLock) {
             return null
         }
 
+        /*
         invariant(
             firstPending.realPath instanceof Array &&
                 firstPending.realPath.every(
@@ -19,6 +21,7 @@ export default function(prevPackageLock, nextPackageLock) {
                 ),
             'Path should be an array of non empty strings'
         )
+        */
 
         seen = [...seen, firstPending.lockEntry]
 
@@ -97,6 +100,7 @@ function fromRequiring({ lockEntry }) {
 
 function fromRemoved(prevPackageLock, { realPath, lockEntry, name }) {
     const prevEntry = resolve(prevPackageLock, realPath, name)
+    // if there is not an equivalent entry in the prev packageLock: nothing
     if (
         !prevEntry ||
         !arrayEquals(prevEntry.realPath, realPath) ||
@@ -110,13 +114,7 @@ function fromRemoved(prevPackageLock, { realPath, lockEntry, name }) {
     // safe to check on requires because optional dependencies which might fail
     // are never bundled.
     return prevNames
-        .reduce(
-            (result, name) => [
-                ...result,
-                !currNames.includes(name) ? name : null,
-            ],
-            []
-        )
+        .map(name => (!currNames.includes(name) ? name : null))
         .filter(Boolean)
 }
 
@@ -129,6 +127,7 @@ function nextPending(seen, pending, children) {
     ]
 }
 
+/*
 function sanityCheck(seen, pending) {
     invariant(
         [...seen, ...pending.map(({ lockEntry }) => lockEntry)].every(
@@ -137,3 +136,4 @@ function sanityCheck(seen, pending) {
         'There are repeated stuff in the seen and pending'
     )
 }
+*/

@@ -2,7 +2,7 @@ import bootstrap from './commands/bootstrap'
 import check from './commands/check'
 import copy from './commands/copy'
 import graph from './commands/graph'
-// import install from './commands/install'
+import install from './commands/install'
 import layers from './commands/layers'
 import ls from './commands/ls'
 import nuke from './commands/nuke'
@@ -13,7 +13,7 @@ const commands = {
     check,
     copy,
     graph,
-    // install,
+    install,
     layers,
     ls,
     nuke,

@@ -3,7 +3,7 @@ import semver from 'semver'
 import { intersect } from 'semver-intersect'
 
 export default function(rawVersions) {
-    const versions = rawVersions
+    const versions = (Array.isArray(rawVersions) ? rawVersions : [rawVersions])
         .map(rawVersion => semver.valid(rawVersion))
         // remove nulls
         .filter(Boolean)
@@ -17,7 +17,7 @@ export default function(rawVersions) {
 
     const [version] = versions
 
-    const ranges = rawVersions
+    const ranges = (Array.isArray(rawVersions) ? rawVersions : [rawVersions])
         .map(rawVersion => (semver.valid(rawVersion) ? null : rawVersion))
         // remove nulls
         .filter(Boolean)
@@ -46,6 +46,22 @@ export default function(rawVersions) {
     } else if (version) {
         return version
     } else {
-        return range
+        return rangeToVersion(range)
     }
+}
+
+const STR_PART = '0|[1-9]\\d*'
+const STR_VERSION =
+    '(' + STR_PART + ')\\.' + '(' + STR_PART + ')\\.' + '(' + STR_PART + ')'
+
+const VALID_RANGE = new RegExp('>=' + STR_VERSION + ' <' + STR_VERSION)
+const VERSION = new RegExp(STR_VERSION)
+
+function rangeToVersion(range) {
+    const result = semver.validRange(range)
+    if (typeof result !== 'string' || !VALID_RANGE.test(result)) {
+        return null
+    }
+
+    return VERSION.exec(result)[0]
 }
