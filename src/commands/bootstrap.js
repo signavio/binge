@@ -7,7 +7,7 @@ import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
 import taskPrune from '../tasks/prune'
 import taskInstall from '../tasks/install'
-import taskBridge from '../tasks/bqridge'
+import taskBridge from '../tasks/bridge'
 import taskBuild from '../tasks/build'
 
 import createReporter from '../reporter'

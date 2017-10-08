@@ -1,15 +1,11 @@
+import hoistDependencies from '../hoisting/collect'
 import inSync from '../lock-file/inSync'
 
 const SUPPORTED_LOCK_VERSION = 1
 
 export default function(node, callback) {
     if (node.isDummy === true) {
-        callback(null)
-        return
-    }
-
-    if (Object.keys(node.hoisted.unreconciled).length > 0) {
-        callback(makeError(node, 'Cannot check an unhoistable tree'))
+        callback(null, null)
         return
     }
 
@@ -34,10 +30,17 @@ export default function(node, callback) {
         return
     }
 
-    const allHoisted = {
-        ...node.hoisted.ok,
-        ...node.hoisted.reconciled,
+    const { ok, reconciled, unreconciled } = hoistDependencies(
+        node.packageJson,
+        node.reachable.map(childNode => childNode.packageJson)
+    )
+
+    if (Object.keys(unreconciled).length > 0) {
+        callback(makeError(node, 'Cannot check, is unhoistable'))
+        return
     }
+
+    const allHoisted = { ...ok, ...reconciled }
     const entryDependencies = Object.keys(allHoisted).reduce(
         (result, name) => ({
             ...result,
@@ -46,7 +49,7 @@ export default function(node, callback) {
         {}
     )
 
-    const { bypass, changed, removed } = inSync(
+    const { bypass, changed, removed, lockEntries } = inSync(
         node.packageLock,
         entryDependencies
     )
@@ -88,7 +91,7 @@ export default function(node, callback) {
         return
     }
 
-    callback(null)
+    callback(null, lockEntries)
 }
 
 function makeError(node, title, detail = '') {

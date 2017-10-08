@@ -1,11 +1,11 @@
 import invariant from 'invariant'
 import resolve from './resolve'
+import { SANITY } from '../constants'
 
 /*
  * Transitively traverses the package-lock starting from the entry dependencies
  * Returns a flat list of reachable package-lock entries
  */
-
 export default function(packageLock, entryDependencies) {
     // starts by getting the external pointers and fetch
     const pending = Array.isArray(entryDependencies)
@@ -15,8 +15,7 @@ export default function(packageLock, entryDependencies) {
               .filter(Boolean)
 
     function walk(seen, pending) {
-        // Slow code bellow
-        // sanityCheck(seen, pending)
+        sanityCheck(seen, pending)
 
         // If there is nothing pending, return the flat list
         const [firstPending, ...restPending] = pending
@@ -88,12 +87,13 @@ function nextPending(seen, pending, children) {
     ]
 }
 
-// eslint-disable-next-line no-unused-vars
 function sanityCheck(seen, pending) {
-    invariant(
-        [...seen, ...pending.map(({ lockEntry }) => lockEntry)].every(
-            (e, i, c) => c.indexOf(e) === i
-        ),
-        'There are repeated stuff in the seen and pending'
-    )
+    if (SANITY) {
+        invariant(
+            [...seen, ...pending.map(({ lockEntry }) => lockEntry)].every(
+                (e, i, c) => c.indexOf(e) === i
+            ),
+            'There are repeated stuff in the seen and pending'
+        )
+    }
 }

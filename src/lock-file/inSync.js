@@ -1,13 +1,13 @@
+import invariant from 'invariant'
 import semver from 'semver'
 import flatten from '../lock-file/flatten'
 import flattenReachable from '../lock-file/flattenReachable'
 
 export default function(packageLock, entryDependencies) {
-    if (!packageLock) {
-        return {
-            result: false,
-        }
-    }
+    invariant(
+        typeof packageLock === 'object' && packageLock !== null,
+        'Expected a packageLock object'
+    )
 
     const all = flatten(packageLock)
     const reachable = flattenReachable(packageLock, entryDependencies)
@@ -30,12 +30,6 @@ export default function(packageLock, entryDependencies) {
 }
 
 function findChanged(packageLock, entryDependencies) {
-    const collect = bag =>
-        Object.keys(bag).map(key => ({
-            name: key,
-            version: bag[key],
-        }))
-
     const isMissing = entry =>
         packageLock.dependencies && !packageLock.dependencies[entry.name]
 
@@ -46,7 +40,10 @@ function findChanged(packageLock, entryDependencies) {
             entry.version
         )
 
-    const wanted = collect(entryDependencies)
+    const wanted = Object.keys(entryDependencies).map(key => ({
+        name: key,
+        version: entryDependencies[key],
+    }))
 
     const missing = wanted.filter(isMissing).map(entry => ({
         name: entry.name,
@@ -74,13 +71,14 @@ function findRemoved(all, reachable) {
 }
 
 function findBypass(packageLock) {
-    return Object.keys(packageLock.dependencies || {})
-        .map(name => ({
+    const collect = key =>
+        Object.keys(packageLock[key] || {}).map(name => ({
             name,
-            version: packageLock.dependencies[name].version,
+            version: packageLock[key][name].version,
         }))
-        .filter(
-            ({ name, version }) =>
-                version === 'string' && version.startsWith('file:')
-        )
+
+    return [...collect('dependencies'), ...collect('devDependencies')].filter(
+        ({ name, version }) =>
+            version === 'string' && version.startsWith('file:')
+    )
 }

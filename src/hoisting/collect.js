@@ -1,5 +1,6 @@
-import reconcileVersion from '../util/reconcileVersion'
 import invariant from 'invariant'
+import reconcileVersion from '../util/reconcileVersion'
+import { SANITY } from '../constants'
 
 /*
  * Receives a root packageJson, and all the reachable packageJsons
@@ -130,15 +131,17 @@ function isFileVersion(version) {
 }
 
 function sanityCheck(result) {
-    const oNames = Object.keys(result.ok)
-    const rNames = Object.keys(result.reconciled)
-    const uNames = Object.keys(result.unreconciled)
+    if (SANITY) {
+        const oNames = Object.keys(result.ok)
+        const rNames = Object.keys(result.reconciled)
+        const uNames = Object.keys(result.unreconciled)
 
-    invariant(
-        oNames.every(name => ![...rNames, ...uNames].includes(name)) &&
-            rNames.every(name => ![...oNames, ...uNames].includes(name)),
-        'Unexpected overlap in hoisting'
-    )
+        invariant(
+            oNames.every(name => ![...rNames, ...uNames].includes(name)) &&
+                rNames.every(name => ![...oNames, ...uNames].includes(name)),
+            'Unexpected overlap in hoisting'
+        )
+    }
 
     return result
 }

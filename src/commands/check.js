@@ -21,9 +21,9 @@ export default function(options) {
 
     function checkNode(node, callback) {
         const done = reporter.task(node.name)
-        checkNpmTask(node, err => {
+        checkNpmTask(node, (err, result) => {
             done()
-            callback(err)
+            callback(err, result)
         })
     }
 
@@ -33,11 +33,29 @@ export default function(options) {
             console.log(chalk.red('failure'))
             process.exit(1)
         } else {
-            console.log(
-                `Checked ${result.length} local-packages for lock consistency and sync`
-            )
             console.log(chalk.green('success'))
+            console.log(
+                `All package.json are in sync with their package-lock.json!\n` +
+                    `(${countLocalPackages(result)} package.json, ` +
+                    `and ${countLockEntries(
+                        result
+                    )} package-lock.json entries checked for sync)`
+            )
+
             process.exit(0)
         }
     }
+}
+
+function countLocalPackages(result) {
+    return result.filter(Boolean).length
+}
+
+function countLockEntries(result) {
+    return result
+        .filter(Boolean)
+        .map(entry => entry && entry.all)
+        .filter(Boolean)
+        .map(all => all.length)
+        .reduce((result, count) => result + count, 0)
 }

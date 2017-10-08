@@ -50,18 +50,19 @@ export default function(rawVersions) {
     }
 }
 
-const STR_PART = '0|[1-9]\\d*'
-const STR_VERSION =
-    '(' + STR_PART + ')\\.' + '(' + STR_PART + ')\\.' + '(' + STR_PART + ')'
-
-const VALID_RANGE = new RegExp('>=' + STR_VERSION + ' <' + STR_VERSION)
-const VERSION = new RegExp(STR_VERSION)
+const EXPANDED_RANGE = />=.+<.+/
 
 function rangeToVersion(range) {
     const result = semver.validRange(range)
-    if (typeof result !== 'string' || !VALID_RANGE.test(result)) {
+    if (typeof result !== 'string' || !EXPANDED_RANGE.test(result)) {
         return null
     }
 
-    return VERSION.exec(result)[0]
+    // validRange returns a string that expands the full range into pinned
+    // down versions. Example:
+    // semver.validRange("^1.1.1-alpha.1") => ">=1.1.1-alpha.1 <2.0.0"
+    // return the leftBound
+    return result
+        .slice(result.indexOf('>=') + '>='.length, result.indexOf('<'))
+        .trim()
 }
