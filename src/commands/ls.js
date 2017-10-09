@@ -37,36 +37,42 @@ function printStats(node) {
     )
 
     console.log('HOISTED ' + chalk.green(Object.keys(ok).length))
-    Object.keys(ok).sort().forEach(name => {
-        console.log(`\t${name} @ ${chalk.green(ok[name].version)}`)
+    Object.keys(ok)
+        .sort()
+        .forEach(name => {
+            console.log(`\t${name} @ ${chalk.green(ok[name].version)}`)
 
-        const pointers = [].concat(ok[name].pointers)
-        pointers.sort(compare).forEach(pointer => {
-            console.log(`\t\t${pointer.pkgName}`)
+            const pointers = [].concat(ok[name].pointers)
+            pointers.sort(compare).forEach(pointer => {
+                console.log(`\t\t${pointer.pkgName}`)
+            })
         })
-    })
 
     console.log('RECONCILED ' + chalk.yellow(Object.keys(reconciled).length))
-    Object.keys(reconciled).sort().forEach(name => {
-        console.log(`\t${name} @ ${chalk.green(reconciled[name].version)}`)
+    Object.keys(reconciled)
+        .sort()
+        .forEach(name => {
+            console.log(`\t${name} @ ${chalk.green(reconciled[name].version)}`)
 
-        const pointers = [].concat(reconciled[name].pointers)
-        pointers.sort(compare).forEach(pointer => {
-            console.log(
-                `\t\t${pointer.pkgName} @ ${chalk.yellow(pointer.version)}`
-            )
+            const pointers = [].concat(reconciled[name].pointers)
+            pointers.sort(compare).forEach(pointer => {
+                console.log(
+                    `\t\t${pointer.pkgName} @ ${chalk.yellow(pointer.version)}`
+                )
+            })
         })
-    })
 
     console.log('UNRECONCILED ' + chalk.red(Object.keys(unreconciled).length))
-    Object.keys(unreconciled).sort().forEach(name => {
-        console.log(`\t${name} ${chalk.red('failed')}`)
+    Object.keys(unreconciled)
+        .sort()
+        .forEach(name => {
+            console.log(`\t${name} ${chalk.red('failed')}`)
 
-        const pointers = [].concat(unreconciled[name].pointers)
-        pointers.sort(compare).forEach(pointer => {
-            console.log(
-                `\t\t${pointer.pkgName} @ ${chalk.red(pointer.version)}`
-            )
+            const pointers = [].concat(unreconciled[name].pointers)
+            pointers.sort(compare).forEach(pointer => {
+                console.log(
+                    `\t\t${pointer.pkgName} @ ${chalk.red(pointer.version)}`
+                )
+            })
         })
-    })
 }

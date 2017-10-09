@@ -47,13 +47,15 @@ function walk(lockEntry, searchPath, newLockEntry) {
 }
 
 function sortKeys(obj) {
-    return Object.keys(obj).sort(compare).reduce(
-        (result, key) => ({
-            ...result,
-            [key]: obj[key],
-        }),
-        {}
-    )
+    return Object.keys(obj)
+        .sort(compare)
+        .reduce(
+            (result, key) => ({
+                ...result,
+                [key]: obj[key],
+            }),
+            {}
+        )
 }
 
 function compare(aa, bb) {
