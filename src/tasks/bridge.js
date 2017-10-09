@@ -2,6 +2,7 @@ import async from 'async'
 import fse from 'fs-extra'
 import path from 'path'
 import invariant from 'invariant'
+import packList from 'npm-packlist'
 
 import { CONCURRENCY } from '../constants'
 
@@ -24,14 +25,19 @@ function bridge(node, childNode, callback) {
         'Node has to have an npmIgnore array'
     )
 
-    const filterNpmIgnored = (src, dest) => {
-        // it will be copied if return true
-        const isIgnored = childNode.npmIgnore.some(re => re.test(src))
-        return !isIgnored
-    }
-
     const srcPath = childNode.path
     const destPath = path.join(node.path, 'node_modules', childNode.name)
-
-    fse.copy(srcPath, destPath, { filter: filterNpmIgnored }, callback)
+    packList({ path: childNode.path }).then(files => {
+        async.map(
+            files,
+            (filePath, done) => {
+                fse.copy(
+                    path.join(srcPath, filePath),
+                    path.join(destPath, filePath),
+                    done
+                )
+            },
+            callback
+        )
+    })
 }

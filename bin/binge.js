@@ -25,7 +25,7 @@ var cli = meow([
     '  watch      Build and watch the local-package tree',
 ])
 
-require('signal-exit').unload()
+// require('signal-exit').unload()
 
 var commandName = cli.input[0]
 var command = binge[commandName]
