@@ -5,10 +5,26 @@
  * see: https://github.com/ForbesLindesay/cmd-shim/blob/f59af911f1373239a7537072641d55ff882c3701/index.js#L22
  */
 
-var binge = require('../lib/index').default
-var chalk = require('chalk')
-var meow = require('meow')
-var packageJson = require('../package.json')
+const binge = require('../lib/index').default
+const chalk = require('chalk')
+const meow = require('meow')
+const packageJson = require('../package.json')
+const ensureRuntime = require('../lib/util/ensureRuntime').default
+
+process.on('exit', () => {
+    console.log('---------- -----------------')
+    console.log('Binge (Eating Local Modules)')
+    console.log(`version:   ${packageJson.version}`)
+    console.timeEnd('execution')
+    console.log('---------- -----------------')
+})
+
+const runtimeErr = ensureRuntime()
+
+if (runtimeErr) {
+    console.log(runtimeErr)
+    process.exit(1)
+}
 
 var cli = meow([
     'Usage',
@@ -25,18 +41,9 @@ var cli = meow([
     '  watch      Build and watch the local-package tree',
 ])
 
-require('signal-exit').unload()
-
 var commandName = cli.input[0]
 var command = binge[commandName]
 
-process.on('exit', () => {
-    console.log('---------- -----------------')
-    console.log('Binge (Eating Local Modules)')
-    console.log(`version:   ${packageJson.version}`)
-    console.timeEnd('execution')
-    console.log('---------- -----------------')
-})
 console.time('execution')
 
 if (!command) {

@@ -1,5 +1,5 @@
 import createHoistedCommand from '../util/createHoistedCommand'
 
 export default createHoistedCommand(() =>
-    process.argv.slice(process.argv.indexOf('ls'))
+    process.argv.slice(process.argv.indexOf('prune'))
 )

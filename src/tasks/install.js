@@ -1,87 +1,74 @@
 import fse from 'fs-extra'
 import path from 'path'
+import createTaskNpm from './npm'
+import patchLockFile from '../lock-file/patchOptional'
 
-import spawnNpm from '../util/spawnNpm'
-import patchPackageJson from '../util/patch'
+import {
+    infer as inferDelta,
+    empty as emptyDelta,
+} from '../util/dependencyDelta'
 
-export default function(node, options, callback) {
-    if (node.isDummy === true) {
-        callback(null)
-        return
+export function createInstaller(npmArgs, spawnOptions) {
+    return (node, callback) => {
+        if (node.isDummy === true) {
+            callback(null, emptyDelta)
+            return
+        }
+
+        const taskNpm = createTaskNpm(npmArgs, spawnOptions)
+
+        taskNpm(
+            node,
+            (error, prevPackageJsonHoisted, nextPackageJsonHoisted) => {
+                if (error) {
+                    callback(error)
+                    return
+                }
+
+                const resultDelta = inferDelta(
+                    prevPackageJsonHoisted,
+                    nextPackageJsonHoisted
+                )
+
+                callback(patchOptional(node), resultDelta)
+            }
+        )
     }
-
-    if (Object.keys(node.hoisted.unreconciled).length) {
-        callback(makeError(node, 'Cannot install an unhoistable node'))
-        return
-    }
-
-    const hoistErr = hoist(node)
-    if (hoistErr) {
-        return callback(hoistErr)
-    }
-
-    const child = spawnNpm(['install'], { cwd: node.path }, (...args) => {
-        removeAll()
-        unhoist(node)
-        // eslint-disable-next-line standard/no-callback-literal
-        callback(...args)
-    })
-
-    const handleExit = () => {
-        removeAll()
-        unhoist(node)
-        child.kill()
-    }
-
-    const handleChildExit = () => {
-        removeAll()
-        unhoist(node)
-    }
-
-    const handleSuspend = () => {
-        removeAll()
-        unhoist(node)
-        child.kill()
-        process.exit(1)
-    }
-
-    const removeAll = () => {
-        process.removeListener('exit', handleExit)
-        process.removeListener('SIGINT', handleSuspend)
-        child.removeListener('exit', handleChildExit)
-    }
-
-    process.on('exit', handleExit)
-    process.on('SIGINT', handleSuspend)
-    child.on('exit', handleChildExit)
 }
 
-function hoist(node) {
-    const dataPath = path.join(node.path, 'package.json')
-    const data = JSON.stringify(patchPackageJson(node))
+export default createInstaller(['install'], {})
+
+function patchOptional(node) {
+    // if there is no packageLock at boot time, nothing to patch.
+    if (!node.packageLock) {
+        return null
+    }
+
     try {
-        fse.writeFileSync(dataPath, data, 'utf8')
+        const packageLockPath = path.join(node.path, 'package-lock.json')
+        const prevPackageLock = node.packageLock
+        const nextPackageLock = JSON.parse(
+            fse.readFileSync(packageLockPath, 'utf8')
+        )
+
+        const patchedPackageLock = patchLockFile(
+            prevPackageLock,
+            nextPackageLock
+        )
+
+        // immutable
+        if (nextPackageLock !== patchedPackageLock) {
+            const packageLockData = `${JSON.stringify(
+                patchedPackageLock,
+                null,
+                2
+            )}\n`
+            fse.writeFileSync(packageLockPath, packageLockData, 'utf8')
+            node.packageLock = patchedPackageLock
+            node.packageLockData = packageLockData
+        }
         return null
     } catch (e) {
         return e
     }
-}
-
-function unhoist(node) {
-    const dataPath = path.join(node.path, 'package.json')
-    try {
-        fse.writeFileSync(dataPath, node.packageJsonData, 'utf8')
-        return null
-    } catch (e) {
-        return e
-    }
-}
-
-function makeError(node, title, detail = '') {
-    return new Error(
-        `\n[Binge] ${title}\n` +
-            `[Binge] Node name: ${node.name}\n` +
-            `[Binge] Node path: ${node.path}\n` +
-            (detail ? `[Binge] ${detail}` : '')
-    )
 }

@@ -3,7 +3,7 @@ import semver from 'semver'
 import { intersect } from 'semver-intersect'
 
 export default function(rawVersions) {
-    const versions = rawVersions
+    const versions = (Array.isArray(rawVersions) ? rawVersions : [rawVersions])
         .map(rawVersion => semver.valid(rawVersion))
         // remove nulls
         .filter(Boolean)
@@ -17,7 +17,7 @@ export default function(rawVersions) {
 
     const [version] = versions
 
-    const ranges = rawVersions
+    const ranges = (Array.isArray(rawVersions) ? rawVersions : [rawVersions])
         .map(rawVersion => (semver.valid(rawVersion) ? null : rawVersion))
         // remove nulls
         .filter(Boolean)
@@ -46,6 +46,23 @@ export default function(rawVersions) {
     } else if (version) {
         return version
     } else {
-        return range
+        return rangeToVersion(range)
     }
+}
+
+const EXPANDED_RANGE = />=.+<.+/
+
+function rangeToVersion(range) {
+    const result = semver.validRange(range)
+    if (typeof result !== 'string' || !EXPANDED_RANGE.test(result)) {
+        return null
+    }
+
+    // validRange returns a string that expands the full range into pinned
+    // down versions. Example:
+    // semver.validRange("^1.1.1-alpha.1") => ">=1.1.1-alpha.1 <2.0.0"
+    // return the leftBound
+    return result
+        .slice(result.indexOf('>=') + '>='.length, result.indexOf('<'))
+        .trim()
 }

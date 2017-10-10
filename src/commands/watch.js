@@ -11,8 +11,9 @@ export default function(callback) {
 function thenWatch(err, graph) {
     if (err) end()
 
-    const [entryNode, ...rest] = graph
-    rest.forEach(node => taskWatch(entryNode, node))
+    const [rootNode] = graph
+
+    taskWatch(rootNode)
 }
 
 function end(err) {

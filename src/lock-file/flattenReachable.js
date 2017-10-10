@@ -1,61 +1,99 @@
 import invariant from 'invariant'
-import resolveName from './resolveName'
+import resolve from './resolve'
+import { SANITY } from '../constants'
 
 /*
  * Transitively traverses the package-lock starting from the entry dependencies
  * Returns a flat list of reachable package-lock entries
  */
-
-export default function(all, entryDependencies) {
+export default function(packageLock, entryDependencies) {
     // starts by getting the external pointers and fetch
     const pending = Array.isArray(entryDependencies)
         ? entryDependencies
         : Object.keys(entryDependencies)
-              .map(name => resolveName(all, [], name))
+              .map(name => resolve(packageLock, [], name))
               .filter(Boolean)
 
+    function walk(seen, pending) {
+        sanityCheck(seen, pending)
+
+        // If there is nothing pending, return the flat list
+        const [firstPending, ...restPending] = pending
+        if (!firstPending) {
+            return seen
+        }
+
+        invariant(
+            firstPending.realPath instanceof Array &&
+                firstPending.realPath.every(
+                    s => typeof s === 'string' && s.length
+                ),
+            'Path should be an array of non empty strings'
+        )
+
+        seen = [...seen, firstPending.lockEntry]
+
+        const children = [
+            ...fromBundling(firstPending),
+            ...fromRequiring(firstPending),
+        ]
+            // uniq
+            .filter((e, i, c) => c.indexOf(e) === i)
+            .map(name =>
+                resolve(
+                    packageLock,
+                    [...firstPending.realPath, firstPending.name],
+                    name
+                )
+            )
+            .filter(Boolean)
+
+        return (
+            walk(
+                // nextSeen
+                seen,
+                nextPending(seen, restPending, children)
+            ) || null
+        )
+    }
+
     // then recurively pull and try to expand
-    return processPending(all, [], pending)
+    return walk([], pending)
 }
 
-function processPending(all, seen, pending) {
-    invariant(
-        Array.isArray(seen) && Array.isArray(pending),
-        'Those should be arrays'
+function fromBundling({ lockEntry }) {
+    return Object.keys(lockEntry.dependencies || {}).filter(
+        name =>
+            lockEntry.dependencies[name] &&
+            lockEntry.dependencies[name].bundled === true
     )
+}
 
-    // If there is nothing pending, return the flat list
-    const [firstPending, ...restPending] = pending
-    if (!firstPending) {
-        return seen
-    }
+function fromRequiring({ lockEntry }) {
+    return Object.keys(lockEntry.requires || {}).filter(
+        name =>
+            !lockEntry.dependencies ||
+            !lockEntry.dependencies[name] ||
+            !lockEntry.dependencies[name].bundled
+    )
+}
 
-    if (seen.includes(firstPending)) {
-        return processPending(all, seen, restPending)
-    }
+function nextPending(seen, pending, children) {
+    const exclusions = [...seen, ...pending.map(({ lockEntry }) => lockEntry)]
 
-    seen = [...seen, firstPending]
+    return [
+        ...pending,
+        ...children.filter(({ lockEntry }) => !exclusions.includes(lockEntry)),
+    ]
+}
 
-    const searchPath = [...firstPending.path, firstPending.name]
-
-    const pendingFromBundling = Object.keys(firstPending.dependencies || {})
-        .map(name => ({
-            name,
-            lockEntry: firstPending.dependencies[name],
-        }))
-        .filter(
-            ({ name, lockEntry }) => lockEntry && lockEntry.bundled === true
+function sanityCheck(seen, pending) {
+    if (SANITY) {
+        invariant(
+            [...seen, ...pending.map(({ lockEntry }) => lockEntry)].every(
+                (e, i, c) => c.indexOf(e) === i
+            ),
+            'There are repeated stuff in the seen and pending'
         )
-        .map(({ name }) => resolveName(all, searchPath, name))
-        .filter(Boolean)
-
-    const pendingFromRequiring = Object.keys(firstPending.requires || {})
-        .map(name => resolveName(all, searchPath, name))
-        .filter(Boolean)
-
-    return processPending(all, seen, [
-        ...restPending,
-        ...pendingFromBundling,
-        ...pendingFromRequiring,
-    ])
+    }
 }

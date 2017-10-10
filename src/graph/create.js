@@ -1,6 +1,5 @@
 import read from './read'
-import reachable from './node/reachable'
-import hoisted from './node/hoisted'
+import reachable from './reachable'
 import { flat as flatTopology } from './topology'
 
 export default function(entryPath, callback) {
@@ -15,7 +14,6 @@ export default function(entryPath, callback) {
         } else {
             result.forEach(node => {
                 node.reachable = reachable(node)
-                node.hoisted = hoisted(node)
             })
             callback(null, result)
         }

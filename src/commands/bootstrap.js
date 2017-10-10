@@ -7,7 +7,6 @@ import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
 import taskPrune from '../tasks/prune'
 import taskInstall from '../tasks/install'
-import taskPatchOptional from '../tasks/patchOptional'
 import taskBridge from '../tasks/bridge'
 import taskBuild from '../tasks/build'
 
@@ -52,11 +51,7 @@ export default function(options) {
     function pruneAndInstallNode(node, callback) {
         const done = reporter.task(node.name)
         async.series(
-            [
-                done => taskPrune(node, done),
-                done => taskInstall(node, options, done),
-                done => taskPatchOptional(node, options, done),
-            ],
+            [done => taskPrune(node, done), done => taskInstall(node, done)],
             err => {
                 done()
                 callback(err)
