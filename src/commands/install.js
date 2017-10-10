@@ -61,16 +61,16 @@ export default function(cliFlags) {
         )
     }
 
-    // eslint-disable-next-line
     function install(nodes, callback) {
-        reporter.series(`Propagating changes and installing...`)
+        // eslint-disable-next-line no-unused-vars
+        const [rootNode, ...childNodes] = nodes
+        reporter.series(`Installing tree...`)
         async.mapLimit(
-            nodes,
+            childNodes,
             installConcurrency(cliFlags),
             (node, done) => installChild(node, done),
             (err, result) => {
                 reporter.clear()
-                // eslint-disable-next-line standard/no-callback-literal
                 callback(err, result)
             }
         )
@@ -81,7 +81,6 @@ export default function(cliFlags) {
         const taskInstall = createInstaller(['install'], {})
         taskInstall(childNode, (err, resultDelta) => {
             done()
-            // eslint-disable-next-line standard/no-callback-literal
             callback(err, resultDelta)
         })
     }

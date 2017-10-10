@@ -29,11 +29,11 @@ export default function(options) {
 
     function end(err, result) {
         if (err) {
+            console.log(chalk.red('Failure'))
             console.log(err)
-            console.log(chalk.red('failure'))
             process.exit(1)
         } else {
-            console.log(chalk.green('success'))
+            console.log(chalk.green('Success'))
             console.log(
                 `All package.json are in sync with their package-lock.json!\n` +
                     `(${countLocalPackages(result)} package.json, ` +

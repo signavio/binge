@@ -14,7 +14,7 @@ export default function(node, callback) {
             makeError(
                 node,
                 'package-lock.json is corrupted!',
-                `Raw Error:\n${node.packageLockError}`
+                `Raw Error:\n\t${node.packageLockError}`
             )
         )
         return
@@ -58,9 +58,9 @@ export default function(node, callback) {
         callback(
             makeError(
                 node,
-                'Binge was bypassed (file link in package-lock file)',
+                'Binge was bypassed (file dependency in package-lock file)',
                 `Found ${bypass[0]
-                    .name} in ${node.name}'s package-lock.json. Remove the lock file and re-execute bootstrap`
+                    .name} in ${node.name}'s package-lock.json. Remove the lock file and execute bootstrap`
             )
         )
         return
@@ -70,8 +70,7 @@ export default function(node, callback) {
         callback(
             makeError(
                 node,
-                'Unsynced dependency',
-                `dependency '${changed[0].name}' wanted ${changed[0]
+                `Unsynced dependency: '${changed[0].name}' wanted ${changed[0]
                     .version} but on the lock file found: ${changed[0]
                     .versionLock}`
             )
@@ -84,8 +83,9 @@ export default function(node, callback) {
         callback(
             makeError(
                 node,
-                'Removed dependencies',
-                `dependencies ${names} were deleted, but they are still on the lock file`
+                removed.length > 1
+                    ? `Dependencies ${names} were removed, but are still present on the lock file`
+                    : `Dependency ${names} was removed, but is still present on the lock file`
             )
         )
         return
@@ -95,11 +95,11 @@ export default function(node, callback) {
 }
 
 function makeError(node, title, detail = '') {
-    return new Error(
-        `\n[Binge] ${title}\n` +
-            `[Binge] Node name: ${node.name}\n` +
-            `[Binge] Node path: ${node.path}\n` +
-            (detail ? `[Binge] ${detail}` : '')
+    return (
+        `${title}\n` +
+        `Node name: ${node.name}\n` +
+        `Node path: ${node.path}` +
+        (detail ? `\n${detail}` : '')
     )
 }
 

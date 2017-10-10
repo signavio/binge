@@ -5,6 +5,7 @@ import invariant from 'invariant'
 import packList from 'npm-packlist'
 import path from 'path'
 import pad from 'pad'
+import onExit from 'signal-exit'
 
 import { spawn } from '../util/childProcess'
 
@@ -18,25 +19,21 @@ export default function(rootNode) {
     }
     const dispatchers = {
         change: changePath => {
-            main({ type: 'CHANGE', changePath })
+            state = nextState(state, { type: 'CHANGE', changePath })
         },
         spawnDone: () => {
-            main({ type: 'SPAWN_DONE' })
+            state = nextState(state, { type: 'SPAWN_DONE' })
         },
         packList: (node, packList) => {
-            main({ type: 'PACKLIST', node, packList })
+            state = nextState(state, { type: 'PACKLIST', node, packList })
         },
-    }
-
-    function main(action) {
-        state = nextState(state, action)
     }
 
     const nextState = createNextState(rootNode, dispatchers)
 
-    console.log('[Binge] Watch starting... ')
+    console.log('[Binge] Watch starting file system... ')
     const watcher = watchProject(rootNode).on('ready', evt => {
-        console.log('[Binge] Watching local-packages')
+        console.log('[Binge] Watch started!')
 
         watcher
             .on('change', changePath => {
@@ -45,6 +42,16 @@ export default function(rootNode) {
             .on('add', changePath => {
                 dispatchers.change(changePath)
             })
+    })
+
+    onExit((code, signal) => {
+        console.log('\n')
+        state.spawned.forEach(entry => {
+            entry.child.kill()
+            console.log(
+                `[Binge] Killed watch for ${chalk.yellow(entry.node.name)}`
+            )
+        })
     })
 }
 
@@ -57,15 +64,20 @@ function createNextState(rootNode, dispatchers) {
                         state.nodes,
                         action.changePath
                     )
-                    console.log(
-                        `[Binge] Watch starting for ${chalk.yellow(
-                            node.name
-                        )} (Resave initial file)`
-                    )
+
                     const oldSpawned = state.spawned[MAX_SPAWN - 1]
                     if (oldSpawned && oldSpawned.child) {
                         oldSpawned.child.kill()
+                        console.log(
+                            `[Binge] Killed watch for ${chalk.yellow(
+                                oldSpawned.node.name
+                            )}`
+                        )
                     }
+
+                    console.log(
+                        `[Binge] Watch starting for ${chalk.yellow(node.name)}`
+                    )
 
                     const newSpawned = watchNode(rootNode, action.changePath)
 

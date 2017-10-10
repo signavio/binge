@@ -112,7 +112,15 @@ function toPointers(rawDependencies = {}, pkgName, isDev = false) {
 }
 
 function isOk(pointers) {
-    return pointers.every(pointer => pointer.version === pointers[0].version)
+    invariant(
+        Array.isArray(pointers) && pointers.length,
+        'Expected a non-empty Array'
+    )
+    return (
+        pointers.every(pointer => pointer.version === pointers[0].version) &&
+        reconcileVersion(pointers.map(({ version }) => version)) ===
+            pointers[0].version
+    )
 }
 function isReconciled(pointers) {
     return (

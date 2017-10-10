@@ -15,7 +15,7 @@ export default function(node, dependencyDelta, callback) {
 
     if (node.packageJson !== packageJson) {
         const dataPath = path.join(node.path, 'package.json')
-        const packageJsonData = JSON.stringify(packageJson, null, 2)
+        const packageJsonData = `${JSON.stringify(packageJson, null, 2)}\n`
         fse.writeFileSync(dataPath, packageJsonData, 'utf8')
         node.packageJson = packageJson
         node.packageJsonData = packageJsonData

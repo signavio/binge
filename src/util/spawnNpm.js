@@ -8,7 +8,7 @@ export default function(args, options, callback) {
         : fromGlobal(args, options, callback)
 }
 
-function isGradleRun(execPath) {
+export function isGradleRun() {
     const parts = process.execPath.split(path.sep)
     return parts.includes('client') && parts.includes('.gradle')
 }
