@@ -1,5 +1,6 @@
 import fse from 'fs-extra'
 import path from 'path'
+import onExit from 'signal-exit'
 
 import spawnNpm from '../util/spawnNpm'
 import hoistPackageJson from '../hoisting/apply'
@@ -21,6 +22,11 @@ export default (npmArgs, spawnOptions) => (node, callback) => {
         return
     }
 
+    const unsubscribe = onExit(() => {
+        restorePackageJson(node)
+        child.kill()
+    })
+
     const child = spawnNpm(
         npmArgs,
         {
@@ -37,34 +43,6 @@ export default (npmArgs, spawnOptions) => (node, callback) => {
             callback(error || errorRestore, packageJsonPrev, packageJsonNext)
         }
     )
-
-    const handleExit = () => {
-        unsubscribe()
-        restorePackageJson(node)
-        child.kill()
-    }
-
-    const handleChildExit = () => {
-        unsubscribe()
-        restorePackageJson(node)
-    }
-
-    const handleSuspend = () => {
-        unsubscribe()
-        restorePackageJson(node)
-        child.kill()
-        process.exit(1)
-    }
-
-    const unsubscribe = () => {
-        process.removeListener('exit', handleExit)
-        process.removeListener('SIGINT', handleSuspend)
-        child.removeListener('exit', handleChildExit)
-    }
-
-    process.on('exit', handleExit)
-    process.on('SIGINT', handleSuspend)
-    child.on('exit', handleChildExit)
 }
 
 function writePackageJson(node) {
@@ -90,7 +68,7 @@ function writePackageJson(node) {
     }
 }
 
-function restorePackageJson(node, packageJsonHoistedPrev) {
+function restorePackageJson(node) {
     const dataPath = path.join(node.path, 'package.json')
     try {
         // read the result

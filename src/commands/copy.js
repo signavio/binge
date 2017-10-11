@@ -9,14 +9,14 @@ import createReporter from '../reporter'
 
 import { CONCURRENCY } from '../constants'
 
-export default function(options, params) {
+export default function(cliFlags, params) {
     const srcPath = path.resolve(params[1])
     const exists = fse.existsSync(srcPath)
     if (!exists) {
         end(new Error(`Could not find path ${params[1]}`))
     }
 
-    const reporter = createReporter()
+    const reporter = createReporter(cliFlags)
     createGraph(path.resolve('.'), function(err, nodes) {
         if (err) end(err)
         reporter.series('Checking...')
@@ -30,7 +30,7 @@ export default function(options, params) {
     function copyIntoNode(node, callback) {
         const done = reporter.task(node.name)
 
-        copyTask(node, srcPath, options, (...args) => {
+        copyTask(node, srcPath, cliFlags, (...args) => {
             done()
             // eslint-disable-next-line
             callback(...args)

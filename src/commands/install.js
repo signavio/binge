@@ -11,7 +11,7 @@ import createReporter from '../reporter'
 import { CONCURRENCY } from '../constants'
 
 export default function(cliFlags) {
-    const reporter = createReporter()
+    const reporter = createReporter(cliFlags)
 
     const basePath = path.resolve('.')
 
