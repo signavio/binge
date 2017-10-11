@@ -8,6 +8,7 @@ import list from './commands/list'
 import ls from './commands/ls'
 import nuke from './commands/nuke'
 import prune from './commands/prune'
+import trace from './commands/trace'
 import uninstall from './commands/uninstall'
 import update from './commands/update'
 import watch from './commands/watch'
@@ -23,6 +24,7 @@ const commands = {
     ls,
     nuke,
     prune,
+    trace,
     uninstall,
     update,
     watch,

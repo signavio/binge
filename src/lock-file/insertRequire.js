@@ -51,7 +51,7 @@ function walk(lockEntry, searchPath, newDependency) {
 
 function sortKeys(obj) {
     return Object.keys(obj)
-        .sort(compare)
+        .sort()
         .reduce(
             (result, key) => ({
                 ...result,
@@ -59,8 +59,4 @@ function sortKeys(obj) {
             }),
             {}
         )
-}
-
-function compare(aa, bb) {
-    return aa.localeCompare(bb)
 }

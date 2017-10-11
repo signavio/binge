@@ -8,8 +8,8 @@ export default () => {
         return null
     }
 
-    let result = spawnSync('node', ['--version'])
-    if (result.error) {
+    let result = spawnSync('node', ['--version'], { stdio: 'pipe' })
+    if (result.status) {
         return new Error(
             `[Binge] ${chalk.red('node not found')}. Requires >=6.0.0`
         )
@@ -23,8 +23,8 @@ export default () => {
         )
     }
 
-    result = spawnSync('npm', ['--version'])
-    if (result.error) {
+    result = spawnSync('npm', ['--version'], { stdio: 'pipe' })
+    if (result.status) {
         return new Error(
             `[Binge] ${chalk.red('npgm not found')}. Requires >=5.4.0`
         )

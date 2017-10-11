@@ -7,8 +7,8 @@ import createReporter from '../reporter'
 
 import { CONCURRENCY } from '../constants'
 
-export default function(options) {
-    const reporter = createReporter()
+export default function(cliFlags) {
+    const reporter = createReporter(cliFlags)
     createGraph(path.resolve('.'), function(err, graph) {
         if (err) end(err)
         reporter.series('rm -rf node_modules')

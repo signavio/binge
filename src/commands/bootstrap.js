@@ -14,7 +14,7 @@ import createReporter from '../reporter'
 
 import { CONCURRENCY } from '../constants'
 
-export default function(options) {
+export default function(cliFlags) {
     let entryNode
     const reporter = createReporter()
     createGraph(path.resolve('.'), function(err, nodes) {
@@ -35,11 +35,11 @@ export default function(options) {
 
     function pruneAndInstall(nodes, callback) {
         reporter.series(
-            `Installing (max parallel ${installConcurrency(options)})...`
+            `Installing (max parallel ${installConcurrency(cliFlags)})...`
         )
         async.mapLimit(
             nodes,
-            installConcurrency(options),
+            installConcurrency(cliFlags),
             pruneAndInstallNode,
             err => {
                 reporter.clear()
@@ -86,10 +86,10 @@ export default function(options) {
     }
 }
 
-function installConcurrency(options) {
+function installConcurrency(cliFlags) {
     const c =
-        typeof options.installConcurrency === 'number'
-            ? options.installConcurrency
+        typeof cliFlags.installConcurrency === 'number'
+            ? cliFlags.installConcurrency
             : CONCURRENCY
 
     invariant(typeof c === 'number', 'Concurrency must be a number')

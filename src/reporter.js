@@ -7,7 +7,42 @@ const CLEAR_RIGHT_OF_CURSOR = 1
 
 const stdout = process.stdout
 
-export default function createReporter() {
+export default function createReporter(cliFlags = {}) {
+    if (cliFlags.silent) {
+        return silent()
+    }
+    if (cliFlags.quiet) {
+        return quiet()
+    }
+
+    return spinners()
+}
+
+function quiet() {
+    let series
+    return {
+        series: title => {
+            series = title
+        },
+        task: name => {
+            console.log(`${series} ${name}`)
+            return () => {}
+        },
+        clear: () => {},
+    }
+}
+
+function silent() {
+    return {
+        series: () => {},
+        task: () => {
+            return () => {}
+        },
+        clear: () => {},
+    }
+}
+
+function spinners(cliFlags) {
     let stop = []
     return {
         series: title => {

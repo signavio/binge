@@ -1,7 +1,7 @@
 import spawnNpm from '../util/spawnNpm'
 
 export default function(node, entryNode, callback) {
-    if (node.isDummy === true || node.isRoot === true || node === entryNode) {
+    if (node.isDummy === true || node.isApp === true || node === entryNode) {
         return callback(null)
     }
 
