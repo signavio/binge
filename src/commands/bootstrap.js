@@ -16,7 +16,7 @@ import { CONCURRENCY } from '../constants'
 
 export default function(cliFlags) {
     let entryNode
-    const reporter = createReporter()
+    const reporter = createReporter(cliFlags)
     createGraph(path.resolve('.'), function(err, nodes) {
         if (err) end(err)
 
