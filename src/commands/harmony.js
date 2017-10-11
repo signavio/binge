@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import path from 'path'
+import pad from 'pad'
 
 import hoisting from '../hoisting/collect'
 import createGraph from '../graph/create'
@@ -77,6 +78,11 @@ function print(reconciled, unreconciled) {
         return str.length > length ? `${str.slice(0, length - 3)}...` : str
     }
 
+    const width =
+        [...Object.keys(reconciled), ...Object.keys(unreconciled)]
+            .map(name => name.length)
+            .reduce((result, next) => (next > result ? next : result), 0) + 1
+
     const printer = (bag, log) =>
         Object.keys(bag)
             .sort()
@@ -91,10 +97,10 @@ function print(reconciled, unreconciled) {
     printer(reconciled, (name, sources) =>
         console.log(
             trim(
-                `[Binge] ${chalk.yellowBright(
-                    'Warning'
-                )} ${name} reconciled to ${reconciled[name]
-                    .version} from  -> ${sources}`,
+                `[Binge] ${chalk.yellowBright('Warning')} ${pad(
+                    name,
+                    width
+                )} reconciled to ${reconciled[name].version}  -> ${sources}`,
                 150
             )
         )
@@ -103,9 +109,10 @@ function print(reconciled, unreconciled) {
     printer(unreconciled, (name, sources) =>
         console.log(
             trim(
-                `[Binge] ${chalk.red(
-                    'Error  '
-                )} ${name} unreconciled from  -> ${sources}`,
+                `[Binge] ${chalk.red('Error  ')} ${pad(
+                    name,
+                    width
+                )} unreconciled -> ${sources}`,
                 150
             )
         )
