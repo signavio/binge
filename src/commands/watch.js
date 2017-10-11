@@ -12,14 +12,17 @@ function thenWatch(err, graph) {
     if (err) end()
 
     const [rootNode] = graph
+    if (!rootNode.isApp) {
+        end(`Starting a watch is only supported for app nodes`)
+    }
 
     taskWatch(rootNode)
 }
 
 function end(err) {
     if (err) {
-        console.log(err)
         console.log(chalk.red('Failure'))
+        console.log(err)
         process.exit(1)
     } else {
         console.log(chalk.green('Success'))

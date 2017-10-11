@@ -29,14 +29,15 @@ function parse(data) {
 }
 
 function isValid(result) {
-    const VALID_SETTINGS = ['isRoot', 'isDummy']
+    const VALID_SETTINGS = ['isApp', 'isDummy', 'testMode']
     return (
         Object.keys(result).every(key => VALID_SETTINGS.includes(key)) &&
         ['boolean', 'undefined'].includes(typeof result.isDummy) &&
-        ['boolean', 'undefined'].includes(typeof result.isRoot)
+        ['boolean', 'undefined'].includes(typeof result.isRoot) &&
+        ['karma', 'mocha', 'none', undefined].includes(result.testMode)
     )
 }
 
 function applyDefaults(result = {}) {
-    return Object.assign({ isDummy: false, isRoot: false }, result)
+    return { isDummy: false, isApp: false, testMode: 'none', ...result }
 }

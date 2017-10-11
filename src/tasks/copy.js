@@ -6,7 +6,7 @@ export default function(node, srcPath, options, callback) {
         return callback(null, false)
     }
 
-    if (options.skipRoot && node.isRoot === true) {
+    if (options.skipRoot && node.isApp === true) {
         return callback(null, false)
     }
 
