@@ -5,6 +5,12 @@ import onExit from 'signal-exit'
 import spawnNpm from '../util/spawnNpm'
 import hoistPackageJson from '../hoisting/apply'
 import hoistDependencies from '../hoisting/collect'
+import patchOptional from '../lock-file/patchOptional'
+
+import {
+    infer as inferDelta,
+    empty as emptyDelta,
+} from '../util/dependencyDelta'
 
 export default (npmArgs, spawnOptions) => (node, callback) => {
     if (!canHoist(node)) {
@@ -14,7 +20,7 @@ export default (npmArgs, spawnOptions) => (node, callback) => {
 
     const {
         error: errorWrite,
-        packageJsonHoisted: packageJsonPrev,
+        packageJsonHoisted: packageJsonHoistedPrev,
     } = writePackageJson(node)
 
     if (errorWrite) {
@@ -37,10 +43,18 @@ export default (npmArgs, spawnOptions) => (node, callback) => {
             unsubscribe()
             const {
                 error: errorRestore,
-                packageJsonHoisted: packageJsonNext,
-            } = restorePackageJson(node, packageJsonPrev)
-            // eslint-disable-next-line standard/no-callback-literal
-            callback(error || errorRestore, packageJsonPrev, packageJsonNext)
+                packageJsonHoisted: packageJsonHoistedNext,
+            } = restorePackageJson(node, packageJsonHoistedPrev)
+
+            const resultDelta =
+                !error && !errorRestore
+                    ? inferDelta(packageJsonHoistedPrev, packageJsonHoistedNext)
+                    : emptyDelta
+
+            callback(
+                error || errorRestore || patchPackageLock(node),
+                resultDelta
+            )
         }
     )
 }
@@ -87,6 +101,41 @@ function restorePackageJson(node) {
             packageJsonHoisted: null,
             error: e,
         }
+    }
+}
+
+function patchPackageLock(node) {
+    // if there is no packageLock at boot time, nothing to patch.
+    if (!node.packageLock) {
+        return null
+    }
+
+    try {
+        const packageLockPath = path.join(node.path, 'package-lock.json')
+        const prevPackageLock = node.packageLock
+        const nextPackageLock = JSON.parse(
+            fse.readFileSync(packageLockPath, 'utf8')
+        )
+
+        const patchedPackageLock = patchOptional(
+            prevPackageLock,
+            nextPackageLock
+        )
+
+        // immutable
+        if (nextPackageLock !== patchedPackageLock) {
+            const packageLockData = `${JSON.stringify(
+                patchedPackageLock,
+                null,
+                2
+            )}\n`
+            fse.writeFileSync(packageLockPath, packageLockData, 'utf8')
+            node.packageLock = patchedPackageLock
+            node.packageLockData = packageLockData
+        }
+        return null
+    } catch (e) {
+        return e
     }
 }
 

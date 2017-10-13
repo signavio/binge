@@ -67,7 +67,9 @@ function findRemoved(all, reachable) {
         return []
     }
 
-    return all.filter(lockEntry => !reachable.includes(lockEntry))
+    return all.filter(({ lockEntry }) =>
+        reachable.every(entry => entry.lockEntry !== lockEntry)
+    )
 }
 
 function findBypass(packageLock) {

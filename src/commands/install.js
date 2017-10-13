@@ -4,71 +4,125 @@ import path from 'path'
 import invariant from 'invariant'
 
 import createGraph from '../graph/create'
-import { createInstaller } from '../tasks/install'
+import taskInstall, { createInstaller } from '../tasks/install'
 import taskTouch from '../tasks/touch'
 import createReporter from '../reporter'
 
 import { CONCURRENCY } from '../constants'
 
 export default function(cliFlags) {
-    const reporter = createReporter(cliFlags)
+    /*
+    const npmArgs = npmOnlyArgs(process.argv)
 
+    if (npmArgs.length > 1) {
+        personalizedInstall(cliFlags)
+    } else {
+        nakedInstall(cliFlags)
+    }
+    */
+    nakedInstall(cliFlags)
+}
+
+function nakedInstall(cliFlags) {
+    const reporter = createReporter(cliFlags)
+    createGraph(path.resolve('.'), (err, nodes) => {
+        if (err) end(err)
+
+        const pipeOutput = nodes.length === 1
+        const taskInstall = createInstaller(['install'], {
+            stdio: pipeOutput ? 'inherit' : 'ignore',
+        })
+
+        if (pipeOutput) {
+            taskInstall(nodes[0], cliFlags, (err, result) =>
+                end(err, !err && [result])
+            )
+        } else {
+            reporter.series(
+                `Installing (max parallel ${installConcurrency(cliFlags)})...`
+            )
+            async.mapLimit(
+                nodes,
+                installConcurrency(cliFlags),
+                installNode,
+                (err, results) => {
+                    reporter.clear()
+                    end(err, results)
+                }
+            )
+        }
+    })
+
+    function installNode(node, callback) {
+        const done = reporter.task(node.name)
+        taskInstall(node, cliFlags, (err, result) => {
+            done()
+            // pass the install results
+            callback(err, result)
+        })
+    }
+}
+
+// eslint-disable-next-line
+function personalizedInstall(cliFlags) {
+    const reporter = createReporter(cliFlags)
     const basePath = path.resolve('.')
 
-    async.waterfall(
-        [
-            done => createGraph(basePath, done),
-            installRoot,
-            touch,
-            done => createGraph(basePath, done),
-            install,
-        ],
-        end
-    )
+    createGraph(path.resolve('.'), (err, nodes) => {
+        if (err) end(err)
 
-    function installRoot(nodes, callback) {
+        const [rootNode, ...restNodes] = nodes
+
+        async.waterfall(
+            [
+                done => installRoot(rootNode, done),
+                (rootResult, done) => {
+                    touch(
+                        restNodes,
+                        rootResult.resultDelta,
+                        (err, touchResults) =>
+                            done(err, rootResult, touchResults)
+                    )
+                },
+                (rootResult, touchResults, done) => {
+                    createGraph(basePath, (err, nodes) => {
+                        done(err, rootResult, touchResults, nodes)
+                    })
+                },
+                (rootResult, touchResults, nodes, done) => {
+                    installRest(restNodes, (err, restResults) => {
+                        done(err, !err && [rootResult, ...restResults])
+                    })
+                },
+            ],
+            end
+        )
+    })
+
+    function installRoot(rootNode, callback) {
         // lets pipe the stuff down:
 
-        const npmArgs = process.argv.slice(process.argv.indexOf('install'))
-        const spawnOptions = {
+        const taskNpm = createInstaller(npmOnlyArgs(process.argv), {
             stdio: 'inherit',
-        }
-
-        const task = createInstaller(npmArgs, spawnOptions)
-
-        const [rootNode] = nodes
-
-        return task(rootNode, (err, resultDelta = {}) => {
-            invariant(
-                err ||
-                    (resultDelta &&
-                        resultDelta.dependencies &&
-                        resultDelta.devDependencies),
-                'expected a dependency dependencyDelta object'
-            )
-
-            callback(err, nodes, resultDelta)
         })
+
+        return taskNpm(rootNode, callback)
     }
 
     function touch(nodes, dependencyDelta, callback) {
-        async.mapLimit(
+        async.map(
             nodes,
-            installConcurrency(cliFlags),
             (node, done) => taskTouch(node, dependencyDelta, done),
-            // dont pass anything else, only err
-            err => callback(err)
+            callback
         )
     }
 
-    function install(nodes, callback) {
-        // eslint-disable-next-line no-unused-vars
-        const [rootNode, ...childNodes] = nodes
+    function installRest(nodes, callback) {
         reporter.series(`Installing tree...`)
         async.mapLimit(
-            childNodes,
+            nodes,
             installConcurrency(cliFlags),
-            (node, done) => installChild(node, done),
+            installChild,
             (err, result) => {
                 reporter.clear()
                 callback(err, result)
@@ -78,12 +132,18 @@ export default function(cliFlags) {
 
     function installChild(childNode, callback) {
         const done = reporter.task(childNode.name)
-        const taskInstall = createInstaller(['install'], {})
-        taskInstall(childNode, (err, resultDelta) => {
+        const taskNpm = createInstaller(['install'], {})
+        taskNpm(childNode, (err, result) => {
             done()
-            callback(err, resultDelta)
+            callback(err, result)
         })
     }
+}
+
+function npmOnlyArgs(argv) {
+    return argv
+        .slice(argv.indexOf('install'))
+        .filter(a => a !== '--quiet' && !a.startsWith('--install-concurrency'))
 }
 
 function installConcurrency(cliFlags) {
@@ -97,13 +157,27 @@ function installConcurrency(cliFlags) {
     return Math.max(c, 1)
 }
 
-function end(err) {
+function end(err, result) {
     if (err) {
-        console.log(err)
         console.log(chalk.red('Failure'))
+        console.log(err)
         process.exit(1)
     } else {
         console.log(chalk.green('Success'))
+        summary(result)
         process.exit(0)
     }
+}
+
+function summary(result) {
+    const installCount = result.filter(e => e.skipped === false).length
+    const upToDateCount = result.filter(e => e.skipped === true).length
+
+    const word = count => (count === 1 ? 'node' : 'nodes')
+
+    console.log(
+        `${installCount} ${word(
+            installCount
+        )} installed, ${upToDateCount} ${word(upToDateCount)} up to date`
+    )
 }
