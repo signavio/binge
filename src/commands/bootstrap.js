@@ -1,7 +1,6 @@
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
-import invariant from 'invariant'
 
 import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
