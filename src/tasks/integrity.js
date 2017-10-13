@@ -13,22 +13,26 @@ export function hash(node, callback) {
 
     const allLockEntries = flatten(node.packageLock)
 
-    async.map(allLockEntries, lockEntryHash, (err, results) => {
-        if (err) {
-            callback(err)
-            return
+    async.map(
+        allLockEntries,
+        (lockEntry, done) => lockEntryHash(node, lockEntry, done),
+        (err, results) => {
+            if (err) {
+                callback(err)
+                return
+            }
+
+            const result = [
+                md5(node.packageJsonData),
+                md5(node.packageLockData),
+                ...results.map(
+                    entry => (entry.md5 ? entry.md5 : md5(entry.filePath))
+                ),
+            ].reduce((result, next) => md5(String(result + next)), '')
+
+            callback(null, result)
         }
-
-        const result = [
-            md5(node.packageJsonData),
-            md5(node.packageLockData),
-            ...results.map(
-                entry => (entry.md5 ? entry.md5 : md5(entry.filePath))
-            ),
-        ].reduce((result, next) => md5(String(result + next)), '')
-
-        callback(null, result)
-    })
+    )
 }
 
 export function read(node, callback) {
@@ -69,8 +73,12 @@ function integrityFilePath(node) {
     )
 }
 
-function lockEntryHash(entry, callback) {
-    const filePath = fromLockEntryToPackageJsonPath(entry.path, entry.name)
+function lockEntryHash(node, entry, callback) {
+    const filePath = fromLockEntryToPackageJsonPath(
+        node,
+        entry.path,
+        entry.name
+    )
     fse.readFile(filePath, 'utf8', (err, data) => {
         callback(null, {
             path: entry.path,
@@ -96,9 +104,5 @@ function fromLockEntryToPackageJsonPath(node, resolvedPath, name) {
         []
     )
 
-    const relativeFilePath = ['.', ...expandedPath, 'package.json'].join(
-        path.sep
-    )
-
-    return path.resolve(relativeFilePath)
+    return path.join(...[node.path, ...expandedPath, 'package.json'])
 }

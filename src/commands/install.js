@@ -1,7 +1,6 @@
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
-import invariant from 'invariant'
 
 import createGraph from '../graph/create'
 import taskInstall, { createInstaller } from '../tasks/install'
@@ -38,18 +37,11 @@ function nakedInstall(cliFlags) {
                 end(err, !err && [result])
             )
         } else {
-            reporter.series(
-                `Installing (max parallel ${installConcurrency(cliFlags)})...`
-            )
-            async.mapLimit(
-                nodes,
-                installConcurrency(cliFlags),
-                installNode,
-                (err, results) => {
-                    reporter.clear()
-                    end(err, results)
-                }
-            )
+            reporter.series(`Installing (max parallel ${CONCURRENCY})...`)
+            async.mapLimit(nodes, CONCURRENCY, installNode, (err, results) => {
+                reporter.clear()
+                end(err, results)
+            })
         }
     })
 
@@ -119,15 +111,10 @@ function personalizedInstall(cliFlags) {
 
     function installRest(nodes, callback) {
         reporter.series(`Installing tree...`)
-        async.mapLimit(
-            nodes,
-            installConcurrency(cliFlags),
-            installChild,
-            (err, result) => {
-                reporter.clear()
-                callback(err, result)
-            }
-        )
+        async.mapLimit(nodes, CONCURRENCY, installChild, (err, result) => {
+            reporter.clear()
+            callback(err, result)
+        })
     }
 
     function installChild(childNode, callback) {
@@ -146,7 +133,10 @@ function npmOnlyArgs(argv) {
         .filter(a => a !== '--quiet' && !a.startsWith('--install-concurrency'))
 }
 
+/*
 function installConcurrency(cliFlags) {
+    return 1
+
     const c =
         typeof cliFlags.installConcurrency === 'number'
             ? cliFlags.installConcurrency
@@ -155,7 +145,9 @@ function installConcurrency(cliFlags) {
     invariant(typeof c === 'number', 'Concurrency must be a number')
 
     return Math.max(c, 1)
+
 }
+*/
 
 function end(err, result) {
     if (err) {

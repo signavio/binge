@@ -36,12 +36,10 @@ export default function(cliFlags) {
     })
 
     function pruneAndInstall(nodes, callback) {
-        reporter.series(
-            `Installing (max parallel ${installConcurrency(cliFlags)})...`
-        )
+        reporter.series(`Installing (max parallel ${CONCURRENCY})...`)
         async.mapLimit(
             nodes,
-            installConcurrency(cliFlags),
+            CONCURRENCY,
             pruneAndInstallNode,
             (err, results) => {
                 reporter.clear()
@@ -92,6 +90,7 @@ export default function(cliFlags) {
     }
 }
 
+/*
 function installConcurrency(cliFlags) {
     const c =
         typeof cliFlags.installConcurrency === 'number'
@@ -102,6 +101,7 @@ function installConcurrency(cliFlags) {
 
     return Math.max(c, 1)
 }
+*/
 
 function end(err, results) {
     if (err) {
