@@ -1,7 +1,6 @@
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
-import invariant from 'invariant'
 
 import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
@@ -9,7 +8,6 @@ import taskPrune from '../tasks/prune'
 import taskInstall from '../tasks/install'
 import taskBridge from '../tasks/bridge'
 import taskBuild from '../tasks/build'
-
 import createReporter from '../reporter'
 
 import { CONCURRENCY } from '../constants'
@@ -20,7 +18,7 @@ export default function(cliFlags) {
     createGraph(path.resolve('.'), function(err, nodes) {
         if (err) end(err)
 
-        entryNode = nodes[0]
+        const [entryNode] = nodes
 
         const layers = layerTopology(entryNode).reverse()
 
@@ -28,22 +26,23 @@ export default function(cliFlags) {
             [
                 done => pruneAndInstall(nodes, done),
                 done => buildAndBridge(layers, done),
-            ].filter(Boolean),
-            end
+            ],
+            (err, results) => {
+                // pass the install results
+                end(err, !err && results[0])
+            }
         )
     })
 
     function pruneAndInstall(nodes, callback) {
-        reporter.series(
-            `Installing (max parallel ${installConcurrency(cliFlags)})...`
-        )
+        reporter.series(`Installing (max parallel ${CONCURRENCY})...`)
         async.mapLimit(
             nodes,
-            installConcurrency(cliFlags),
+            CONCURRENCY,
             pruneAndInstallNode,
-            err => {
+            (err, results) => {
                 reporter.clear()
-                callback(err)
+                callback(err, results)
             }
         )
     }
@@ -51,10 +50,14 @@ export default function(cliFlags) {
     function pruneAndInstallNode(node, callback) {
         const done = reporter.task(node.name)
         async.series(
-            [done => taskPrune(node, done), done => taskInstall(node, done)],
-            err => {
+            [
+                done => taskPrune(node, done),
+                done => taskInstall(node, cliFlags, done),
+            ],
+            (err, results) => {
                 done()
-                callback(err)
+                // pass the install results
+                callback(err, !err && results[1])
             }
         )
     }
@@ -86,6 +89,7 @@ export default function(cliFlags) {
     }
 }
 
+/*
 function installConcurrency(cliFlags) {
     const c =
         typeof cliFlags.installConcurrency === 'number'
@@ -96,14 +100,31 @@ function installConcurrency(cliFlags) {
 
     return Math.max(c, 1)
 }
+*/
 
-function end(err) {
+function end(err, results) {
     if (err) {
-        console.log(err)
         console.log(chalk.red('Failure'))
+        console.log(err)
         process.exit(1)
     } else {
         console.log(chalk.green('Success'))
+        summary(results)
         process.exit(0)
     }
+}
+
+function summary(result) {
+    const installCount = result.filter(e => e.skipped === false).length
+    const upToDateCount = result.filter(e => e.skipped === true).length
+
+    const word = count => (count === 1 ? 'node' : 'nodes')
+
+    console.log(
+        `${installCount} ${word(
+            installCount
+        )} installed, ${upToDateCount} ${word(
+            upToDateCount
+        )} install up to date`
+    )
 }

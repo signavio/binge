@@ -3,24 +3,23 @@ import { drop as arrayDrop, equals as arrayEquals } from '../util/array'
 import { SANITY } from '../constants'
 
 export default function(packageLock) {
-    return sanityCheck(flatten(packageLock, [], []))
+    // return sanityCheck(flatten(packageLock, [], []))
+    return flatten(packageLock, [], [])
 }
 
 function flatten(packageLock, path, result) {
-    const lockEntries = Object.keys(
+    const nextResult = Object.keys(
         packageLock.dependencies || {}
     ).map(name => ({
         name,
         path,
-        ...packageLock.dependencies[name],
+        lockEntry: packageLock.dependencies[name],
     }))
 
-    const nextResult = [...result, ...lockEntries]
-
-    return lockEntries.reduce(
-        (result, lockEntry) =>
-            flatten(lockEntry, [...path, lockEntry.name], result),
-        nextResult
+    return nextResult.reduce(
+        (result, entry) =>
+            flatten(entry.lockEntry, [...path, entry.name], result),
+        [...result, ...nextResult]
     )
 }
 

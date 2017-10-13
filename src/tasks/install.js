@@ -1,74 +1,92 @@
-import fse from 'fs-extra'
-import path from 'path'
+import invariant from 'invariant'
+import async from 'async'
 import createTaskNpm from './npm'
-import patchLockFile from '../lock-file/patchOptional'
 
 import {
-    infer as inferDelta,
-    empty as emptyDelta,
-} from '../util/dependencyDelta'
+    hash as taskIntegrityHash,
+    read as taskIntegrityRead,
+    write as taskIntegrityWrite,
+} from '../tasks/integrity'
 
-export function createInstaller(npmArgs, spawnOptions) {
-    return (node, callback) => {
+import { empty as emptyDelta } from '../util/dependencyDelta'
+
+export default createInstaller(['install'], { stdio: 'ignore' })
+
+export function createInstaller(npmArgs, spawnOptions = {}) {
+    return (node, cliFlags, callback) => {
         if (node.isDummy === true) {
-            callback(null, emptyDelta)
+            callback(null, { skipped: null, resultDelta: emptyDelta })
             return
         }
 
-        const taskNpm = createTaskNpm(npmArgs, spawnOptions)
+        invariant(npmArgs[0] === 'install', 'Should start with install')
 
-        taskNpm(
-            node,
-            (error, prevPackageJsonHoisted, nextPackageJsonHoisted) => {
-                if (error) {
-                    callback(error)
-                    return
-                }
+        const isPersonalized = npmArgs.length > 1
+        const taskNpm = createTaskNpm(['install'], spawnOptions)
 
-                const resultDelta = inferDelta(
-                    prevPackageJsonHoisted,
-                    nextPackageJsonHoisted
-                )
-
-                callback(patchOptional(node), resultDelta)
-            }
+        async.waterfall(
+            [
+                // Only read the integrity if it is not a personalizedInstall
+                done => {
+                    if (!isPersonalized) {
+                        taskIntegrityRead(node, done)
+                    } else {
+                        done(null, null)
+                    }
+                },
+                // hash the integrity
+                (prevIntegrity, done) => {
+                    if (prevIntegrity) {
+                        taskIntegrityHash(node, (err, nextIntegrity) =>
+                            done(err, prevIntegrity, nextIntegrity)
+                        )
+                    } else {
+                        done(null, null, null)
+                    }
+                },
+                // If integrities match skip the install. Otherwise install
+                (prevIntegrity, nextIntegrity, done) => {
+                    const integrityMatch = Boolean(
+                        prevIntegrity &&
+                            nextIntegrity &&
+                            prevIntegrity === nextIntegrity
+                    )
+                    if (!integrityMatch) {
+                        taskNpm(node, (err, resultDelta) =>
+                            done(err, {
+                                skipped: false,
+                                resultDelta,
+                            })
+                        )
+                    } else {
+                        done(null, {
+                            skipped: true,
+                            resultDelta: emptyDelta,
+                        })
+                    }
+                },
+                // Hash the node modules content
+                ({ skipped, resultDelta }, done) => {
+                    if (!skipped) {
+                        taskIntegrityHash(node, (err, finalIntegrity) =>
+                            done(err, finalIntegrity, { skipped, resultDelta })
+                        )
+                    } else {
+                        done(null, null, { skipped, resultDelta })
+                    }
+                },
+                // Write the integrity
+                (finalIntegrity, { skipped, resultDelta }, done) => {
+                    if (!skipped) {
+                        taskIntegrityWrite(node, finalIntegrity, err =>
+                            done(err, { skipped, resultDelta })
+                        )
+                    } else {
+                        done(null, { skipped, resultDelta })
+                    }
+                },
+            ],
+            callback
         )
-    }
-}
-
-export default createInstaller(['install'], {})
-
-function patchOptional(node) {
-    // if there is no packageLock at boot time, nothing to patch.
-    if (!node.packageLock) {
-        return null
-    }
-
-    try {
-        const packageLockPath = path.join(node.path, 'package-lock.json')
-        const prevPackageLock = node.packageLock
-        const nextPackageLock = JSON.parse(
-            fse.readFileSync(packageLockPath, 'utf8')
-        )
-
-        const patchedPackageLock = patchLockFile(
-            prevPackageLock,
-            nextPackageLock
-        )
-
-        // immutable
-        if (nextPackageLock !== patchedPackageLock) {
-            const packageLockData = `${JSON.stringify(
-                patchedPackageLock,
-                null,
-                2
-            )}\n`
-            fse.writeFileSync(packageLockPath, packageLockData, 'utf8')
-            node.packageLock = patchedPackageLock
-            node.packageLockData = packageLockData
-        }
-        return null
-    } catch (e) {
-        return e
     }
 }
