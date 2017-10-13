@@ -77,7 +77,7 @@ export function createInstaller(npmArgs, spawnOptions = {}) {
                 },
                 // Write the integrity
                 (finalIntegrity, { skipped, resultDelta }, done) => {
-                    if (!skipped) {
+                    if (finalIntegrity) {
                         taskIntegrityWrite(node, finalIntegrity, err =>
                             done(err, { skipped, resultDelta })
                         )

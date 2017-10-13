@@ -1,11 +1,17 @@
 import path from 'path'
-
+import { spawnSync } from 'child_process'
 import { spawn } from '../util/childProcess'
 
 export default function(args, options, callback) {
     return isGradleRun()
         ? fromBinaries(args, options, callback)
         : fromGlobal(args, options, callback)
+}
+
+export function sync(args, options) {
+    return isGradleRun()
+        ? spawnSync(findNpmPath(), args, options)
+        : spawnSync('npm', args, options)
 }
 
 export function isGradleRun() {

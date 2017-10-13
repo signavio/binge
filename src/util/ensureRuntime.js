@@ -26,7 +26,7 @@ export default () => {
     result = spawnSync('npm', ['--version'], { stdio: 'pipe' })
     if (result.status) {
         return new Error(
-            `[Binge] ${chalk.red('npgm not found')}. Requires >=5.4.0`
+            `[Binge] ${chalk.red('npgm not found')}. Requires >=5.3.0`
         )
     }
 

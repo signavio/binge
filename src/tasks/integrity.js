@@ -2,6 +2,7 @@ import async from 'async'
 import fse from 'fs-extra'
 import path from 'path'
 
+import { NPM_VERSION } from '../constants'
 import flatten from '../lock-file/flatten'
 import md5 from '../util/md5.js'
 
@@ -23,6 +24,7 @@ export function hash(node, callback) {
             }
 
             const result = [
+                md5(NPM_VERSION),
                 md5(node.packageJsonData),
                 md5(node.packageLockData),
                 ...results.map(

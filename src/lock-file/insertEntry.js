@@ -9,6 +9,7 @@
  */
 
 import invariant from 'invariant'
+import sortKeys from '../util/sortKeys'
 
 export default function(packageLock, insertPath, newLockEntry) {
     invariant(
@@ -44,16 +45,4 @@ function walk(lockEntry, searchPath, newLockEntry) {
                   ),
         }),
     }
-}
-
-function sortKeys(obj) {
-    return Object.keys(obj)
-        .sort()
-        .reduce(
-            (result, key) => ({
-                ...result,
-                [key]: obj[key],
-            }),
-            {}
-        )
 }
