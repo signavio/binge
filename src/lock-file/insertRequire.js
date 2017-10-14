@@ -9,7 +9,7 @@
  */
 
 import invariant from 'invariant'
-import sortKeys from '../util/sortKeys'
+import insertKeySorted from '../util/insertKeySorted'
 
 export default function(packageLock, insertPath, newDependency) {
     invariant(
@@ -30,16 +30,12 @@ function walk(lockEntry, searchPath, newDependency) {
     if (isLeaf) {
         return {
             ...lockEntry,
-            requires: sortKeys({
-                ...lockEntry.requires,
-                ...newDependency,
-            }),
+            requires: insertKeySorted(lockEntry.requires, newDependency),
         }
     } else {
         return {
             ...lockEntry,
-            dependencies: sortKeys({
-                ...lockEntry.dependencies,
+            dependencies: insertKeySorted(lockEntry.dependencies, {
                 [firstPath]: walk(
                     lockEntry.dependencies[firstPath],
                     restPath,
