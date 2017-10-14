@@ -19,12 +19,7 @@ process.on('exit', () => {
     console.log('---------- -----------------')
 })
 
-const runtimeErr = ensureRuntime()
-
-if (runtimeErr) {
-    console.log(runtimeErr)
-    process.exit(1)
-}
+ensureRuntime()
 
 var cli = meow([
     'Usage',

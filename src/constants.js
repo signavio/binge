@@ -1,15 +1,26 @@
 import os from 'os'
-import chalk from 'chalk'
-import { sync as spawnNpm } from './util/spawnNpm'
+import {
+    nodeSync as spawnNodeSync,
+    npmSync as spawnNpmSync,
+} from './util/spawnTool'
 
 export const CONCURRENCY = Math.max(os.cpus().length - 2, 1)
 export const SANITY = false
+export const NODE_REQUIRED = '>=6.0.0'
+export const NPM_REQUIRED = '>=5.5.1'
 
-const child = spawnNpm(['--version'], { stdio: 'pipe' })
-if (child.status) {
-    console.log(chalk.red('Failure'))
-    console.log("Couldn't find npm version")
-    process.exit(1)
+let npmVersionCache
+export const npmVersion = () => {
+    if (!npmVersionCache) {
+        npmVersionCache = spawnNpmSync(['--version'])
+    }
+    return npmVersionCache
 }
 
-export const NPM_VERSION = String(child.stdout)
+let nodeVersionCache
+export const nodeVersion = () => {
+    if (!nodeVersionCache) {
+        nodeVersionCache = spawnNodeSync(['--version'])
+    }
+    return nodeVersionCache
+}

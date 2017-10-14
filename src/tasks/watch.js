@@ -7,7 +7,7 @@ import path from 'path'
 import pad from 'pad'
 import onExit from 'signal-exit'
 
-import { spawn } from '../util/childProcess'
+import { npm as spawnNpm } from '../util/spawnTool'
 
 const MAX_SPAWN = 3
 
@@ -201,7 +201,7 @@ function watchNode(rootNode, changePath) {
 
     return {
         node,
-        child: spawn('npm', ['run', 'dev'], options, function() {}),
+        child: spawnNpm(['run', 'dev'], options, function() {}),
     }
 }
 

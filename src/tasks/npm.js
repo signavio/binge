@@ -2,7 +2,7 @@ import fse from 'fs-extra'
 import path from 'path'
 import onExit from 'signal-exit'
 
-import spawnNpm from '../util/spawnNpm'
+import { npm as spawnNpm } from '../util/spawnTool'
 import hoistPackageJson from '../hoisting/apply'
 import hoistDependencies from '../hoisting/collect'
 import patchOptional from '../lock-file/patchOptional'
@@ -51,10 +51,15 @@ export default (npmArgs, spawnOptions) => (node, callback) => {
                     ? inferDelta(packageJsonHoistedPrev, packageJsonHoistedNext)
                     : emptyDelta
 
-            callback(
-                error || errorRestore || patchPackageLock(node),
-                resultDelta
-            )
+            const { error: errorPatch, patched } =
+                error || errorRestore
+                    ? { error: null, patched: false }
+                    : patchPackageLock(node)
+
+            callback(error || errorRestore || errorPatch, {
+                resultDelta,
+                patched,
+            })
         }
     )
 }
@@ -133,9 +138,12 @@ function patchPackageLock(node) {
             node.packageLock = patchedPackageLock
             node.packageLockData = packageLockData
         }
-        return null
-    } catch (e) {
-        return e
+        return {
+            error: null,
+            patched: nextPackageLock !== patchedPackageLock,
+        }
+    } catch (error) {
+        return { error, patched: false }
     }
 }
 

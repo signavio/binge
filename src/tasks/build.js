@@ -1,4 +1,4 @@
-import spawnNpm from '../util/spawnNpm'
+import { npm as spawnNpm } from '../util/spawnTool'
 
 export default function(node, entryNode, callback) {
     if (node.isDummy === true || node.isApp === true || node === entryNode) {
