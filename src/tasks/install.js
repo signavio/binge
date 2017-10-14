@@ -15,7 +15,11 @@ export default createInstaller(['install'], { stdio: 'ignore' })
 export function createInstaller(npmArgs, spawnOptions = {}) {
     return (node, cliFlags, callback) => {
         if (node.isDummy === true) {
-            callback(null, { skipped: null, resultDelta: emptyDelta })
+            callback(null, {
+                skipped: null,
+                resultDelta: emptyDelta,
+                patched: false,
+            })
             return
         }
 
@@ -52,37 +56,39 @@ export function createInstaller(npmArgs, spawnOptions = {}) {
                             prevIntegrity === nextIntegrity
                     )
                     if (!integrityMatch) {
-                        taskNpm(node, (err, resultDelta) =>
+                        taskNpm(node, (err, { resultDelta, patched }) =>
                             done(err, {
                                 skipped: false,
                                 resultDelta,
+                                patched,
                             })
                         )
                     } else {
                         done(null, {
                             skipped: true,
                             resultDelta: emptyDelta,
+                            patched: false,
                         })
                     }
                 },
                 // Hash the node modules content
-                ({ skipped, resultDelta }, done) => {
+                ({ skipped, ...rest }, done) => {
                     if (!skipped) {
                         taskIntegrityHash(node, (err, finalIntegrity) =>
-                            done(err, finalIntegrity, { skipped, resultDelta })
+                            done(err, finalIntegrity, { skipped, ...rest })
                         )
                     } else {
-                        done(null, null, { skipped, resultDelta })
+                        done(null, null, { skipped, ...rest })
                     }
                 },
                 // Write the integrity
-                (finalIntegrity, { skipped, resultDelta }, done) => {
-                    if (!skipped) {
+                (finalIntegrity, { skipped, ...rest }, done) => {
+                    if (finalIntegrity) {
                         taskIntegrityWrite(node, finalIntegrity, err =>
-                            done(err, { skipped, resultDelta })
+                            done(err, { skipped, ...rest })
                         )
                     } else {
-                        done(null, { skipped, resultDelta })
+                        done(null, { skipped, ...rest })
                     }
                 },
             ],

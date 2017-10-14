@@ -1,41 +1,34 @@
 import chalk from 'chalk'
 import semver from 'semver'
-import { isGradleRun } from './spawnNpm'
-import { spawnSync } from 'child_process'
+import { isGradleRun } from './spawnTool'
+import {
+    npmVersion,
+    nodeVersion,
+    NODE_REQUIRED,
+    NPM_REQUIRED,
+} from '../constants'
 
 export default () => {
     if (isGradleRun()) {
         return null
     }
 
-    let result = spawnSync('node', ['--version'], { stdio: 'pipe' })
-    if (result.status) {
-        return new Error(
-            `[Binge] ${chalk.red('node not found')}. Requires >=6.0.0`
+    let version = nodeVersion()
+    if (!semver.satisfies(version, NODE_REQUIRED)) {
+        console.log(chalk.red('Failure'))
+        console.log(
+            `Unsupported node version ${version}. Requires ${NODE_REQUIRED}`
         )
+        process.exit(1)
     }
 
-    if (!semver.satisfies(String(result.stdout), '>=6.0.0')) {
-        return new Error(
-            `[Binge] Unsupported node version ${String(
-                result.stdout
-            )}. Requires >=6.0.0`
+    version = npmVersion()
+    if (!semver.satisfies(version, NPM_REQUIRED)) {
+        console.log(chalk.red('Failure'))
+        console.log(
+            `Unsupported npm version ${version}. Requires ${NPM_REQUIRED}`
         )
-    }
-
-    result = spawnSync('npm', ['--version'], { stdio: 'pipe' })
-    if (result.status) {
-        return new Error(
-            `[Binge] ${chalk.red('npgm not found')}. Requires >=5.4.0`
-        )
-    }
-
-    if (!semver.satisfies(String(result.stdout), '>=3.10.10')) {
-        return new Error(
-            `[Binge] Unsupported npm version ${String(
-                result.stdout
-            )}. Requires >=3.10.10`
-        )
+        process.exit(1)
     }
 
     return null

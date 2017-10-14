@@ -1,13 +1,12 @@
 import crossSpawn from 'cross-spawn'
 
-export function spawn(command, args, opts = {}, callback) {
+export default function spawn(command, args, options = {}, callback) {
     let stderr = ''
 
-    const childProcess = crossSpawn(
-        command,
-        args,
-        Object.assign({ stdio: ['ignore', 'ignore', 'pipe'] }, opts)
-    )
+    const child = crossSpawn(command, args, {
+        stdio: ['ignore', 'ignore', 'pipe'],
+        ...options,
+    })
         .on('error', e => callback(e))
         .on('exit', code =>
             callback(
@@ -15,18 +14,22 @@ export function spawn(command, args, opts = {}, callback) {
                     new Error(
                         `\n[Binge] Spawn failed\n` +
                             `[Binge] cmd -> ${command} ${args.join(' ')}\n` +
-                            (opts.cwd ? `[Binge] at  -> ${opts.cwd}\n` : '') +
+                            (options.cwd
+                                ? `[Binge] at  -> ${options.cwd}\n`
+                                : '') +
                             (stderr ? `[Binge] Raw error:\n` : '') +
                             stderr
                     )
             )
         )
 
-    if (childProcess.stderr) {
-        childProcess.stderr.setEncoding('utf8').on('data', chunk => {
+    if (child.stderr) {
+        child.stderr.setEncoding('utf8').on('data', chunk => {
             stderr += chunk
         })
     }
 
-    return childProcess
+    return child
 }
+
+export const spawnSync = crossSpawn.sync

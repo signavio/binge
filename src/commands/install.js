@@ -164,12 +164,15 @@ function end(err, result) {
 function summary(result) {
     const installCount = result.filter(e => e.skipped === false).length
     const upToDateCount = result.filter(e => e.skipped === true).length
+    const patchedCount = result.filter(e => e.patched === true).length
 
     const word = count => (count === 1 ? 'node' : 'nodes')
 
     console.log(
         `${installCount} ${word(
             installCount
-        )} installed, ${upToDateCount} ${word(upToDateCount)} up to date`
+        )} installed, ${patchedCount} ${word(
+            patchedCount
+        )} patched, ${upToDateCount} ${word(upToDateCount)} up to date`
     )
 }

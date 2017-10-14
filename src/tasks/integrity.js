@@ -2,16 +2,32 @@ import async from 'async'
 import fse from 'fs-extra'
 import path from 'path'
 
+import { npmVersion } from '../constants'
 import flatten from '../lock-file/flatten'
 import md5 from '../util/md5.js'
 
 export function hash(node, callback) {
-    if (node.isDummy || !node.packageLock) {
+    if (node.isDummy) {
         callback(null, null)
         return
     }
 
-    const allLockEntries = flatten(node.packageLock)
+    const packageJsonData = fse.readFileSync(
+        path.join(node.path, 'package.json'),
+        'utf8'
+    )
+
+    const packageLockData = fse.readFileSync(
+        path.join(node.path, 'package-lock.json'),
+        'utf8'
+    )
+
+    const packageLock =
+        packageLockData !== node.packageLockData
+            ? JSON.parse(packageLockData)
+            : node.packageLock
+
+    const allLockEntries = flatten(packageLock)
 
     async.map(
         allLockEntries,
@@ -23,8 +39,9 @@ export function hash(node, callback) {
             }
 
             const result = [
-                md5(node.packageJsonData),
-                md5(node.packageLockData),
+                md5(npmVersion()),
+                md5(packageJsonData),
+                md5(packageLockData),
                 ...results.map(
                     entry => (entry.md5 ? entry.md5 : md5(entry.filePath))
                 ),
