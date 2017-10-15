@@ -14,6 +14,6 @@ export default function(node, entryNode, callback) {
         const options = {
             cwd: node.path,
         }
-        spawn(['run', 'build'], options, callback)
+        spawn('npm', ['run', 'build'], options, callback)
     }
 }
