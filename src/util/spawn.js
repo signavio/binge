@@ -1,10 +1,13 @@
+import invariant from 'invariant'
 import crossSpawn from 'cross-spawn'
 
 export default function spawn(command, args, options = {}, callback) {
+    invariant(typeof callback === 'function', 'Expected a function')
+
     let stderr = ''
 
     const child = crossSpawn(command, args, {
-        stdio: ['ignore', 'ignore', 'pipe'],
+        stdio: 'pipe',
         ...options,
     })
         .on('error', e => callback(e))

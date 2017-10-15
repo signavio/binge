@@ -10,16 +10,12 @@ import createReporter from '../reporter'
 import { CONCURRENCY } from '../constants'
 
 export default function(cliFlags) {
-    /*
     const npmArgs = npmOnlyArgs(process.argv)
-
     if (npmArgs.length > 1) {
         personalizedInstall(cliFlags)
     } else {
         nakedInstall(cliFlags)
     }
-    */
-    nakedInstall(cliFlags)
 }
 
 function nakedInstall(cliFlags) {
@@ -28,11 +24,10 @@ function nakedInstall(cliFlags) {
         if (err) end(err)
 
         const pipeOutput = nodes.length === 1
-        const taskInstall = createInstaller(['install'], {
-            stdio: pipeOutput ? 'inherit' : 'ignore',
-        })
-
         if (pipeOutput) {
+            const taskInstall = createInstaller(['install'], {
+                stdio: 'inherit',
+            })
             taskInstall(nodes[0], cliFlags, (err, result) =>
                 end(err, !err && [result])
             )
@@ -58,30 +53,32 @@ function nakedInstall(cliFlags) {
 // eslint-disable-next-line
 function personalizedInstall(cliFlags) {
     const reporter = createReporter(cliFlags)
-    const basePath = path.resolve('.')
 
     createGraph(path.resolve('.'), (err, nodes) => {
         if (err) end(err)
 
-        const [rootNode, ...restNodes] = nodes
+        const [rootNode] = nodes
 
         async.waterfall(
             [
                 done => installRoot(rootNode, done),
                 (rootResult, done) => {
-                    touch(
-                        restNodes,
-                        rootResult.resultDelta,
-                        (err, touchResults) =>
-                            done(err, rootResult, touchResults)
+                    touch(nodes, rootResult.resultDelta, (err, touchResults) =>
+                        done(err, rootResult, touchResults)
                     )
                 },
                 (rootResult, touchResults, done) => {
-                    createGraph(basePath, (err, nodes) => {
+                    // TODO only readload if touched proced anything
+                    createGraph(path.resolve('.'), (err, nodes) => {
                         done(err, rootResult, touchResults, nodes)
                     })
                 },
-                (rootResult, touchResults, nodes, done) => {
+                (
+                    rootResult,
+                    touchResults,
+                    [rootNode, ...restNodes] = [],
+                    done
+                ) => {
                     installRest(restNodes, (err, restResults) => {
                         done(err, !err && [rootResult, ...restResults])
                     })
@@ -93,18 +90,20 @@ function personalizedInstall(cliFlags) {
 
     function installRoot(rootNode, callback) {
         // lets pipe the stuff down:
-
-        const taskNpm = createInstaller(npmOnlyArgs(process.argv), {
+        const taskInstall = createInstaller(npmOnlyArgs(process.argv), {
             stdio: 'inherit',
         })
 
-        return taskNpm(rootNode, callback)
+        return taskInstall(rootNode, cliFlags, callback)
     }
 
     function touch(nodes, dependencyDelta, callback) {
         async.map(
             nodes,
-            (node, done) => taskTouch(node, dependencyDelta, done),
+            (node, done) => {
+                const force = node === nodes[0]
+                taskTouch(node, dependencyDelta, force, done)
+            },
             callback
         )
     }
@@ -120,7 +119,7 @@ function personalizedInstall(cliFlags) {
     function installChild(childNode, callback) {
         const done = reporter.task(childNode.name)
         const taskNpm = createInstaller(['install'], {})
-        taskNpm(childNode, (err, result) => {
+        taskNpm(childNode, cliFlags, (err, result) => {
             done()
             callback(err, result)
         })

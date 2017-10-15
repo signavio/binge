@@ -1,11 +1,12 @@
+import sortKeys from './sortKeys'
 import reconcileVersion from './reconcileVersion'
 
-export function apply(packageJson, dependencyDelta = {}) {
+export function apply(packageJson, dependencyDelta = {}, force) {
     const collect = key =>
         Object.keys(dependencyDelta[key] || {})
             // is in the packageJson
-            .filter(name => Boolean(packageJson[key][name]))
-            // is it a version mismatch
+            .filter(name => force || Boolean(packageJson[key][name]))
+            // only write if it changed
             .filter(
                 name => dependencyDelta[key][name] !== packageJson[key][name]
             )
@@ -27,14 +28,14 @@ export function apply(packageJson, dependencyDelta = {}) {
             ? packageJson
             : {
                   ...packageJson,
-                  dependencies: {
+                  dependencies: sortKeys({
                       ...packageJson.dependencies,
                       ...appliedDelta.dependencies,
-                  },
-                  devDependencies: {
+                  }),
+                  devDependencies: sortKeys({
                       ...packageJson.devDependencies,
                       ...appliedDelta.devDependencies,
-                  },
+                  }),
               },
     }
 }
@@ -45,7 +46,7 @@ export function infer(prevPackageJson, nextPackageJson) {
         const nextNames = Object.keys(nextPackageJson[key] || {})
 
         return nextNames
-            .filter(name => prevNames.includes(name))
+            .filter(name => !prevNames.includes(name))
             .filter(
                 name =>
                     prevPackageJson[key][name] !== nextPackageJson[key][name]

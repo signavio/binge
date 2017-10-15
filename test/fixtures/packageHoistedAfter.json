@@ -1,0 +1,50 @@
+{
+  "name": "bdmsimulation",
+  "version": "0.0.1",
+  "private": true,
+  "description": "",
+  "main": "src/main.js",
+  "scripts": {
+    "binge": "binge",
+    "webpack": "webpack --progress --hide-modules",
+    "webpack:webapps": "cross-env OUTPUT_MODE=webapps webpack --progress --hide-modules",
+    "build": "binge bootstrap && cross-env OUTPUT_MODE=webapps client-build clean info && npm run webpack:webapps",
+    "build:dev": "client-build clean info && npm run webpack",
+    "build:prod": "cross-env NODE_ENV=production client-build clean info && cross-env NODE_ENV=production npm run webpack",
+    "watch": "binge bootstrap && cross-env OUTPUT_MODE=webapps client-build clean info && run-p \"webpack:webapps -- --watch \" \"binge -- watch\"",
+    "start": "echo call client-build devserver TODO",
+    "test:ci": "echo no tests on the main app",
+    "test:grid": "echo no tests on the main app",
+    "test": "echo no tests on the main app"
+  },
+  "author": "Signavio GmbH",
+  "license": "Signavio GmbH",
+  "dependencies": {
+    "@signavio/feel": "2.0.7",
+    "fbjs": "0.8.14",
+    "hasher": "1.2.0",
+    "invariant": "2.2.2",
+    "key-mirror": "1.0.1",
+    "lodash": "4.17.4",
+    "moment": "2.11.1",
+    "radium": "0.18.4",
+    "react-click-outside": "2.3.1",
+    "react-date-widgets": "1.0.0-alpha.2",
+    "react-dom": "15.6.1",
+    "react-redux": "4.4.8",
+    "react": "15.6.1",
+    "redux-thunk": "1.0.3",
+    "redux": "3.7.2",
+    "signavio-i18n": "1.0.0",
+    "deep-equal": "1.0.1"
+  },
+  "devDependencies": {
+    "@signavio/client-build": "2.0.1",
+    "angular": "^1.6.6",
+    "core-js": "1.2.7",
+    "cross-env": "3.2.4",
+    "npm-run-all": "2.3.0",
+    "redux-logger": "2.10.2",
+    "webpack": "2.3.3"
+  }
+}
