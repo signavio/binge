@@ -4,18 +4,21 @@
  * package bin shortcut on windows
  * see: https://github.com/ForbesLindesay/cmd-shim/blob/f59af911f1373239a7537072641d55ff882c3701/index.js#L22
  */
+const packageJson = require('../package.json')
 
-const binge = require('../lib/index').default
+const pad = require('pad')
 const chalk = require('chalk')
 const meow = require('meow')
-const packageJson = require('../package.json')
-const ensureRuntime = require('../lib/util/ensureRuntime').default
 
+const ensureRuntime = require('../lib/util/ensureRuntime').default
+const binge = require('../lib/index').default
+
+const start = Date.now()
 process.on('exit', () => {
     console.log('---------- -----------------')
     console.log('Binge (Eating Local Modules)')
     console.log(`version:   ${packageJson.version}`)
-    console.timeEnd('execution')
+    console.log(`execution: ${mmss(Date.now() - start)}`)
     console.log('---------- -----------------')
 })
 
@@ -36,10 +39,8 @@ var cli = meow([
     '  watch      Build and watch the local-package tree',
 ])
 
-var commandName = cli.input[0]
-var command = binge[commandName]
-
-console.time('execution')
+const [commandName] = cli.input
+const command = binge[commandName]
 
 if (!command) {
     if (commandName) {
@@ -49,4 +50,11 @@ if (!command) {
     cli.showHelp()
 } else {
     command(cli.flags, cli.input)
+}
+
+function mmss(milliseconds) {
+    const seconds = Math.floor((milliseconds / 1000) % 60)
+    const minutes = Math.floor((milliseconds / (1000 * 60)) % 60)
+
+    return `${pad(2, String(minutes), '0')}m${pad(2, seconds, '0')}s`
 }
