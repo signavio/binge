@@ -10,9 +10,9 @@ import {
 
 import { empty as emptyDelta } from '../util/dependencyDelta'
 
-export default createInstaller(['install'], { stdio: 'ignore' })
+export default createInstaller(['install'], { stdio: 'pipe' })
 
-export function createInstaller(npmArgs, spawnOptions = {}) {
+export function createInstaller(npmArgs, spawnOptions) {
     return (node, cliFlags, callback) => {
         if (node.isDummy === true) {
             callback(null, {
@@ -24,9 +24,10 @@ export function createInstaller(npmArgs, spawnOptions = {}) {
         }
 
         invariant(npmArgs[0] === 'install', 'Should start with install')
+        invariant(typeof callback === 'function', 'Expected a function')
 
         const isPersonalized = npmArgs.length > 1
-        const taskNpm = createTaskNpm(['install'], spawnOptions)
+        const taskNpm = createTaskNpm(npmArgs, spawnOptions)
 
         async.waterfall(
             [

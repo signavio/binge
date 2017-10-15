@@ -1,4 +1,5 @@
 import bootstrap from './commands/bootstrap'
+import cache from './commands/cache'
 import check from './commands/check'
 import copy from './commands/copy'
 import graph from './commands/graph'
@@ -15,6 +16,7 @@ import watch from './commands/watch'
 
 const commands = {
     bootstrap,
+    cache,
     check,
     copy,
     graph,
