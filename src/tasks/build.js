@@ -1,4 +1,4 @@
-import { npm as spawnNpm } from '../util/spawnTool'
+import spawn from '../util/spawn'
 
 export default function(node, entryNode, callback) {
     if (node.isDummy === true || node.isApp === true || node === entryNode) {
@@ -14,6 +14,6 @@ export default function(node, entryNode, callback) {
         const options = {
             cwd: node.path,
         }
-        spawnNpm(['run', 'build'], options, callback)
+        spawn('npm', ['run', 'build'], options, callback)
     }
 }

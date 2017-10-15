@@ -37,7 +37,7 @@ function nakedInstall(cliFlags) {
                 end(err, !err && [result])
             )
         } else {
-            reporter.series(`Installing (max parallel ${CONCURRENCY})...`)
+            reporter.series(`Installing...`)
             async.mapLimit(nodes, CONCURRENCY, installNode, (err, results) => {
                 reporter.clear()
                 end(err, results)
