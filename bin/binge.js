@@ -73,6 +73,9 @@ if (!command) {
 }
 
 function mmss(milliseconds) {
+    if (milliseconds < 1000) {
+        return `${milliseconds}ms`
+    }
     const seconds = Math.floor((milliseconds / 1000) % 60)
     const minutes = Math.floor((milliseconds / (1000 * 60)) % 60)
 
