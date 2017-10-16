@@ -1,4 +1,4 @@
-import spawn from '../util/spawn'
+import exec from '../util/exec'
 
 export default function(node, entryNode, callback) {
     if (node.isDummy === true || node.isApp === true || node === entryNode) {
@@ -14,6 +14,6 @@ export default function(node, entryNode, callback) {
         const options = {
             cwd: node.path,
         }
-        spawn('npm', ['run', 'build'], options, callback)
+        exec('npm run build', options, callback)
     }
 }
