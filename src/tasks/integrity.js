@@ -12,22 +12,34 @@ export function hash(node, callback) {
         return
     }
 
-    const packageJsonData = fse.readFileSync(
-        path.join(node.path, 'package.json'),
-        'utf8'
-    )
+    let packageJsonData
+    try {
+        packageJsonData = fse.readFileSync(
+            path.join(node.path, 'package.json'),
+            'utf8'
+        )
+    } catch (e) {
+        packageJsonData = null
+    }
 
-    const packageLockData = fse.readFileSync(
-        path.join(node.path, 'package-lock.json'),
-        'utf8'
-    )
+    let packageLockData
+    try {
+        packageLockData = fse.readFileSync(
+            path.join(node.path, 'package-lock.json'),
+            'utf8'
+        )
+    } catch (e) {
+        packageLockData = null
+    }
 
-    const packageLock =
-        packageLockData !== node.packageLockData
-            ? JSON.parse(packageLockData)
-            : node.packageLock
+    let packageLock
+    try {
+        packageLock = JSON.parse(packageLockData)
+    } catch (e) {
+        packageLock = null
+    }
 
-    const allLockEntries = flatten(packageLock)
+    const allLockEntries = packageLock ? flatten(packageLock) : []
 
     async.map(
         allLockEntries,
@@ -96,14 +108,31 @@ function lockEntryHash(node, entry, callback) {
         entry.path,
         entry.name
     )
-    fse.readFile(filePath, 'utf8', (err, data) => {
+
+    let isThere
+    try {
+        isThere = fse.existsSync(filePath)
+    } catch (e) {
+        isThere = false
+    }
+
+    if (isThere) {
+        fse.readFile(filePath, 'utf8', (err, data) => {
+            callback(null, {
+                path: entry.path,
+                name: entry.name,
+                filePath,
+                md5: err ? null : md5(data),
+            })
+        })
+    } else {
         callback(null, {
             path: entry.path,
             name: entry.name,
             filePath,
-            md5: err ? null : md5(data),
+            md5: null,
         })
-    })
+    }
 }
 
 function fromLockEntryToPackageJsonPath(node, resolvedPath, name) {

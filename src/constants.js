@@ -4,7 +4,7 @@ import {
     npmSync as spawnNpmSync,
 } from './util/spawnTool'
 
-export const CONCURRENCY = Math.max(os.cpus().length - 2, 1)
+export const CONCURRENCY = Math.max(Math.min(os.cpus().length - 2, 4), 1)
 export const SANITY = false
 export const NODE_REQUIRED = '>=6.0.0'
 export const NPM_REQUIRED = '>=5.5.1'
