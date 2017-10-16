@@ -68,7 +68,7 @@ export default function(cliFlags) {
 
     function buildAndBridgeLayer(layer, callback) {
         reporter.series(`Building Layer...`)
-        async.mapLimit(layer, CONCURRENCY, buildAndBridgeNode, err => {
+        async.mapLimit(layer, 1, buildAndBridgeNode, err => {
             reporter.clear()
             callback(err)
         })

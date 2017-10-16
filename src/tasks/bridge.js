@@ -4,8 +4,6 @@ import path from 'path'
 import invariant from 'invariant'
 import packList from 'npm-packlist'
 
-import { CONCURRENCY } from '../constants'
-
 export default function(node, callback) {
     if (node.isDummy === true) {
         return callback(null)
@@ -13,7 +11,7 @@ export default function(node, callback) {
 
     async.mapLimit(
         node.reachable,
-        CONCURRENCY,
+        1,
         (childNode, done) => bridge(node, childNode, done),
         callback
     )
@@ -25,19 +23,29 @@ function bridge(node, childNode, callback) {
         'Node has to have an npmIgnore array'
     )
 
+    console.log(`${node.name} <- ${childNode.name}`)
+
     const srcPath = childNode.path
     const destPath = path.join(node.path, 'node_modules', childNode.name)
-    packList({ path: childNode.path }).then(files => {
-        async.map(
-            files,
-            (filePath, done) => {
-                fse.copy(
-                    path.join(srcPath, filePath),
-                    path.join(destPath, filePath),
-                    done
-                )
-            },
-            callback
-        )
-    })
+    packList({ path: childNode.path })
+        .then(files => {
+            console.log(files.length + ' pack')
+            async.map(
+                files,
+                (filePath, done) => {
+                    fse.copy(
+                        path.join(srcPath, filePath),
+                        path.join(destPath, filePath),
+                        done
+                    )
+                },
+                err => {
+                    console.log('OK pack')
+                    callback(err)
+                }
+            )
+        })
+        .catch(e => {
+            console.log('ERROR pack')
+        })
 }
