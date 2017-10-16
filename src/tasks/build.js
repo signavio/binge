@@ -1,4 +1,4 @@
-import spawn from '../util/spawn'
+import exec from '../util/exec'
 
 export default function(node, entryNode, callback) {
     if (node.isDummy === true || node.isApp === true || node === entryNode) {
@@ -17,7 +17,7 @@ export default function(node, entryNode, callback) {
             cwd: node.path,
             stdio: 'inherit',
         }
-        spawn('npm', ['run', 'build'], options, e => {
+        exec('npm run build', options, e => {
             if (!e) {
                 console.log(`Build ${node.name} OK`)
             } else {

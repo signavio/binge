@@ -5,10 +5,13 @@ import { spawn } from 'child_process'
 export default function(command, args, options = {}, callback) {
     invariant(typeof callback === 'function', 'Expected a function')
 
-    const child = spawn(command, args, {
+    let finalOptions = {
         stdio: 'pipe',
         ...options,
-    }).on('exit', code =>
+    }
+    if (command === 'npm') console.log('SPAWN START ' + finalOptions)
+    const child = spawn(command, args, finalOptions).on('exit', code => {
+        if (command === 'npm') console.log('SPAWN DONE ' + code)
         callback(
             code &&
                 new Error(
@@ -17,7 +20,7 @@ export default function(command, args, options = {}, callback) {
                         (options.cwd ? `[Binge] at  -> ${options.cwd}\n` : '')
                 )
         )
-    )
+    })
 
     /*
     if (child.stderr) {
