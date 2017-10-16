@@ -1,12 +1,11 @@
 import invariant from 'invariant'
 import crossSpawn from 'cross-spawn'
+import { spawn } from 'child_process'
 
-export default function spawn(command, args, options = {}, callback) {
+export default function(command, args, options = {}, callback) {
     invariant(typeof callback === 'function', 'Expected a function')
 
-    let stderr = ''
-
-    const child = crossSpawn(command, args, {
+    const child = spawn(command, args, {
         stdio: 'pipe',
         ...options,
     }).on('exit', code =>
@@ -15,18 +14,18 @@ export default function spawn(command, args, options = {}, callback) {
                 new Error(
                     `\n[Binge] Spawn failed\n` +
                         `[Binge] cmd -> ${command} ${args.join(' ')}\n` +
-                        (options.cwd ? `[Binge] at  -> ${options.cwd}\n` : '') +
-                        (stderr ? `[Binge] Raw error:\n` : '') +
-                        stderr
+                        (options.cwd ? `[Binge] at  -> ${options.cwd}\n` : '')
                 )
         )
     )
 
+    /*
     if (child.stderr) {
         child.stderr.setEncoding('utf8').on('data', chunk => {
             stderr += chunk
         })
     }
+    */
 
     return child
 }
