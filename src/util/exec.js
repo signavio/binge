@@ -9,7 +9,7 @@ export default function(command, options = {}, callback) {
             err &&
                 new Error(
                     `\n[Binge] Exec failed\n` +
-                        `[Binge] cmd -> ${command} ${args.join(' ')}\n` +
+                        `[Binge] cmd -> ${command}\n` +
                         (options.cwd ? `[Binge] at  -> ${options.cwd}\n` : '') +
                         (stderr ? `[Binge] Raw error:\n` : '')
                 )
