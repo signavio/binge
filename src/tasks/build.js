@@ -1,4 +1,4 @@
-import { yarn as spawnYarn } from '../util/spawn'
+import { yarn as spawnYarn } from '../util/spawnTool'
 
 export default function(node, entryNode, callback) {
     if (node.isDummy === true || node.isApp === true || node === entryNode) {
