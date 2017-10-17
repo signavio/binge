@@ -23,13 +23,10 @@ function bridge(node, childNode, callback) {
         'Node has to have an npmIgnore array'
     )
 
-    console.log(`${node.name} <- ${childNode.name}`)
-
     const srcPath = childNode.path
     const destPath = path.join(node.path, 'node_modules', childNode.name)
     packList({ path: childNode.path })
         .then(files => {
-            console.log(files.length + ' pack')
             async.map(
                 files,
                 (filePath, done) => {
@@ -39,10 +36,7 @@ function bridge(node, childNode, callback) {
                         done
                     )
                 },
-                err => {
-                    console.log('OK pack')
-                    callback(err)
-                }
+                callback
             )
         })
         .catch(e => {

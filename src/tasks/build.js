@@ -1,23 +1,39 @@
-import exec from '../util/exec'
+//import exec from '../util/exec'
+import spawn from '../util/spawn'
 
 export default function(node, entryNode, callback) {
     if (node.isDummy === true || node.isApp === true || node === entryNode) {
         return callback(null)
     }
-
     const unavailable =
         node.packageJson.scripts && !node.packageJson.scripts.build
 
-    console.log(`Build ${node.name} starting`)
+    const options = {
+        cwd: node.path,
+        stdio: 'inherit',
+    }
+
+    console.log('Reaching spawn ' + node.name)
+    spawn('npm', ['--version'], options, e => {
+        if (!e) {
+            console.log('SPAWN OK' + node.name)
+        } else {
+            console.log('SPAWN OUT ' + node.name)
+        }
+
+        callback(e)
+    })
+
+    /*
+
     if (unavailable) {
-        console.log(`Build ${node.name} unavailable`)
         return callback(null)
     } else {
         const options = {
             cwd: node.path,
             stdio: 'inherit',
         }
-        exec('npm run build', options, e => {
+        spawn('npm', ['--version'], options, e => {
             if (!e) {
                 console.log(`Build ${node.name} OK`)
             } else {
@@ -25,8 +41,8 @@ export default function(node, entryNode, callback) {
                 console.log(e)
             }
 
-            console.log(``)
             callback(e)
         })
     }
+    */
 }
