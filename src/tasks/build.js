@@ -1,4 +1,4 @@
-import exec from '../util/exec'
+import { yarn as spawnYarn } from '../util/spawnTool'
 
 export default function(node, entryNode, callback) {
     if (node.isDummy === true || node.isApp === true || node === entryNode) {
@@ -14,6 +14,6 @@ export default function(node, entryNode, callback) {
         const options = {
             cwd: node.path,
         }
-        exec('npm run build', options, callback)
+        spawnYarn(['run', 'build'], options, callback)
     }
 }
