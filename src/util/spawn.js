@@ -9,9 +9,8 @@ export default function(command, args, options = {}, callback) {
         stdio: 'pipe',
         ...options,
     }
-    if (command === 'npm') console.log('SPAWN START ' + finalOptions)
+
     const child = spawn(command, args, finalOptions).on('exit', code => {
-        if (command === 'npm') console.log('SPAWN DONE ' + code)
         callback(
             code &&
                 new Error(

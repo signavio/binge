@@ -1,45 +1,19 @@
-// import exec from '../util/exec'
-import spawn from '../util/spawn'
+import { yarn as spawnYarn } from '../util/spawn'
 
 export default function(node, entryNode, callback) {
     if (node.isDummy === true || node.isApp === true || node === entryNode) {
         return callback(null)
     }
-    const options = {
-        cwd: node.path,
-        stdio: 'inherit',
-    }
 
-    console.log('Reaching spawn ' + node.name)
-    spawn('npm', ['--version'], options, e => {
-        if (!e) {
-            console.log('SPAWN OK' + node.name)
-        } else {
-            console.log('SPAWN OUT ' + node.name)
-        }
-
-        callback(e)
-    })
-
-    /*
+    const unavailable =
+        node.packageJson.scripts && !node.packageJson.scripts.build
 
     if (unavailable) {
         return callback(null)
     } else {
         const options = {
             cwd: node.path,
-            stdio: 'inherit',
         }
-        spawn('npm', ['--version'], options, e => {
-            if (!e) {
-                console.log(`Build ${node.name} OK`)
-            } else {
-                console.log(`Build ${node.name} FAIL`)
-                console.log(e)
-            }
-
-            callback(e)
-        })
+        spawnYarn(['run', 'build'], options, callback)
     }
-    */
 }

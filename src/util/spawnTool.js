@@ -42,6 +42,19 @@ export function npm(args, options = {}, callback) {
     }
 }
 
+export function yarn(args, options = {}, callback) {
+    if (isGradleRun()) {
+        return spawn(
+            process.execPath,
+            [findYarnPath(), ...args],
+            options,
+            callback
+        )
+    } else {
+        return spawn('yarn', args, options, callback)
+    }
+}
+
 export function npmSync(args, options = {}) {
     const child = isGradleRun()
         ? spawnSync(process.execPath, [findNpmPath(), ...args], options)
@@ -77,4 +90,15 @@ function findNpmPath() {
         'bin',
         'npm-cli.js'
     )
+}
+
+function findYarnPath() {
+    const parts = process.execPath.split(path.sep)
+
+    // OLD path
+    // /.gradle/nodejs/<version>/lib/node_modules/npm/bin/npm-cli.js
+    // NEW path
+    // /.gradle/npm/node_modules/npm/bin/npm-cli.js
+    const basePath = parts.slice(0, parts.indexOf('.gradle') + 1).join(path.sep)
+    return path.join(basePath, 'yarn', 'node_modules', 'yarn', 'bin', 'yarn.js')
 }
