@@ -76,14 +76,11 @@ export function isGradleRun() {
 
 function findNpmPath() {
     const parts = process.execPath.split(path.sep)
-
-    // OLD path
-    // /.gradle/nodejs/<version>/lib/node_modules/npm/bin/npm-cli.js
-    // NEW path
-    // /.gradle/npm/node_modules/npm/bin/npm-cli.js
-    const basePath = parts.slice(0, parts.indexOf('.gradle') + 1).join(path.sep)
+    const basePath = parts.slice(0, parts.indexOf('client') + 1).join(path.sep)
     return path.join(
         basePath,
+        '_',
+        '.gradle',
         'npm',
         'node_modules',
         'npm',
@@ -94,11 +91,6 @@ function findNpmPath() {
 
 function findYarnPath() {
     const parts = process.execPath.split(path.sep)
-
-    // OLD path
-    // /.gradle/nodejs/<version>/lib/node_modules/npm/bin/npm-cli.js
-    // NEW path
-    // /.gradle/npm/node_modules/npm/bin/npm-cli.js
     const basePath = parts.slice(0, parts.indexOf('client') + 1).join(path.sep)
     return path.join(
         basePath,
