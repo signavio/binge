@@ -8,7 +8,7 @@ import taskPrune from '../tasks/prune'
 import taskInstall from '../tasks/install'
 import taskBridge from '../tasks/bridge'
 import taskBuild from '../tasks/build'
-import createReporter from '../reporter'
+import createReporter from '../createReporter'
 
 import { CONCURRENCY } from '../constants'
 

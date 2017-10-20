@@ -5,7 +5,7 @@ import path from 'path'
 import createGraph from '../graph/create'
 import taskInstall, { createInstaller } from '../tasks/install'
 import taskTouch from '../tasks/touch'
-import createReporter from '../reporter'
+import createReporter from '../createReporter'
 
 import { CONCURRENCY } from '../constants'
 

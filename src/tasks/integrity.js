@@ -4,7 +4,7 @@ import path from 'path'
 
 import { npmVersion } from '../constants'
 import flatten from '../lock-file/flatten'
-import md5 from '../util/md5.js'
+import md5 from 'md5-slim'
 
 export function hash(node, callback) {
     if (node.isDummy) {

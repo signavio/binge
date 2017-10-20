@@ -4,7 +4,7 @@ import path from 'path'
 
 import createGraph from '../graph/create'
 import checkNpmTask from '../tasks/checkNpm'
-import createReporter from '../reporter'
+import createReporter from '../createReporter'
 
 import { CONCURRENCY } from '../constants'
 
