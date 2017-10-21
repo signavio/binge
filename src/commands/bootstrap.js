@@ -29,7 +29,7 @@ export default function(cliFlags) {
             ],
             (err, results) => {
                 // pass the install results
-                end(err, !err && results[0])
+                end(err, results)
             }
         )
     })
@@ -50,10 +50,7 @@ export default function(cliFlags) {
     function pruneAndInstallNode(node, callback) {
         const done = reporter.task(node.name)
         async.series(
-            [
-                done => taskPrune(node, done),
-                done => taskInstall(node, cliFlags, done),
-            ],
+            [done => taskPrune(node, done), done => taskInstall(node, done)],
             (err, results) => {
                 done()
                 // pass the install results
@@ -63,15 +60,28 @@ export default function(cliFlags) {
     }
 
     function buildAndBridge(layers, callback) {
-        async.mapSeries(layers, buildAndBridgeLayer, callback)
+        async.mapSeries(layers, buildAndBridgeLayer, (err, nestedResults) => {
+            const results = err
+                ? []
+                : nestedResults.reduce(
+                      (result, next) => [...result, ...next],
+                      []
+                  )
+            callback(err, results)
+        })
     }
 
     function buildAndBridgeLayer(layer, callback) {
         reporter.series(`Building Layer...`)
-        async.mapLimit(layer, CONCURRENCY, buildAndBridgeNode, err => {
-            reporter.clear()
-            callback(err)
-        })
+        async.mapLimit(
+            layer,
+            CONCURRENCY,
+            buildAndBridgeNode,
+            (err, results) => {
+                reporter.clear()
+                callback(err, results)
+            }
+        )
     }
 
     function buildAndBridgeNode(node, callback) {
@@ -81,9 +91,10 @@ export default function(cliFlags) {
                 done => taskBridge(node, done),
                 done => taskBuild(node, entryNode, done),
             ],
-            err => {
+            (err, results) => {
                 done()
-                callback(err)
+                // pass the install results
+                callback(err, !err && results[1])
             }
         )
     }
@@ -114,18 +125,23 @@ function end(err, results) {
     }
 }
 
-function summary(result) {
-    const installCount = result.filter(e => e.skipped === false).length
-    const upToDateCount = result.filter(e => e.skipped === true).length
-    const patchedCount = result.filter(e => e.patched === true).length
+function summary([installResults, buildResults]) {
+    const installCount = installResults.filter(e => e.skipped === false).length
+    const installSkipCount = installResults.filter(e => e.skipped === true)
+        .length
+    const patchedCount = installResults.filter(e => e.patched === true).length
+
+    const buildCount = buildResults.filter(e => e.skipped === false).length
+    const buildSkipCount = buildResults.filter(e => e.skipped === true).length
 
     const word = count => (count === 1 ? 'node' : 'nodes')
 
     console.log(
-        `${installCount} ${word(
+        `Installed ${installCount} ${word(
             installCount
-        )} installed, ${patchedCount} ${word(
-            patchedCount
-        )} patched, ${upToDateCount} ${word(upToDateCount)} up to date`
+        )}, patched ${patchedCount}, ${installSkipCount} up-to-date`
+    )
+    console.log(
+        `Built ${buildCount} ${word(buildCount)}, ${buildSkipCount} up-to-date`
     )
 }

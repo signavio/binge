@@ -28,9 +28,7 @@ function nakedInstall(cliFlags) {
             const taskInstall = createInstaller(['install'], {
                 stdio: 'inherit',
             })
-            taskInstall(nodes[0], cliFlags, (err, result) =>
-                end(err, !err && [result])
-            )
+            taskInstall(nodes[0], (err, result) => end(err, !err && [result]))
         } else {
             reporter.series(`Installing...`)
             async.mapLimit(nodes, CONCURRENCY, installNode, (err, results) => {
@@ -42,7 +40,7 @@ function nakedInstall(cliFlags) {
 
     function installNode(node, callback) {
         const done = reporter.task(node.name)
-        taskInstall(node, cliFlags, (err, result) => {
+        taskInstall(node, (err, result) => {
             done()
             // pass the install results
             callback(err, result)
@@ -50,7 +48,6 @@ function nakedInstall(cliFlags) {
     }
 }
 
-// eslint-disable-next-line
 function personalizedInstall(cliFlags) {
     const reporter = createReporter(cliFlags)
 
@@ -94,7 +91,7 @@ function personalizedInstall(cliFlags) {
             stdio: 'inherit',
         })
 
-        return taskInstall(rootNode, cliFlags, callback)
+        return taskInstall(rootNode, callback)
     }
 
     function touch(nodes, dependencyDelta, callback) {
@@ -119,7 +116,7 @@ function personalizedInstall(cliFlags) {
     function installChild(childNode, callback) {
         const done = reporter.task(childNode.name)
         const taskNpm = createInstaller(['install'], {})
-        taskNpm(childNode, cliFlags, (err, result) => {
+        taskNpm(childNode, (err, result) => {
             done()
             callback(err, result)
         })
@@ -162,16 +159,14 @@ function end(err, result) {
 
 function summary(result) {
     const installCount = result.filter(e => e.skipped === false).length
-    const upToDateCount = result.filter(e => e.skipped === true).length
+    const installSkipCount = result.filter(e => e.skipped === true).length
     const patchedCount = result.filter(e => e.patched === true).length
 
     const word = count => (count === 1 ? 'node' : 'nodes')
 
     console.log(
-        `${installCount} ${word(
+        `Installed ${installCount} ${word(
             installCount
-        )} installed, ${patchedCount} ${word(
-            patchedCount
-        )} patched, ${upToDateCount} ${word(upToDateCount)} up to date`
+        )}, patched ${patchedCount}, ${installSkipCount} up-to-date`
     )
 }

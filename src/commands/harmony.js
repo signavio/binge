@@ -121,7 +121,7 @@ function print(reconciled, unreconciled) {
 
 function end(okCount, reconciledCount, unreconciledCount) {
     if (unreconciledCount) {
-        console.log(chalk.green('Failure'))
+        console.log(chalk.red('Failure'))
     } else {
         console.log(chalk.green('Success'))
     }

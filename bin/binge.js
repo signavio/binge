@@ -10,8 +10,9 @@ const pad = require('pad')
 const chalk = require('chalk')
 const meow = require('meow')
 
-const ensureRuntime = require('../lib/util/ensureRuntime').default
 const binge = require('../lib/index').default
+const createLogger = require('../lib/createLogger').default
+const ensureRuntime = require('../lib/util/ensureRuntime').default
 
 const start = Date.now()
 process.on('exit', () => {
@@ -69,6 +70,7 @@ if (!command) {
 
     cli.showHelp()
 } else {
+    createLogger(cli.flags)
     command(cli.flags, cli.input)
 }
 

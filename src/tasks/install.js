@@ -3,17 +3,18 @@ import async from 'async'
 import createTaskNpm from './npm'
 
 import {
-    hash as taskIntegrityHash,
-    read as taskIntegrityRead,
-    write as taskIntegrityWrite,
-} from '../tasks/integrity'
+    hashInstall as integrityHash,
+    readInstall as integrityRead,
+    writeInstall as integrityWrite,
+    cleanInstall as integrityClean,
+} from '../integrity'
 
 import { empty as emptyDelta } from '../util/dependencyDelta'
 
 export default createInstaller(['install'], { stdio: 'pipe' })
 
 export function createInstaller(npmArgs, spawnOptions) {
-    return (node, cliFlags, callback) => {
+    return (node, callback) => {
         if (node.isDummy === true) {
             callback(null, {
                 skipped: null,
@@ -34,28 +35,35 @@ export function createInstaller(npmArgs, spawnOptions) {
                 // Only read the integrity if it is not a personalizedInstall
                 done => {
                     if (!isPersonalized) {
-                        taskIntegrityRead(node, done)
+                        integrityRead(node, done)
                     } else {
-                        done(null, null)
+                        done(null, { md5: null })
                     }
                 },
-                // hash the integrity
-                (prevIntegrity, done) => {
-                    if (prevIntegrity) {
-                        taskIntegrityHash(node, (err, nextIntegrity) =>
-                            done(err, prevIntegrity, nextIntegrity)
-                        )
+                // hash the current
+                ({ md5: prevMD5 }, done) => {
+                    if (prevMD5) {
+                        integrityHash(node, (err, { md5: nextMD5 }) => {
+                            const integrityMatch = Boolean(
+                                prevMD5 && nextMD5 && prevMD5 === nextMD5
+                            )
+                            done(err, integrityMatch)
+                        })
                     } else {
-                        done(null, null, null)
+                        const integrityMatch = false
+                        done(null, integrityMatch)
+                    }
+                },
+                // If there is a mismatch, clean first
+                (integrityMatch, done) => {
+                    if (!integrityMatch) {
+                        integrityClean(node, err => done(err, integrityMatch))
+                    } else {
+                        done(null, integrityMatch)
                     }
                 },
                 // If integrities match skip the install. Otherwise install
-                (prevIntegrity, nextIntegrity, done) => {
-                    const integrityMatch = Boolean(
-                        prevIntegrity &&
-                            nextIntegrity &&
-                            prevIntegrity === nextIntegrity
-                    )
+                (integrityMatch, done) => {
                     if (!integrityMatch) {
                         taskNpm(node, (err, { resultDelta, patched }) =>
                             done(err, {
@@ -75,21 +83,26 @@ export function createInstaller(npmArgs, spawnOptions) {
                 // Hash the node modules content
                 ({ skipped, ...rest }, done) => {
                     if (!skipped) {
-                        taskIntegrityHash(node, (err, finalIntegrity) =>
-                            done(err, finalIntegrity, { skipped, ...rest })
-                        )
+                        integrityHash(node, (err, { md5, log }) => {
+                            done(err, { md5, log, skipped, ...rest })
+                        })
                     } else {
-                        done(null, null, { skipped, ...rest })
+                        done(null, {
+                            md5: null,
+                            log: null,
+                            skipped,
+                            ...rest,
+                        })
                     }
                 },
                 // Write the integrity
-                (finalIntegrity, { skipped, ...rest }, done) => {
-                    if (finalIntegrity) {
-                        taskIntegrityWrite(node, finalIntegrity, err =>
-                            done(err, { skipped, ...rest })
+                ({ md5, log, ...rest }, done) => {
+                    if (md5) {
+                        integrityWrite(node, { md5, log }, err =>
+                            done(err, rest)
                         )
                     } else {
-                        done(null, { skipped, ...rest })
+                        done(null, rest)
                     }
                 },
             ],
