@@ -12,7 +12,7 @@ function thenWatch(err, graph) {
     if (err) end()
 
     const [rootNode] = graph
-    if (!rootNode.isApp) {
+    if (!rootNode.isDummy && !rootNode.isApp) {
         end(`Starting a watch is only supported for app nodes`)
     }
 
