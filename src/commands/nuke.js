@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import fse from 'fs-extra'
 import path from 'path'
 import createGraph from '../graph/create'
-import createReporter from '../reporter'
+import createReporter from '../createReporter'
 
 import { CONCURRENCY } from '../constants'
 
