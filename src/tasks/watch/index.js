@@ -1,10 +1,7 @@
 import chalk from 'chalk'
 import onExit from 'signal-exit'
-import createNextState, {
-    createInitialState,
-    preEffects,
-    postEffects,
-} from './nextState'
+import createNextState, { createInitialState } from './nextState'
+import { preEffects, postEffects } from './sideEffects'
 import { watchProject, watchApp } from './fs'
 
 export default rootNode => {
