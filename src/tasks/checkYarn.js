@@ -80,8 +80,6 @@ export default function(node, callback) {
 }
 
 function findMiss(yarnLock, allHoisted) {
-    const REGEX = /@.+\/.+@.+/
-
     const miss = Object.keys(allHoisted)
         .map(name => ({
             name,
