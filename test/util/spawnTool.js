@@ -1,8 +1,8 @@
 import semver from 'semver'
 import { expect } from 'chai'
-import { node, nodeSync, npm, npmSync, gitSync } from '../../src/util/spawnTool'
+import { node, nodeSync, npm, gitSync } from '../../src/util/spawnTool'
 
-import { NODE_REQUIRED, NPM_REQUIRED } from '../../src/constants'
+import { NODE_REQUIRED } from '../../src/constants'
 
 describe('util', () => {
     describe('spawnTool', () => {
@@ -22,10 +22,6 @@ describe('util', () => {
                 expect(err).to.equal(0)
                 done()
             })
-        })
-        it('npmSync', () => {
-            const result = npmSync(['--version'], {})
-            expect(semver.satisfies(result, NPM_REQUIRED)).to.equal(true)
         })
 
         if (process.platform !== 'win32') {
