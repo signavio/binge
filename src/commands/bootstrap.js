@@ -4,7 +4,6 @@ import path from 'path'
 
 import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
-import taskPrune from '../tasks/prune'
 import { createInstaller } from '../tasks/install'
 import taskBridge from '../tasks/bridge'
 import taskBuild from '../tasks/build'
@@ -46,14 +45,10 @@ export default function(cliFlags) {
     function pruneAndInstallNode(node, callback) {
         const done = reporter.task(node.name)
 
-        async.series(
-            [done => taskPrune(node, done), done => taskInstall(node, done)],
-            (err, results) => {
-                done()
-                // pass the install results
-                callback(err, !err && results[1])
-            }
-        )
+        taskInstall(node, (err, results) => {
+            done()
+            callback(err, results)
+        })
     }
 
     function buildAndBridge(layers, callback) {
@@ -96,19 +91,6 @@ export default function(cliFlags) {
         )
     }
 }
-
-/*
-function installConcurrency(cliFlags) {
-    const c =
-        typeof cliFlags.installConcurrency === 'number'
-            ? cliFlags.installConcurrency
-            : CONCURRENCY
-
-    invariant(typeof c === 'number', 'Concurrency must be a number')
-
-    return Math.max(c, 1)
-}
-*/
 
 function end(err, results) {
     if (err) {

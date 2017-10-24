@@ -5,14 +5,14 @@ import path from 'path'
 import createGraph from '../graph/create'
 import createReporter from '../createReporter'
 
-import { CONCURRENCY } from '../constants'
+import taskCheckYarn from '../tasks/checkYarn'
 
 export default function(cliFlags) {
     const reporter = createReporter(cliFlags)
     createGraph(path.resolve('.'), function(err, nodes) {
         if (err) end(err)
         reporter.series('Checking...')
-        async.mapLimit(nodes, CONCURRENCY, checkNode, (err, result) => {
+        async.map(nodes, checkNode, (err, result) => {
             reporter.clear()
             end(err, result)
         })
@@ -22,14 +22,12 @@ export default function(cliFlags) {
         const done = reporter.task(node.name)
         setTimeout(() => {
             done()
-            callback(null)
         }, 0)
-        /*
-        checkNpmTask(node, (err, result) => {
-            done()
 
+        taskCheckYarn(node, err => {
+            done()
+            callback(err)
         })
-        */
     }
 
     function end(err, result) {
@@ -43,18 +41,3 @@ export default function(cliFlags) {
         }
     }
 }
-
-/*
-function countLocalPackages(result) {
-    return result.filter(Boolean).length
-}
-
-function countLockEntries(result) {
-    return result
-        .filter(Boolean)
-        .map(entry => entry && entry.all)
-        .filter(Boolean)
-        .map(all => all.length)
-        .reduce((result, count) => result + count, 0)
-}
-*/

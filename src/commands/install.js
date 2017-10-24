@@ -7,8 +7,6 @@ import taskInstall, { createInstaller } from '../tasks/install'
 import taskTouch from '../tasks/touch'
 import createReporter from '../createReporter'
 
-import { CONCURRENCY } from '../constants'
-
 export default function(cliFlags) {
     const npmArgs = yarnArgsOnly(process.argv)
     if (npmArgs.length > 1) {
@@ -31,7 +29,7 @@ function nakedInstall(cliFlags) {
             taskInstall(nodes[0], (err, result) => end(err, !err && [result]))
         } else {
             reporter.series(`Installing...`)
-            async.mapLimit(nodes, CONCURRENCY, installNode, (err, results) => {
+            async.mapSeries(nodes, installNode, (err, results) => {
                 reporter.clear()
                 end(err, results)
             })
@@ -65,7 +63,7 @@ function personalizedInstall(cliFlags) {
                     )
                 },
                 (rootResult, touchResults, done) => {
-                    // TODO only readload if touched proced anything
+                    // TODO only readload if touched produced anything
                     createGraph(path.resolve('.'), (err, nodes) => {
                         done(err, rootResult, touchResults, nodes)
                     })
