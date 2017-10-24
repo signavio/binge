@@ -7,6 +7,7 @@ import { layer as layerTopology } from '../graph/topology'
 import { createInstaller } from '../tasks/install'
 import taskBridge from '../tasks/bridge'
 import taskBuild from '../tasks/build'
+import taskPrune from '../tasks/prune'
 import createReporter from '../createReporter'
 
 import { CONCURRENCY } from '../constants'
@@ -80,13 +81,14 @@ export default function(cliFlags) {
         const done = reporter.task(node.name)
         async.series(
             [
+                done => taskPrune(node, done),
                 done => taskBridge(node, done),
                 done => taskBuild(node, entryNode, done),
             ],
             (err, results) => {
                 done()
                 // pass the install results
-                callback(err, !err && results[1])
+                callback(err, !err && results[2])
             }
         )
     }

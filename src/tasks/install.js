@@ -1,7 +1,5 @@
 import invariant from 'invariant'
 import async from 'async'
-
-import taskPrune from './prune'
 import createTaskYarn from './yarn'
 
 import {
@@ -33,7 +31,6 @@ export function createInstaller(yarnArgs, spawnOptions) {
 
         async.waterfall(
             [
-                done => taskPrune(node, done),
                 // Only read the integrity if it is not a personalizedInstall
                 done => {
                     if (!isPersonalized) {

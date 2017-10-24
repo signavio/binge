@@ -3,14 +3,16 @@ import path from 'path'
 import async from 'async'
 
 export default function(dirPath, callback) {
-    fromNodeModules(dirPath, callback)
+    const ignoredNames = localPackageNames(dirPath)
+    fromNodeModules(dirPath, ignoredNames, callback)
 }
 
 function walk(dirPath, callback) {
+    const ignoredNames = []
     async.parallel(
         [
             done => packageJson(dirPath, done),
-            done => fromNodeModules(dirPath, done),
+            done => fromNodeModules(dirPath, ignoredNames, done),
         ],
         (err, [r1, r2]) => callback(err, [...r1, ...r2])
     )
@@ -28,7 +30,7 @@ function packageJson(dirPath, callback) {
     })
 }
 
-function fromNodeModules(dirPath, callback) {
+function fromNodeModules(dirPath, ignoredNames, callback) {
     const basePath = path.join(dirPath, 'node_modules')
     async.waterfall(
         [
@@ -36,6 +38,12 @@ function fromNodeModules(dirPath, callback) {
                 fs.readdir(basePath, 'utf8', (err, dirNames) => {
                     done(null, err ? [] : dirNames)
                 }),
+            (dirNames, done) => {
+                done(
+                    null,
+                    dirNames.filter(dirName => !ignoredNames.includes(dirName))
+                )
+            },
             (dirNames, done) => {
                 async.parallel(
                     [
@@ -86,6 +94,22 @@ function privateNodeModules(basePath, folderNames, callback) {
             ),
         (err, results) => callback(err, flatten(results))
     )
+}
+
+function localPackageNames(dirPath) {
+    try {
+        const data = fs.readFileSync(path.join(dirPath, 'package.json'), 'utf8')
+        let packageJson = JSON.parse(data)
+
+        const bag = {
+            ...(packageJson.dependencies || {}),
+            ...(packageJson.devDependencies || {}),
+        }
+
+        return Object.keys(bag).filter(name => bag[name].startsWith('file:'))
+    } catch (e) {
+        return []
+    }
 }
 
 function flatten(a) {
