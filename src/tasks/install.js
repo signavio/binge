@@ -1,6 +1,6 @@
 import invariant from 'invariant'
 import async from 'async'
-import createTaskNpm from './npm'
+import createTaskYarn from './yarn'
 
 import {
     hashInstall as integrityHash,
@@ -13,22 +13,21 @@ import { empty as emptyDelta } from '../util/dependencyDelta'
 
 export default createInstaller(['install'], { stdio: 'pipe' })
 
-export function createInstaller(npmArgs, spawnOptions) {
+export function createInstaller(yarnArgs, spawnOptions) {
     return (node, callback) => {
         if (node.isDummy === true) {
             callback(null, {
                 skipped: null,
                 resultDelta: emptyDelta,
-                patched: false,
             })
             return
         }
 
-        invariant(npmArgs[0] === 'install', 'Should start with install')
+        invariant(yarnArgs[0] === 'install', 'Should start with install')
         invariant(typeof callback === 'function', 'Expected a function')
 
-        const isPersonalized = npmArgs.length > 1
-        const taskNpm = createTaskNpm(npmArgs, spawnOptions)
+        const isPersonalized = withoutFlags(yarnArgs).length > 1
+        const taskYarn = createTaskYarn(yarnArgs, spawnOptions)
 
         async.waterfall(
             [
@@ -65,18 +64,16 @@ export function createInstaller(npmArgs, spawnOptions) {
                 // If integrities match skip the install. Otherwise install
                 (integrityMatch, done) => {
                     if (!integrityMatch) {
-                        taskNpm(node, (err, { resultDelta, patched }) =>
+                        taskYarn(node, (err, { resultDelta }) =>
                             done(err, {
                                 skipped: false,
                                 resultDelta,
-                                patched,
                             })
                         )
                     } else {
                         done(null, {
                             skipped: true,
                             resultDelta: emptyDelta,
-                            patched: false,
                         })
                     }
                 },
@@ -109,4 +106,9 @@ export function createInstaller(npmArgs, spawnOptions) {
             callback
         )
     }
+}
+
+function withoutFlags(yarnArgs) {
+    // TODO add more flags
+    return yarnArgs.filter(arg => arg !== '--frozen-lockfile')
 }

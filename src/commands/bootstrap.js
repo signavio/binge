@@ -5,7 +5,7 @@ import path from 'path'
 import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
 import taskPrune from '../tasks/prune'
-import taskInstall from '../tasks/install'
+import { createInstaller } from '../tasks/install'
 import taskBridge from '../tasks/bridge'
 import taskBuild from '../tasks/build'
 import createReporter from '../createReporter'
@@ -15,6 +15,7 @@ import { CONCURRENCY } from '../constants'
 export default function(cliFlags) {
     let entryNode
     const reporter = createReporter(cliFlags)
+    const taskInstall = createInstaller(['install', '--frozen-lockfile'])
     createGraph(path.resolve('.'), function(err, nodes) {
         if (err) end(err)
 
@@ -36,19 +37,15 @@ export default function(cliFlags) {
 
     function pruneAndInstall(nodes, callback) {
         reporter.series(`Installing...`)
-        async.mapLimit(
-            nodes,
-            CONCURRENCY,
-            pruneAndInstallNode,
-            (err, results) => {
-                reporter.clear()
-                callback(err, results)
-            }
-        )
+        async.mapSeries(nodes, pruneAndInstallNode, (err, results) => {
+            reporter.clear()
+            callback(err, results)
+        })
     }
 
     function pruneAndInstallNode(node, callback) {
         const done = reporter.task(node.name)
+
         async.series(
             [done => taskPrune(node, done), done => taskInstall(node, done)],
             (err, results) => {
@@ -129,7 +126,6 @@ function summary([installResults, buildResults]) {
     const installCount = installResults.filter(e => e.skipped === false).length
     const installSkipCount = installResults.filter(e => e.skipped === true)
         .length
-    const patchedCount = installResults.filter(e => e.patched === true).length
 
     const buildCount = buildResults.filter(e => e.skipped === false).length
     const buildSkipCount = buildResults.filter(e => e.skipped === true).length
@@ -139,7 +135,7 @@ function summary([installResults, buildResults]) {
     console.log(
         `Installed ${installCount} ${word(
             installCount
-        )}, patched ${patchedCount}, ${installSkipCount} up-to-date`
+        )}, ${installSkipCount} up-to-date`
     )
     console.log(
         `Built ${buildCount} ${word(buildCount)}, ${buildSkipCount} up-to-date`

@@ -10,7 +10,7 @@ import createReporter from '../createReporter'
 import { CONCURRENCY } from '../constants'
 
 export default function(cliFlags) {
-    const npmArgs = npmOnlyArgs(process.argv)
+    const npmArgs = yarnArgsOnly(process.argv)
     if (npmArgs.length > 1) {
         personalizedInstall(cliFlags)
     } else {
@@ -87,7 +87,7 @@ function personalizedInstall(cliFlags) {
 
     function installRoot(rootNode, callback) {
         // lets pipe the stuff down:
-        const taskInstall = createInstaller(npmOnlyArgs(process.argv), {
+        const taskInstall = createInstaller(yarnArgsOnly(process.argv), {
             stdio: 'inherit',
         })
 
@@ -107,7 +107,7 @@ function personalizedInstall(cliFlags) {
 
     function installRest(nodes, callback) {
         reporter.series(`Installing tree...`)
-        async.mapLimit(nodes, CONCURRENCY, installChild, (err, result) => {
+        async.mapSeries(nodes, installChild, (err, result) => {
             reporter.clear()
             callback(err, result)
         })
@@ -123,7 +123,7 @@ function personalizedInstall(cliFlags) {
     }
 }
 
-function npmOnlyArgs(argv) {
+function yarnArgsOnly(argv) {
     return argv
         .slice(argv.indexOf('install'))
         .filter(a => a !== '--quiet' && !a.startsWith('--install-concurrency'))
