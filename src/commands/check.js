@@ -3,17 +3,16 @@ import chalk from 'chalk'
 import path from 'path'
 
 import createGraph from '../graph/create'
-import checkNpmTask from '../tasks/checkNpm'
 import createReporter from '../createReporter'
 
-import { CONCURRENCY } from '../constants'
+import taskCheckYarn from '../tasks/checkYarn'
 
 export default function(cliFlags) {
     const reporter = createReporter(cliFlags)
     createGraph(path.resolve('.'), function(err, nodes) {
         if (err) end(err)
         reporter.series('Checking...')
-        async.mapLimit(nodes, CONCURRENCY, checkNode, (err, result) => {
+        async.map(nodes, checkNode, (err, result) => {
             reporter.clear()
             end(err, result)
         })
@@ -21,9 +20,13 @@ export default function(cliFlags) {
 
     function checkNode(node, callback) {
         const done = reporter.task(node.name)
-        checkNpmTask(node, (err, result) => {
+        setTimeout(() => {
             done()
-            callback(err, result)
+        }, 0)
+
+        taskCheckYarn(node, err => {
+            done()
+            callback(err)
         })
     }
 
@@ -34,28 +37,7 @@ export default function(cliFlags) {
             process.exit(1)
         } else {
             console.log(chalk.green('Success'))
-            console.log(
-                `All package.json are in sync with their package-lock.json!\n` +
-                    `(${countLocalPackages(result)} package.json, ` +
-                    `and ${countLockEntries(
-                        result
-                    )} package-lock.json entries checked for sync)`
-            )
-
             process.exit(0)
         }
     }
-}
-
-function countLocalPackages(result) {
-    return result.filter(Boolean).length
-}
-
-function countLockEntries(result) {
-    return result
-        .filter(Boolean)
-        .map(entry => entry && entry.all)
-        .filter(Boolean)
-        .map(all => all.length)
-        .reduce((result, count) => result + count, 0)
 }

@@ -6,9 +6,7 @@ import md5 from 'md5-slim'
 import pad from 'pad'
 import path from 'path'
 
-import flatten from '../lock-file/flatten'
-
-const PRIVATE_MODULE_NS = /^(@.+\/)/
+import findInstalledPJsons from '../util/findInstalledPJsons'
 
 /*
  * ************
@@ -55,54 +53,19 @@ function buildFilePaths(node) {
   * ************
   */
 export function install(node, callback) {
-    let allLockEntries
+    findInstalledPJsons(node.path, (err, packageJsonLocations) => {
+        invariant(err === null, 'That should never return an error')
 
-    try {
-        const packageLockData = fse.readFileSync(
-            path.join(node.path, 'package-lock.json'),
-            'utf8'
-        )
-        const packageLock = JSON.parse(packageLockData)
+        const filePaths = [
+            path.resolve(node.path, 'package.json'),
+            path.resolve(node.path, 'yarn.lock'),
+            ...packageJsonLocations,
+        ]
 
-        allLockEntries = flatten(packageLock)
-    } catch (e) {
-        callback(null, null)
-        return
-    }
-
-    const filePaths = [
-        path.resolve(node.path, 'package.json'),
-        path.resolve(node.path, 'package-lock.json'),
-        ...installFilePaths(node, allLockEntries),
-    ]
-
-    hash(filePaths, (err, results) => {
-        invariant(!err, 'The hash function should never return a error')
-        callback(null, hashReduce(results))
-    })
-}
-
-function installFilePaths(node, allLockEntries) {
-    /*
-     * From each lock entry get the path to the installed package.json.
-     * Only hash that
-     */
-    return allLockEntries.map(lockEntry => {
-        const breakPath = name => {
-            if (!PRIVATE_MODULE_NS.test(name)) {
-                return [name]
-            }
-
-            const hit = PRIVATE_MODULE_NS.exec(name)[0]
-            return [hit.slice(0, hit.length - 1), name.slice(hit.length)]
-        }
-
-        const expandedPath = [...lockEntry.path, lockEntry.name].reduce(
-            (result, next) => [...result, 'node_modules', ...breakPath(next)],
-            []
-        )
-
-        return path.join(...[node.path, ...expandedPath, 'package.json'])
+        hash(filePaths, (err, results) => {
+            invariant(!err, 'The hash function should never return a error')
+            callback(null, hashReduce(results))
+        })
     })
 }
 

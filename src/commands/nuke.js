@@ -7,11 +7,12 @@ import createReporter from '../createReporter'
 
 import { CONCURRENCY } from '../constants'
 
-export default function(cliFlags) {
+export default function(cliFlags, cliInput) {
     const reporter = createReporter(cliFlags)
+    const target = cliInput[1] || 'node_modules'
     createGraph(path.resolve('.'), function(err, graph) {
         if (err) end(err)
-        reporter.series('rm -rf node_modules')
+        reporter.series(`rm -rf ${target}`)
         async.mapLimit(graph, CONCURRENCY, nukeNode, err => {
             reporter.clear()
             end(err)
@@ -20,7 +21,7 @@ export default function(cliFlags) {
 
     function nukeNode(node, done) {
         const reportDone = reporter.task(node.name)
-        fse.remove(path.join(node.path, 'node_modules'), err => {
+        fse.remove(path.join(node.path, target), err => {
             reportDone()
             done(err)
         })

@@ -3,7 +3,6 @@ import fs from 'fs'
 import invariant from 'invariant'
 import path from 'path'
 
-import readIgnoreFile from '../util/readIgnoreFile'
 import readRCFile from '../util/readRCFile'
 
 /*
@@ -27,14 +26,9 @@ export default function readGraph(rootPath, callback) {
         async.parallel(
             [
                 done => readPackageJson(pkgPath, done),
-                done => readPackageLock(pkgPath, done),
-                done => readIgnoreFile(pkgPath, done),
                 done => readRCFile(pkgPath, done),
             ],
-            (
-                err,
-                [packageJsonFields, packageLockFields, npmIgnore, rcConfig] = []
-            ) => {
+            (err, [packageJsonFields, rcConfig] = []) => {
                 if (err) {
                     return callback(err)
                 }
@@ -43,8 +37,6 @@ export default function readGraph(rootPath, callback) {
                     name: packageJsonFields.packageJson.name,
                     path: pkgPath,
                     ...packageJsonFields,
-                    ...packageLockFields,
-                    npmIgnore,
                     ...rcConfig,
                 })
 
@@ -166,6 +158,7 @@ function readPackageJson(pkgPath, callback) {
     })
 }
 
+/*
 function readPackageLock(pkgPath, callback) {
     const filePath = path.join(pkgPath, 'package-lock.json')
 
@@ -192,3 +185,4 @@ function readPackageLock(pkgPath, callback) {
         callback(null, { packageLock, packageLockData: data, packageLockError })
     })
 }
+*/

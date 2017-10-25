@@ -2,10 +2,10 @@ import chalk from 'chalk'
 import path from 'path'
 
 import createGraph from '../graph/create'
-import createNpmTask from '../tasks/npm'
+import createYarnTask from '../tasks/yarn'
 
 export default collectNpmArgs => cliFlags => {
-    const npmTask = createNpmTask(collectNpmArgs(), { stdio: 'inherit' })
+    const yarnTask = createYarnTask(collectNpmArgs(), { stdio: 'inherit' })
 
     createGraph(path.resolve('.'), function(err, nodes) {
         if (err) {
@@ -14,7 +14,7 @@ export default collectNpmArgs => cliFlags => {
 
         const [rootNode] = nodes
 
-        npmTask(rootNode, end)
+        yarnTask(rootNode, end)
     })
 }
 

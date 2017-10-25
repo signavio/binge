@@ -7,10 +7,8 @@ import taskInstall, { createInstaller } from '../tasks/install'
 import taskTouch from '../tasks/touch'
 import createReporter from '../createReporter'
 
-import { CONCURRENCY } from '../constants'
-
 export default function(cliFlags) {
-    const npmArgs = npmOnlyArgs(process.argv)
+    const npmArgs = yarnArgsOnly(process.argv)
     if (npmArgs.length > 1) {
         personalizedInstall(cliFlags)
     } else {
@@ -31,7 +29,7 @@ function nakedInstall(cliFlags) {
             taskInstall(nodes[0], (err, result) => end(err, !err && [result]))
         } else {
             reporter.series(`Installing...`)
-            async.mapLimit(nodes, CONCURRENCY, installNode, (err, results) => {
+            async.mapSeries(nodes, installNode, (err, results) => {
                 reporter.clear()
                 end(err, results)
             })
@@ -65,7 +63,7 @@ function personalizedInstall(cliFlags) {
                     )
                 },
                 (rootResult, touchResults, done) => {
-                    // TODO only readload if touched proced anything
+                    // TODO only readload if touched produced anything
                     createGraph(path.resolve('.'), (err, nodes) => {
                         done(err, rootResult, touchResults, nodes)
                     })
@@ -87,7 +85,7 @@ function personalizedInstall(cliFlags) {
 
     function installRoot(rootNode, callback) {
         // lets pipe the stuff down:
-        const taskInstall = createInstaller(npmOnlyArgs(process.argv), {
+        const taskInstall = createInstaller(yarnArgsOnly(process.argv), {
             stdio: 'inherit',
         })
 
@@ -107,7 +105,7 @@ function personalizedInstall(cliFlags) {
 
     function installRest(nodes, callback) {
         reporter.series(`Installing tree...`)
-        async.mapLimit(nodes, CONCURRENCY, installChild, (err, result) => {
+        async.mapSeries(nodes, installChild, (err, result) => {
             reporter.clear()
             callback(err, result)
         })
@@ -123,7 +121,7 @@ function personalizedInstall(cliFlags) {
     }
 }
 
-function npmOnlyArgs(argv) {
+function yarnArgsOnly(argv) {
     return argv
         .slice(argv.indexOf('install'))
         .filter(a => a !== '--quiet' && !a.startsWith('--install-concurrency'))
