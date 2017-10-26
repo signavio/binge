@@ -13,7 +13,16 @@ import {
 
 export default (yarnArgs, spawnOptions) => (node, callback) => {
     if (!canHoist(node)) {
-        callback(makeError(node, 'Cannot install an unhoistable node'))
+        callback(
+            makeError(
+                node,
+                'Not possible to hoist node!',
+                `Execute 'binge harmony' to view the the causes of the problem`
+            ),
+            {
+                resultDelta: emptyDelta,
+            }
+        )
         return
     }
 
@@ -23,7 +32,7 @@ export default (yarnArgs, spawnOptions) => (node, callback) => {
     } = writePackageJson(node)
 
     if (errorWrite) {
-        callback(errorWrite)
+        callback(errorWrite, { resultDelta: emptyDelta })
         return
     }
 
@@ -50,9 +59,7 @@ export default (yarnArgs, spawnOptions) => (node, callback) => {
                     ? inferDelta(packageJsonHoistedPrev, packageJsonHoistedNext)
                     : emptyDelta
 
-            callback(error || errorRestore, {
-                resultDelta,
-            })
+            callback(error || errorRestore, { resultDelta })
         }
     )
 }

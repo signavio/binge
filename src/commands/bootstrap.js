@@ -28,10 +28,7 @@ export default function(cliFlags) {
                 done => pruneAndInstall(nodes, done),
                 done => buildAndBridge(layers, done),
             ],
-            (err, results) => {
-                // pass the install results
-                end(err, results)
-            }
+            end
         )
     })
 

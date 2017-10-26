@@ -1,3 +1,4 @@
+import add from './commands/add'
 import bootstrap from './commands/bootstrap'
 import cache from './commands/cache'
 import check from './commands/check'
@@ -6,15 +7,14 @@ import graph from './commands/graph'
 import harmony from './commands/harmony'
 import install from './commands/install'
 import list from './commands/list'
-import ls from './commands/ls'
 import nuke from './commands/nuke'
-import prune from './commands/prune'
+import remove from './commands/remove'
 import trace from './commands/trace'
-import uninstall from './commands/uninstall'
-import update from './commands/update'
+import upgrade from './commands/upgrade'
 import watch from './commands/watch'
 
 const commands = {
+    add,
     bootstrap,
     cache,
     check,
@@ -23,12 +23,10 @@ const commands = {
     harmony,
     install,
     list,
-    ls,
     nuke,
-    prune,
+    remove,
     trace,
-    uninstall,
-    update,
+    upgrade,
     watch,
 }
 
