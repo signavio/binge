@@ -4,8 +4,11 @@ import path from 'path'
 import createGraph from '../graph/create'
 import createYarnTask from '../tasks/yarn'
 
-export default collectNpmArgs => cliFlags => {
-    const yarnTask = createYarnTask(collectNpmArgs(), { stdio: 'inherit' })
+export default (
+    selectArgs,
+    spawnOptions = { stdio: 'inherit' }
+) => cliFlags => {
+    const yarnTask = createYarnTask(selectArgs(), spawnOptions)
 
     createGraph(path.resolve('.'), function(err, nodes) {
         if (err) {

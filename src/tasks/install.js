@@ -11,8 +11,6 @@ import {
 
 import { empty as emptyDelta } from '../util/dependencyDelta'
 
-export default createInstaller(['install'], { stdio: 'pipe' })
-
 export function createInstaller(yarnArgs, spawnOptions) {
     return (node, callback) => {
         if (node.isDummy === true) {
@@ -26,19 +24,12 @@ export function createInstaller(yarnArgs, spawnOptions) {
         invariant(yarnArgs[0] === 'install', 'Should start with install')
         invariant(typeof callback === 'function', 'Expected a function')
 
-        const isPersonalized = withoutFlags(yarnArgs).length > 1
         const taskYarn = createTaskYarn(yarnArgs, spawnOptions)
 
         async.waterfall(
             [
-                // Only read the integrity if it is not a personalizedInstall
-                done => {
-                    if (!isPersonalized) {
-                        integrityRead(node, done)
-                    } else {
-                        done(null, { md5: null })
-                    }
-                },
+                // Start by reading the integrity
+                done => integrityRead(node, done),
                 // hash the current
                 ({ md5: prevMD5 }, done) => {
                     if (prevMD5) {
@@ -106,9 +97,4 @@ export function createInstaller(yarnArgs, spawnOptions) {
             callback
         )
     }
-}
-
-function withoutFlags(yarnArgs) {
-    // TODO add more flags
-    return yarnArgs.filter(arg => arg !== '--frozen-lockfile')
 }
