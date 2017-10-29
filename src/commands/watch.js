@@ -9,7 +9,7 @@ export default function(callback) {
 }
 
 function thenWatch(err, graph) {
-    if (err) end()
+    if (err) end(err)
 
     const [rootNode] = graph
     if (!rootNode.isDummy && !rootNode.isApp) {

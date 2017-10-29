@@ -9,7 +9,7 @@ export default function spawn(command, args, options = {}, callback) {
     const child = crossSpawn(command, args, {
         stdio: 'pipe',
         ...options,
-    }).on('exit', code =>
+    }).on('exit', code => {
         callback(
             code &&
                 new Error(
@@ -20,7 +20,7 @@ export default function spawn(command, args, options = {}, callback) {
                         stderr
                 )
         )
-    )
+    })
 
     if (child.stderr) {
         child.stderr.setEncoding('utf8').on('data', chunk => {

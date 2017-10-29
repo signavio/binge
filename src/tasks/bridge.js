@@ -3,16 +3,13 @@ import fse from 'fs-extra'
 import path from 'path'
 import packList from 'npm-packlist'
 
-import { CONCURRENCY } from '../constants'
-
 export default function(node, callback) {
     if (node.isDummy === true) {
         return callback(null)
     }
 
-    async.mapLimit(
+    async.map(
         node.reachable,
-        CONCURRENCY,
         (childNode, done) => bridge(node, childNode, done),
         callback
     )

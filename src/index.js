@@ -8,6 +8,7 @@ import harmony from './commands/harmony'
 import install from './commands/install'
 import list from './commands/list'
 import nuke from './commands/nuke'
+import outdated from './commands/outdated'
 import remove from './commands/remove'
 import trace from './commands/trace'
 import upgrade from './commands/upgrade'
@@ -24,6 +25,7 @@ const commands = {
     install,
     list,
     nuke,
+    outdated,
     remove,
     trace,
     upgrade,

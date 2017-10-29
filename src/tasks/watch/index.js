@@ -1,12 +1,31 @@
-import chalk from 'chalk'
 import onExit from 'signal-exit'
-import createNextState, { createInitialState } from './nextState'
-import { preEffects, postEffects } from './sideEffects'
-import { watchProject, watchApp } from './fs'
+import createNextState from './nextState'
+import { createPreEffects, createPostEffects } from './sideEffects'
+import { childLauncher, watchProject } from './fs'
 
 export default rootNode => {
     let state
-    const apply = (state, action) => {
+
+    const dispatchers = {
+        add: changePath =>
+            nextTick(() => {
+                state = dispatch(state, { type: 'ADD', changePath })
+            }),
+        change: changePath =>
+            nextTick(() => {
+                state = dispatch(state, { type: 'CHANGE', changePath })
+            }),
+        packageReady: () =>
+            nextTick(() => {
+                state = dispatch(state, { type: 'PACKAGE_READY' })
+            }),
+        packList: (node, files) =>
+            nextTick(() => {
+                state = dispatch(state, { type: 'PACKLIST', node, files })
+            }),
+    }
+
+    const dispatch = (state, action) => {
         const _prevState = state
         preEffects(_prevState, action)
         const _nextState = nextState(_prevState, action)
@@ -14,30 +33,24 @@ export default rootNode => {
         return _nextState
     }
 
-    const dispatchers = {
-        add: changePath =>
-            nextTick(() => {
-                state = apply(state, { type: 'ADD', changePath })
-            }),
-        change: changePath =>
-            nextTick(() => {
-                state = apply(state, { type: 'CHANGE', changePath })
-            }),
-        packageReady: () =>
-            nextTick(() => {
-                state = apply(state, { type: 'PACKAGE_READY' })
-            }),
-        packList: (node, files) =>
-            nextTick(() => {
-                state = apply(state, { type: 'PACKLIST', node, files })
-            }),
-    }
-
+    const preEffects = createPreEffects(rootNode, dispatchers)
     const nextState = createNextState(rootNode, dispatchers)
+    const postEffects = createPostEffects(rootNode, dispatchers)
 
-    console.log('[Binge] Starting file system... ')
-    watchProject(rootNode, (watcher, packLists) => {
-        state = createInitialState([rootNode, ...rootNode.reachable], packLists)
+    console.log('[Binge] Watch indexing... ')
+    watchProject(rootNode, watcher => {
+        // Initial State
+        state = {
+            mode: 'watching',
+            spawnedApp: null,
+            spawnedPackages: [],
+            nodes: [rootNode, ...rootNode.reachable],
+            packlists: [rootNode, ...rootNode.reachable].map(node => ({
+                node,
+                files: [],
+            })),
+        }
+
         watcher
             .on('change', changePath => {
                 dispatchers.change(changePath)
@@ -46,32 +59,16 @@ export default rootNode => {
                 dispatchers.add(changePath)
             })
 
+        console.log(`[Binge] Watch started!`)
         if (rootNode.isApp) {
-            watchApp(rootNode)
-        } else {
-            console.log('[Binge] Watch started!')
-        }
-    })
-
-    onExit(() => {
-        console.log('\n')
-        if (state && state.spawnedApp) {
-            state.spawnedApp.child.kill()
-            console.log(
-                `[Binge] Killed watch for ${chalk.yellow(
-                    state.spawnedApp.node.name
-                )}`
-            )
+            childLauncher.watchApp(rootNode)
         }
 
-        if (state) {
-            state.spawnedPackages.forEach(entry => {
-                entry.child.kill()
-                console.log(
-                    `[Binge] Killed watch for ${chalk.yellow(entry.node.name)}`
-                )
-            })
-        }
+        onExit(() => {
+            console.log('\n[Binge] Exit detected')
+            watcher.close()
+            childLauncher.killAll()
+        })
     })
 }
 
