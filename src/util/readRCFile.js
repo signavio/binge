@@ -9,35 +9,77 @@ export default function(pkgPath, callback) {
             return callback(null, applyDefaults())
         }
 
-        let result = parse(data)
-        if (!result) {
-            callback(new Error(`Not valid JSON at ${filePath}`))
-        } else if (!isValid(result)) {
-            callback(new Error(`Invalid object shape at ${filePath}`))
+        let result
+        let error
+        try {
+            result = JSON.parse(data)
+            error = null
+        } catch (e) {
+            result = null
+            error = e
+        }
+        if (error) {
+            callback(makeError('.bingerc not valid JSON', pkgPath, error))
+            return
+        }
+
+        const keys = invalidKeys(result)
+        if (keys.length) {
+            callback(
+                makeError(
+                    '.bingerc has invalid keys',
+                    pkgPath,
+                    `Invalid keys: ${keys.join(', ')}`
+                )
+            )
         } else {
             callback(null, applyDefaults(result))
         }
     })
 }
 
-function parse(data) {
-    try {
-        return JSON.parse(data)
-    } catch (e) {
-        return null
-    }
-}
+function invalidKeys(result) {
+    const VALID_KEYS = [
+        'isApp',
+        'isDummy',
+        'testMode',
+        'scriptBuild',
+        'scriptWatch',
+    ]
 
-function isValid(result) {
-    const VALID_SETTINGS = ['isApp', 'isDummy', 'testMode']
-    return (
-        Object.keys(result).every(key => VALID_SETTINGS.includes(key)) &&
-        ['boolean', 'undefined'].includes(typeof result.isDummy) &&
-        ['boolean', 'undefined'].includes(typeof result.isRoot) &&
-        ['karma', 'mocha', 'none', undefined].includes(result.testMode)
-    )
+    const VALIDATORS = {
+        isApp: () => ['boolean', 'undefined'].includes(typeof result.isApp),
+        isDummy: () => ['boolean', 'undefined'].includes(typeof result.isDummy),
+        testMode: () =>
+            ['karma', 'mocha', 'none', undefined].includes(result.testMode),
+        scriptBuild: () =>
+            ['string', 'undefined'].includes(typeof result.scriptBuild),
+        scriptWatch: () =>
+            ['string', 'undefined'].includes(typeof result.scriptWatch),
+    }
+
+    return Object.keys(result)
+        .filter(key => VALID_KEYS.includes(key))
+        .map(key => (VALIDATORS[key]() ? null : key))
+        .filter(Boolean)
 }
 
 function applyDefaults(result = {}) {
-    return { isDummy: false, isApp: false, testMode: 'none', ...result }
+    return {
+        isDummy: false,
+        isApp: false,
+        testMode: 'none',
+        scriptWatch: null,
+        scriptBuild: null,
+        ...result,
+    }
+}
+
+function makeError(title, path, rawError) {
+    return (
+        `[Binge] ${title}\n` +
+        `[Binge] at -> ${path}\n` +
+        `[Binge] raw error:\n` +
+        String(rawError)
+    )
 }

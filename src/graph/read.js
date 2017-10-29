@@ -105,8 +105,20 @@ export default function readGraph(rootPath, callback) {
                 'mismatch on loaded nodes length'
             )
 
-            if (isWrongLocalName(names, nodes)) {
-                callback(errorWrongLocalName(names, nodes))
+            const wrongNames = findWrongNameReferences(names, nodes)
+            if (wrongNames.length) {
+                callback(
+                    makeError(
+                        'Referencing packages with names that do not the real name',
+                        node.path,
+                        wrongNames
+                            .map(
+                                ([name, realName]) =>
+                                    `Used '${name}' but the real name is '${realName}'`
+                            )
+                            .join('\n')
+                    )
+                )
             } else {
                 callback(null)
             }
@@ -120,17 +132,13 @@ function isFileVersion(version) {
     )
 }
 
-function isWrongLocalName(names, nodes) {
-    return !names.every((name, index) => name === nodes[index].name)
-}
-
-function errorWrongLocalName(names, nodes) {
-    const name = names.find((name, index) => name !== nodes[index].name)
-    const node = nodes.find((node, index) => node.name !== names[index])
-
-    return new Error(
-        `Referencing package with '${name}' but its real name is '${node.name}'`
-    )
+function findWrongNameReferences(names, nodes) {
+    return names
+        .map(
+            (name, index) =>
+                name === nodes[index].name ? null : [name, nodes[index].name]
+        )
+        .filter(Boolean)
 }
 
 function readPackageJson(pkgPath, callback) {
@@ -138,7 +146,7 @@ function readPackageJson(pkgPath, callback) {
 
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
-            callback(err)
+            callback(makeError('Error reading package.json', pkgPath, err))
             return
         }
 
@@ -154,35 +162,18 @@ function readPackageJson(pkgPath, callback) {
             err = e
         }
 
-        callback(err, { packageJson, packageJsonData })
+        callback(
+            err ? makeError('Error parsing package.json', pkgPath, err) : null,
+            { packageJson, packageJsonData }
+        )
     })
 }
 
-/*
-function readPackageLock(pkgPath, callback) {
-    const filePath = path.join(pkgPath, 'package-lock.json')
-
-    fs.readFile(filePath, 'utf8', (err, data) => {
-        if (err) {
-            callback(null, {
-                packageLock: null,
-                packageLockData: null,
-                packageLockError: null,
-            })
-            return
-        }
-
-        let packageLock
-        let packageLockError
-        try {
-            packageLock = JSON.parse(data)
-            packageLockError = null
-        } catch (e) {
-            packageLock = null
-            packageLockError = e
-        }
-
-        callback(null, { packageLock, packageLockData: data, packageLockError })
-    })
+function makeError(title, path, rawError) {
+    return (
+        `[Binge] ${title}\n` +
+        `[Binge] at -> ${path}\n` +
+        `[Binge] raw error:\n` +
+        String(rawError)
+    )
 }
-*/

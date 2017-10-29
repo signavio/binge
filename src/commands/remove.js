@@ -1,5 +1,5 @@
-import createHoistedCommand from '../util/createHoistedCommand'
+import createHoisted from './createHoisted'
 
 const selectArgs = () => process.argv.slice(process.argv.indexOf('remove'))
 
-export default createHoistedCommand(selectArgs)
+export default createHoisted(selectArgs)

@@ -46,6 +46,7 @@ var cli = meow([
     'Hoisted Yarn Commands:',
     '  add',
     '  list',
+    '  outdated',
     '  remove',
     '  upgrade',
     'Hoisted Yarn Commands follow these steps:',
