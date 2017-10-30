@@ -1,4 +1,5 @@
 import invariant from 'invariant'
+import semver from 'semver'
 import reconcileVersion from '../util/reconcileVersion'
 import { SANITY } from '../constants'
 
@@ -6,15 +7,15 @@ import { SANITY } from '../constants'
  * Receives a root packageJson, and all the reachable packageJsons
  * Returns an object of the form:
  * {
- *   ok: ArrayOf(ENTRY)
- *   reconciled: ArrayOf(ENTRY)
- *   error: ArrayOf(ENTRY)
+ *   ok: keyValueObject([dependenName]:ENTRY)
+ *   warning: keyValueObject([dependenName]:ENTRY)
+ *   error: keyValueObject([dependenName]:ENTRY)
  * }
  *
  * ENTRY has the form of:
  * {
  *   name: String, the dependency name
- *   version: String|NULL, the reconciiled dependency version or NULL if was
+ *   version: String|NULL, the reconciled dependency version or NULL if was
  *            not possible to reconcile (is error entry)
  *   pointers: ArrayOf(POINTER)
  *   isDev: Boolean, is it a devDependency
@@ -22,11 +23,10 @@ import { SANITY } from '../constants'
  *
  * POINTER has the form of:
  * {
- *   pkgName: String, name of the package where this dependency pointer was
- *            retrieved from
+ *   pkgName: String, name of the package pointing to the dependency
  *   name: String, Dependency name
  *   version: String, Dependency version, in a raw format as seen in the
- *            packageJson
+ *            package.json
  *   isDev: Boolean, is it a devDependency
  * }
  */
@@ -48,7 +48,7 @@ export default function(packageJson, reachablePackageJsons) {
     return sanityCheck({
         ok: reduce(pointerGroups.filter(isOk)),
         reconciled: reduce(pointerGroups.filter(isReconciled)),
-        unreconciled: reduce(pointerGroups.filter(isUnreconciled)),
+        error: reduce(pointerGroups.filter(isError)),
     })
 }
 
@@ -117,9 +117,10 @@ function isOk(pointers) {
         'Expected a non-empty Array'
     )
     return (
+        // all elements are equal
         pointers.every(pointer => pointer.version === pointers[0].version) &&
-        reconcileVersion(pointers.map(({ version }) => version)) ===
-            pointers[0].version
+        // and it is a pinned down version (non range)
+        semver.valid(pointers[0].version)
     )
 }
 function isReconciled(pointers) {
@@ -128,7 +129,7 @@ function isReconciled(pointers) {
         reconcileVersion(pointers.map(({ version }) => version)) !== null
     )
 }
-function isUnreconciled(pointers) {
+function isError(pointers) {
     return !isOk(pointers) && !isReconciled(pointers)
 }
 
@@ -142,12 +143,12 @@ function sanityCheck(result) {
     if (SANITY) {
         const oNames = Object.keys(result.ok)
         const rNames = Object.keys(result.reconciled)
-        const uNames = Object.keys(result.unreconciled)
+        const eNames = Object.keys(result.error)
 
         invariant(
-            oNames.every(name => ![...rNames, ...uNames].includes(name)) &&
-                rNames.every(name => ![...oNames, ...uNames].includes(name)),
-            'Unexpected overlap in hoisting'
+            oNames.every(name => ![...rNames, ...eNames].includes(name)) &&
+                rNames.every(name => ![...oNames, ...eNames].includes(name)),
+            'Unexpected overlap'
         )
     }
 

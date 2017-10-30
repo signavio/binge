@@ -42,13 +42,13 @@ export default function(node, callback) {
         return
     }
 
-    const { ok, reconciled, unreconciled } = hoistDependencies(
+    const { ok, reconciled, error } = hoistDependencies(
         node.packageJson,
         node.reachable.map(childNode => childNode.packageJson)
     )
 
-    if (Object.keys(unreconciled).length > 0) {
-        callback(makeError(node, 'Cannot check, is unhoistable'))
+    if (Object.keys(error).length > 0) {
+        callback(makeError(node, 'Cannot check because node is unhoistable'))
         return
     }
 
@@ -65,12 +65,18 @@ export default function(node, callback) {
     }
 
     const allHoisted = { ...ok, ...reconciled }
-    const [missedName, missedVersion] = findMiss(yarnLock, allHoisted)
-    if (missedName) {
+    const misses = findMisses(yarnLock, allHoisted)
+    if (misses.length) {
         callback(
             makeError(
                 node,
-                `Unsynced dependency: '${missedName}' wanted ${missedVersion} but on the lock file found no match`
+                `Lock out of sync`,
+                misses
+                    .map(
+                        ([name, version]) =>
+                            `'${name}' wanted ${version} but on the lock file found no match)`
+                    )
+                    .join('\n')
             )
         )
         return
@@ -79,22 +85,16 @@ export default function(node, callback) {
     callback(null)
 }
 
-function findMiss(yarnLock, allHoisted) {
-    const miss = Object.keys(allHoisted)
-        .map(name => ({
-            name,
-            version: allHoisted[name].version,
-        }))
-        .find(entry => !yarnLock[`${entry.name}@${entry.version}`])
-
-    return miss ? [miss.name, miss.version] : []
+function findMisses(yarnLock, allHoisted) {
+    const notInYarnLock = ([name, version]) => !yarnLock[`${name}@${version}`]
+    return Object.keys(allHoisted)
+        .map(name => [name, allHoisted[name].version])
+        .filter(notInYarnLock)
 }
 
 function findFile(yarnLock) {
     const REGEX = /.+@file:.+/
-
     const key = Object.keys(yarnLock).find(key => REGEX.test(key))
-
     return key ? key.slice(0, key.indexOf('@file:')) : null
 }
 

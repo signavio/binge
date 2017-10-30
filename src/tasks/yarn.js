@@ -115,7 +115,7 @@ function canHoist(node) {
         node.reachable.map(childNode => childNode.packageJson)
     )
 
-    return Object.keys(hoistingResult.unreconciled).length === 0
+    return Object.keys(hoistingResult.error).length === 0
 }
 
 function makeError(node, title, detail = '') {
