@@ -1,106 +1,44 @@
-import chalk from 'chalk'
-
-export default function() {
-    console.log(chalk.red('Failure'))
-    console.log('[Binge] TODO')
-    console.log('[Binge] comming soon')
-    process.exit(1)
-}
-
-/*
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
+import invariant from 'invariant'
 
 import createGraph from '../graph/create'
-import taskInstall, { createInstaller } from '../tasks/install'
+
+import { createInstaller } from '../tasks/install'
+import createTaskYarn from '../tasks/yarn'
 import taskTouch from '../tasks/touch'
-import createReporter from '../createReporter'
 
 export default function(cliFlags) {
-    const npmArgs = yarnArgsOnly(process.argv)
-    if (npmArgs.length > 1) {
-        personalizedInstall(cliFlags)
-    } else {
-        nakedInstall(cliFlags)
-    }
-}
-
-function nakedInstall(cliFlags) {
-    const reporter = createReporter(cliFlags)
-    createGraph(path.resolve('.'), (err, nodes) => {
-        if (err) end(err)
-
-        const pipeOutput = nodes.length === 1
-        if (pipeOutput) {
-            const taskInstall = createInstaller(['install'], {
-                stdio: 'inherit',
-            })
-            taskInstall(nodes[0], (err, result) => end(err, !err && [result]))
-        } else {
-            reporter.series(`Installing...`)
-            async.mapSeries(nodes, installNode, (err, results) => {
-                reporter.clear()
-                end(err, results)
-            })
-        }
-    })
-
-    function installNode(node, callback) {
-        const done = reporter.task(node.name)
-        taskInstall(node, (err, result) => {
-            done()
-            // pass the install results
-            callback(err, result)
-        })
-    }
-}
-
-function personalizedInstall(cliFlags) {
-    const reporter = createReporter(cliFlags)
-
     createGraph(path.resolve('.'), (err, nodes) => {
         if (err) end(err)
 
         const [rootNode] = nodes
 
+        invariant(!rootNode.isDummy, 'Add is not supported in Dummy')
+
+        const taskAdd = createTaskYarn(yarnArgsOnly(process.argv), {
+            stdio: 'inherit',
+        })
+
         async.waterfall(
             [
-                done => installRoot(rootNode, done),
-                (rootResult, done) => {
-                    touch(nodes, rootResult.resultDelta, (err, touchResults) =>
-                        done(err, rootResult, touchResults)
-                    )
-                },
-                (rootResult, touchResults, done) => {
+                done => taskAdd(rootNode, done),
+                ({ resultDelta }, done) => touch(nodes, resultDelta, done),
+                (touchResults, done) =>
                     // TODO only readload if touched produced anything
                     createGraph(path.resolve('.'), (err, nodes) => {
-                        done(err, rootResult, touchResults, nodes)
-                    })
-                },
-                (
-                    rootResult,
-                    touchResults,
-                    [rootNode, ...restNodes] = [],
-                    done
-                ) => {
-                    installRest(restNodes, (err, restResults) => {
-                        done(err, !err && [rootResult, ...restResults])
+                        done(err, nodes, touchResults)
+                    }),
+                (nodes, touchResults, done) => {
+                    propagate(nodes, touchResults, (err, restResults) => {
+                        done(err, !err && touchResults)
                     })
                 },
             ],
             end
         )
     })
-
-    function installRoot(rootNode, callback) {
-        // lets pipe the stuff down:
-        const taskInstall = createInstaller(yarnArgsOnly(process.argv), {
-            stdio: 'inherit',
-        })
-
-        return taskInstall(rootNode, callback)
-    }
 
     function touch(nodes, dependencyDelta, callback) {
         async.map(
@@ -113,31 +51,36 @@ function personalizedInstall(cliFlags) {
         )
     }
 
-    function installRest(nodes, callback) {
-        reporter.series(`Installing tree...`)
-        async.mapSeries(nodes, installChild, (err, result) => {
-            reporter.clear()
-            callback(err, result)
-        })
+    function propagate(nodes, touchResults, callback) {
+        // ignore the root because that was already worked on by yarn
+        const restNodes = nodes.slice(1)
+        const restResults = touchResults.slice(1)
+
+        async.mapSeries(
+            restNodes.map((node, index) => ({
+                node,
+                skipped: restResults[index].skipped,
+                appliedDelta: restResults[index].appliedDelta,
+            })),
+            propagateNode,
+            callback
+        )
     }
 
-    function installChild(childNode, callback) {
-        const done = reporter.task(childNode.name)
-        const taskNpm = createInstaller(['install'], {})
-        taskNpm(childNode, (err, result) => {
-            done()
-            callback(err, result)
-        })
+    function propagateNode({ node, skipped, appliedDelta }, callback) {
+        const taskInstall = createInstaller(['install'])
+        if (!skipped) {
+            console.log(`Propagating changes to ${node.name}`)
+            taskInstall(node, callback)
+        } else {
+            callback(null)
+        }
     }
 }
 
 function yarnArgsOnly(argv) {
-    return argv
-        .slice(argv.indexOf('install'))
-        .filter(a => a !== '--quiet' && !a.startsWith('--install-concurrency'))
+    return argv.slice(argv.indexOf('add')).filter(a => a !== '--quiet')
 }
-
-
 
 function end(err, result) {
     if (err) {
@@ -145,24 +88,35 @@ function end(err, result) {
         console.log(err)
         process.exit(1)
     } else {
-        console.log(chalk.green('Success'))
         summary(result)
         process.exit(0)
     }
 }
 
 function summary(result) {
-    const installCount = result.filter(e => e.skipped === false).length
-    const installSkipCount = result.filter(e => e.skipped === true).length
-    const patchedCount = result.filter(e => e.patched === true).length
+    const touchedCount = result.filter(entry => entry.skipped !== true).length
 
-    const word = count => (count === 1 ? 'node' : 'nodes')
+    result.forEach(({ node, appliedDelta }) => {
+        Object.keys(appliedDelta.dependencies).forEach(name => {
+            console.log(
+                `${chalk.yellow(node.name)} -> ` +
+                    `${name}@${appliedDelta.dependencies[name]}`
+            )
+        })
 
-    console.log(
-        `Installed ${installCount} ${word(
-            installCount
-        )}, patched ${patchedCount}, ${installSkipCount} up-to-date`
-    )
+        Object.keys(appliedDelta.devDependencies).forEach(name => {
+            console.log(
+                `${chalk.yellow(node.name)} -> ` +
+                    `${name}@${appliedDelta.devDependencies[name]} (dev)`
+            )
+        })
+    })
+
+    console.log(`Touched ${touchedCount} nodes`)
 }
 
+/*
+function dependencyDeltaText(node, dependencyDelta) {
+    Object.keys(dependencyDelta)
+}
 */

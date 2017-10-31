@@ -8,8 +8,7 @@
     "clean": "rimraf lib",
     "dev": "npm run clean && babel -w src -d lib",
     "lint": "eslint '{bin/**/*.js,src/**/*.js,test/**/*.js}'",
-    "test": "mocha",
-    "prepublish": "npm run lint && npm run prettier:check && npm run build",
+    "test": "mocha",    
     "prettier": "prettier --write --tab-width 4 --no-semi --single-quote --trailing-comma es5 '{bin/**/*.js,src/**/*.js,test/**/*.js}'",
     "prettier:check": "prettier --list-different --tab-width 4 --no-semi --single-quote --trailing-comma es5 '{bin/**/*.js,src/**/*.js,test/**/*.js}'"
   },
@@ -27,7 +26,7 @@
     "md5-slim": "1.0.0",
     "meow": "3.7.0",
     "npm-packlist": "1.1.9",
-    "pad": "2.0.0",
+    "pad": "2.0.1",
     "semver": "5.4.1",
     "semver-intersect": "1.1.2",
     "signal-exit": "3.0.2"

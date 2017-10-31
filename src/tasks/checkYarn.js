@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import hoistDependencies from '../hoisting/collect'
+import hoisting from '../hoisting'
 import parseYarnLock from '../util/parseYarnLock'
 
 export default function(node, callback) {
@@ -42,12 +42,12 @@ export default function(node, callback) {
         return
     }
 
-    const { ok, reconciled, error } = hoistDependencies(
+    const { dependencyStatus } = hoisting(
         node.packageJson,
         node.reachable.map(childNode => childNode.packageJson)
     )
 
-    if (Object.keys(error).length > 0) {
+    if (dependencyStatus.filter(({ status }) => status === 'ERROR').length) {
         callback(makeError(node, 'Cannot check because node is unhoistable'))
         return
     }
@@ -64,8 +64,7 @@ export default function(node, callback) {
         return
     }
 
-    const allHoisted = { ...ok, ...reconciled }
-    const misses = findMisses(yarnLock, allHoisted)
+    const misses = findMisses(yarnLock, dependencyStatus)
     if (misses.length) {
         callback(
             makeError(
@@ -85,11 +84,9 @@ export default function(node, callback) {
     callback(null)
 }
 
-function findMisses(yarnLock, allHoisted) {
-    const notInYarnLock = ([name, version]) => !yarnLock[`${name}@${version}`]
-    return Object.keys(allHoisted)
-        .map(name => [name, allHoisted[name].version])
-        .filter(notInYarnLock)
+function findMisses(yarnLock, dependencyStatus) {
+    const notInYarnLock = ({ name, version }) => !yarnLock[`${name}@${version}`]
+    return dependencyStatus.filter(notInYarnLock)
 }
 
 function findFile(yarnLock) {

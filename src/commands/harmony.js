@@ -3,7 +3,7 @@ import pad from 'pad'
 import path from 'path'
 import semver from 'semver'
 
-import hoisting from '../hoisting/collect'
+import hoisting from '../hoisting'
 import createGraph from '../graph/create'
 
 export default function(cliFlags) {
@@ -16,23 +16,24 @@ export default function(cliFlags) {
 
         const [entryNode] = nodes
 
-        const { ok, reconciled, error } = hoisting(
+        const { dependencyPointers, dependencyStatus } = hoisting(
             entryNode.packageJson,
             entryNode.reachable.map(({ packageJson }) => packageJson)
         )
 
         const devDependencyRanges = findDevDependencyRanges(entryNode)
 
-        const okCount = Object.keys(ok).length
-        const reconciledCount = Object.keys(reconciled).length
-        const errorCount = Object.keys(error).length
-
         if (cliFlags.verbose) {
-            printVerbose(ok, reconciled, error, devDependencyRanges)
+            printVerbose(
+                dependencyPointers,
+                dependencyStatus,
+                devDependencyRanges
+            )
         } else {
-            print(reconciled, error, devDependencyRanges)
+            print(dependencyPointers, dependencyStatus, devDependencyRanges)
         }
 
+        /*
         end(
             okCount,
             reconciledCount,
@@ -40,17 +41,10 @@ export default function(cliFlags) {
             Object.keys(devDependencyRanges).length,
             cliFlags
         )
+        */
     })
 }
 
-/*
- * Go through all packageJsons, find all devDependencies that are ranges.
- * This is a different process because:
- * devDependencies are not hoisted, so has no influence in the hoisting,
- * mechanism. However, as a good practice we want to enforce that no ranges
- * exist in package.jsons. We include it as part of the harmony command
- *
- */
 function findDevDependencyRanges(node) {
     return node.reachable
         .map(node => ({
@@ -69,10 +63,10 @@ function findDevDependencyRanges(node) {
         .reduce((result, next) => [...result, ...next], [])
 }
 
-function print(reconciled, error, devDependencyRanges) {
+function print(pointers, status, devDependencyRanges) {
     function compare(a, b) {
-        if (a.pkgName < b.pkgName) return -1
-        if (a.pkgName > b.pkgName) return 1
+        if (a.nodeName < b.nodeName) return -1
+        if (a.nodeName > b.nodeName) return 1
         return 0
     }
 
@@ -81,59 +75,49 @@ function print(reconciled, error, devDependencyRanges) {
         else return 1
     }
 
-    const errorAndReconciled = {
-        ...reconciled,
-        ...error,
-    }
-
-    const calcWidth = names =>
-        names
-            .map(name => name.length)
-            .reduce((result, next) => (next > result ? next : result), 0)
-
+    const nonOk = status.filter(({ status }) => status !== 'OK')
     const widthCol1 = calcWidth(['Warning', 'Error']) + 2
-    const widthCol2 = calcWidth(Object.keys(errorAndReconciled)) + 2
-    const widthCol3 =
-        calcWidth(
-            Object.keys(errorAndReconciled).map(
-                name => errorAndReconciled[name].version || 'failed'
-            )
-        ) + 2
+    const widthCol2 = calcWidth(nonOk.map(({ name }) => name)) + 2
+    const widthCol3 = calcWidth(nonOk.map(({ version }) => version || 'failed'))
 
-    const pointerText = (bag, name) =>
-        [...bag[name].pointers]
+    const pointerText = name =>
+        pointers
+            .filter(entry => entry.name === name)
             .sort(compare)
-            .map(pointer => `${pointer.pkgName}@${pointer.version}`)
+            .map(pointer => `${pointer.nodeName}@${pointer.version}`)
             .join(', ')
 
-    const errorText = Object.keys(error)
-        .sort()
-        .map(name => {
+    const errorText = status
+        .filter(entry => entry.status === 'ERROR')
+        .sort(compareByName)
+        .map(({ name }) => {
             const prefix =
                 `${chalk.red(pad('Error', widthCol1))}` +
                 `${pad(name, widthCol2)}` +
                 `${pad('failed', widthCol3)}` +
                 ` -> `
-            const postfix1 = pointerText(error, name)
-            const postfix2 = `(in ${error[name].pointers
-                .length} local-packages, trimmed for length)`
+            const postfix1 = pointerText(name)
+            const postfix2 = `(in ${pointers.filter(
+                entry => entry.name === name
+            ).length} local-packages, trimmed)`
             return (prefix + postfix1).length < 140
                 ? prefix + postfix1
                 : prefix + postfix2
         })
         .join('\n')
 
-    const warningText = Object.keys(reconciled)
-        .sort()
-        .map(name => {
+    const warningText = status
+        .filter(entry => entry.status === 'RECONCILED')
+        .sort(compareByName)
+        .map(({ name, version }) => {
             const prefix =
                 `${chalk.yellowBright(pad('Warning', widthCol1))}` +
                 `${pad(name, widthCol2)}` +
-                `${pad(reconciled[name].version, widthCol3)}` +
+                `${pad(version, widthCol3)}` +
                 ` -> `
 
-            const postfix1 = pointerText(reconciled, name)
-            const postfix2 = `(${reconciled[name].pointers
+            const postfix1 = pointerText(name)
+            const postfix2 = `(${pointers.filter(entry => entry.name === name)
                 .length} references, trimmed)`
             return (prefix + postfix1).length < 140
                 ? prefix + postfix1
@@ -146,8 +130,7 @@ function print(reconciled, error, devDependencyRanges) {
         .map(
             ({ pkgName, name, version }) =>
                 `${chalk.yellowBright(pad('Warning', widthCol1))}` +
-                `${pad(name, widthCol2)}` +
-                `${pkgName}@${version}`
+                `${pad(name, widthCol2)} -> ${pkgName}@${version}`
         )
         .join('\n')
 
@@ -160,40 +143,70 @@ function print(reconciled, error, devDependencyRanges) {
 
     if (rangesText) {
         console.log(
-            'Not related with hoisting, still we found some ranges in devDependencies:'
+            'Not related with hoisting, but ranges were found in devDependencies:'
         )
         console.log(rangesText)
         console.log()
     }
 }
 
-function printVerbose(ok, reconciled, error, devDependencyRanges) {
+function printVerbose(pointers, status, devDependencyRanges) {
     function compare(a, b) {
-        if (a.pkgName < b.pkgName) return -1
-        if (a.pkgName > b.pkgName) return 1
+        if (a.nodeName < b.nodeName) return -1
+        if (a.nodeName > b.nodeName) return 1
         return 0
     }
 
-    const printer = (bag, versionColor, pointerColor) => {
-        Object.keys(bag)
-            .sort()
-            .forEach(name => {
-                console.log(`${name} @ ${versionColor(bag[name].version)}`)
-
-                const pointers = [].concat(bag[name].pointers)
-                pointers.sort(compare).forEach(pointer => {
-                    console.log(
-                        `\t${pointer.pkgName} @ ${pointerColor(
-                            pointer.version
-                        )}`
-                    )
-                })
-            })
+    function compareByName(a, b) {
+        if (a.name < b.name) return -1
+        else return 1
     }
 
-    printer(ok, chalk.green, chalk.green)
-    printer(reconciled, chalk.green, chalk.yellowBright)
-    printer(error, () => chalk.red('failed'), chalk.red)
+    const widthHeader =
+        calcWidth(
+            status.map(({ name, version }) => `${name} ${version || 'failed'}`)
+        ) + 2
+    const widthCol1 = calcWidth(pointers.map(pointer => pointer.nodeName)) + 4
+    const widthCol2 = calcWidth(
+        pointers.map(pointer => pointer.version || 'failed')
+    )
+    const widthTotal = Math.max(widthCol1 + widthCol2, widthHeader)
+
+    const header = (name, version, color) => {
+        const available = widthTotal - (`${name}@${version}`.length + 2)
+        const padLeft = Math.floor(available / 2)
+        const padRight = Math.floor(available / 2) + available % 2
+
+        console.log(pad('', widthTotal, '-'))
+        console.log(
+            `|${pad(padLeft, '')}${name} ${color(version)}${pad('', padRight)}|`
+        )
+        console.log(pad('', widthTotal, '-'))
+    }
+
+    console.log()
+    console.log()
+    ;[...status].sort(compareByName).forEach(({ name, version, status }) => {
+        const versionColor = status === 'ERROR' ? chalk.red : chalk.green
+        const referenceColor =
+            status === 'OK'
+                ? chalk.green
+                : status === 'ERROR' ? chalk.red : chalk.yellowBright
+
+        header(name, version || 'failed', versionColor)
+
+        pointers
+            .filter(pointer => pointer.name === name)
+            .sort(compare)
+            .forEach(({ nodeName, version }) => {
+                console.log(
+                    `${pad(nodeName + ' -> ', widthCol1)}` +
+                        `${pad(widthTotal - widthCol1 - version.length, '')}` +
+                        `${referenceColor(version)}`
+                )
+            })
+        console.log()
+    })
 }
 
 function end(okCount, reconciledCount, errorCount, rangeCount, cliFlags) {
@@ -204,26 +217,23 @@ function end(okCount, reconciledCount, errorCount, rangeCount, cliFlags) {
     }
 
     if (errorCount) {
-        console.log(`Found ${errorCount} unhoistable dependencies`)
+        console.log(`${errorCount} dependencies could not be hoisted`)
     } else if (reconciledCount) {
         console.log(
-            `The tree is hoistable, but ${reconciledCount} dependencies were reconciled.` +
+            `Could hoist the tree, but ${reconciledCount} dependencies were reconciled.` +
                 `\nPin down all ranges to correct the problem.`
         )
     } else if (rangeCount) {
         console.log(
-            `The tree is hoistable, but ${reconciledCount} dependencies with ranges were found in devDependencies.` +
+            `Could hoist the tree, but ${reconciledCount} dependencies with ranges were found in devDependencies.` +
                 `\nPin down all ranges to correct the problem.`
         )
     } else {
-        console.log(
-            `The tree is hoistable, but ${reconciledCount} dependencies with ranges were found in devDependencies.` +
-                `\nPin down all ranges to correct the problem.`
-        )
+        console.log(`Hoisted tree holds ${okCount} dependencies`)
     }
 
     if (!cliFlags.verbose) {
-        console.log('(run the command with the --versobe flag for more info)')
+        console.log('(run the command with the --verbose flag for more info)')
     }
 
     if (errorCount || reconciledCount || rangeCount) {
@@ -231,4 +241,10 @@ function end(okCount, reconciledCount, errorCount, rangeCount, cliFlags) {
     } else {
         process.exit(0)
     }
+}
+
+function calcWidth(names) {
+    return names
+        .map(name => name.length)
+        .reduce((result, next) => (next > result ? next : result), 0)
 }

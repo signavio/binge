@@ -2098,9 +2098,9 @@ p-locate@^2.0.0:
   dependencies:
     p-limit "^1.1.0"
 
-pad@2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/pad/-/pad-2.0.0.tgz#20e5cc9cbc4ca6e707a67c566dc7df5200928f32"
+pad@2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/pad/-/pad-2.0.1.tgz#a371bc135048da6f4c260a2aef245132cbdd0f8c"
   dependencies:
     wcwidth "^1.0.1"
 
