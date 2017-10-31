@@ -14,7 +14,7 @@ export default function(packageJson, reachablePackageJsons) {
         devDependencies: devDependencies(devPointers, dependencyStatus),
         dependencyPointers: [...pointers, ...devPointers],
         dependencyStatus,
-        canHoist: canHoist(pointers, dependencyStatus),
+        canHoist: canHoist(dependencyStatus),
     }
 }
 

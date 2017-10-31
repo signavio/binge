@@ -33,7 +33,15 @@ export default function(cliFlags) {
             print(dependencyPointers, dependencyStatus, devDependencyRanges)
         }
 
-        /*
+        const okCount = dependencyStatus.filter(({ status }) => status === 'OK')
+            .length
+        const reconciledCount = dependencyStatus.filter(
+            ({ status }) => status === 'RECONCILED'
+        ).length
+        const errorCount = dependencyStatus.filter(
+            ({ status }) => status === 'ERROR'
+        ).length
+
         end(
             okCount,
             reconciledCount,
@@ -41,7 +49,6 @@ export default function(cliFlags) {
             Object.keys(devDependencyRanges).length,
             cliFlags
         )
-        */
     })
 }
 
@@ -183,9 +190,6 @@ function printVerbose(pointers, status, devDependencyRanges) {
         )
         console.log(pad('', widthTotal, '-'))
     }
-
-    console.log()
-    console.log()
     ;[...status].sort(compareByName).forEach(({ name, version, status }) => {
         const versionColor = status === 'ERROR' ? chalk.red : chalk.green
         const referenceColor =

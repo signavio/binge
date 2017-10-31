@@ -16,15 +16,12 @@ export default (yarnArgs, spawnOptions) => (node, callback) => {
         node.reachable.map(({ packageJson }) => packageJson)
     )
 
-    console.log(canHoist)
-    process.exit(0)
-
     if (!canHoist) {
         callback(
             makeError(
                 node,
                 'Not possible to hoist node!',
-                `Execute 'binge harmony' to understand the problem`
+                `Execute 'binge harmony' for details on the problem`
             ),
             {
                 resultDelta: emptyDelta,
