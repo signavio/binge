@@ -20,10 +20,6 @@ export default function(cliFlags) {
 
     function checkNode(node, callback) {
         const done = reporter.task(node.name)
-        setTimeout(() => {
-            done()
-        }, 0)
-
         taskCheckYarn(node, err => {
             done()
             callback(err)
@@ -37,6 +33,9 @@ export default function(cliFlags) {
             process.exit(1)
         } else {
             console.log(chalk.green('Success'))
+            console.log(
+                `${result.length} local-packages checked for lock consistency`
+            )
             process.exit(0)
         }
     }

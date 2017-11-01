@@ -1,5 +1,7 @@
 /src
 /test
+/examples
+
 .babelrc
 .editorconfig
 .eslintrc.js

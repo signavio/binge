@@ -19,7 +19,7 @@ export default function(entryPath, callback) {
             // eslint-disable-next-line
             callback(
                 `Version ${rootNode.version} is required,` +
-                    ` but currently running binge ${packageJson.version}`
+                    ` but currently running binge@${packageJson.version}`
             )
             return
         }
