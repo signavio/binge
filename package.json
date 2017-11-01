@@ -4,11 +4,11 @@
   "description": "Tool for managing monorepos with local packages",
   "main": "lib/index.js",
   "scripts": {
-    "build": "npm run clean && babel src -d lib",
+    "build": "yarn run clean && babel src -d lib",
     "clean": "rimraf lib",
-    "dev": "npm run clean && babel -w src -d lib",
+    "dev": "yarn run clean && babel -w src -d lib",
     "lint": "eslint '{bin/**/*.js,src/**/*.js,test/**/*.js}'",
-    "test": "mocha",    
+    "test": "mocha",
     "prettier": "prettier --write --tab-width 4 --no-semi --single-quote --trailing-comma es5 '{bin/**/*.js,src/**/*.js,test/**/*.js}'",
     "prettier:check": "prettier --list-different --tab-width 4 --no-semi --single-quote --trailing-comma es5 '{bin/**/*.js,src/**/*.js,test/**/*.js}'"
   },

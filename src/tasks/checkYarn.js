@@ -42,12 +42,12 @@ export default function(node, callback) {
         return
     }
 
-    const { dependencyStatus } = hoisting(
+    const { dependencyStatus, canHoist } = hoisting(
         node.packageJson,
         node.reachable.map(childNode => childNode.packageJson)
     )
 
-    if (dependencyStatus.filter(({ status }) => status === 'ERROR').length) {
+    if (!canHoist) {
         callback(makeError(node, 'Cannot check because node is unhoistable'))
         return
     }
@@ -72,8 +72,8 @@ export default function(node, callback) {
                 `Lock out of sync`,
                 misses
                     .map(
-                        ([name, version]) =>
-                            `'${name}' wanted ${version} but on the lock file found no match)`
+                        ({ name, version }) =>
+                            `'${name}' wanted ${version} but no match found on the lock file`
                     )
                     .join('\n')
             )

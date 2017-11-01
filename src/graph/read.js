@@ -113,8 +113,8 @@ export default function readGraph(rootPath, callback) {
                         node.path,
                         wrongNames
                             .map(
-                                ([name, realName]) =>
-                                    `Used '${name}' but the real name is '${realName}'`
+                                ([name, realName, nodePath]) =>
+                                    `Used '${name}' to reference local-package at ${nodePath}, however its real name is '${realName}'`
                             )
                             .join('\n')
                     )
@@ -136,7 +136,9 @@ function findWrongNameReferences(names, nodes) {
     return names
         .map(
             (name, index) =>
-                name === nodes[index].name ? null : [name, nodes[index].name]
+                name === nodes[index].name
+                    ? null
+                    : [name, nodes[index].name, nodes[index].path]
         )
         .filter(Boolean)
 }
