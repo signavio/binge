@@ -45,6 +45,7 @@ function invalidKeys(result) {
         'testMode',
         'scriptBuild',
         'scriptWatch',
+        'version',
     ]
 
     const VALIDATORS = {
@@ -56,6 +57,7 @@ function invalidKeys(result) {
             ['string', 'undefined'].includes(typeof result.scriptBuild),
         scriptWatch: () =>
             ['string', 'undefined'].includes(typeof result.scriptWatch),
+        version: () => ['string', 'undefined'].includes(typeof result.version),
     }
 
     return Object.keys(result)
@@ -71,6 +73,7 @@ function applyDefaults(result = {}) {
         testMode: 'none',
         scriptWatch: null,
         scriptBuild: null,
+        version: null,
         ...result,
     }
 }
