@@ -1,30 +1,21 @@
 import async from 'async'
 import fse from 'fs-extra'
 import path from 'path'
-import invariant from 'invariant'
 import packList from 'npm-packlist'
-
-import { CONCURRENCY } from '../constants'
 
 export default function(node, callback) {
     if (node.isDummy === true) {
         return callback(null)
     }
 
-    async.mapLimit(
+    async.map(
         node.reachable,
-        CONCURRENCY,
         (childNode, done) => bridge(node, childNode, done),
         callback
     )
 }
 
 function bridge(node, childNode, callback) {
-    invariant(
-        childNode.npmIgnore instanceof Array,
-        'Node has to have an npmIgnore array'
-    )
-
     const srcPath = childNode.path
     const destPath = path.join(node.path, 'node_modules', childNode.name)
     packList({ path: childNode.path }).then(files => {

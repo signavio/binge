@@ -42,11 +42,9 @@ export function apply(packageJson, dependencyDelta = {}, force) {
 
 export function infer(prevPackageJson, nextPackageJson) {
     const collect = key => {
-        const prevNames = Object.keys(prevPackageJson[key] || {})
         const nextNames = Object.keys(nextPackageJson[key] || {})
 
         return nextNames
-            .filter(name => !prevNames.includes(name))
             .filter(
                 name =>
                     prevPackageJson[key][name] !== nextPackageJson[key][name]
