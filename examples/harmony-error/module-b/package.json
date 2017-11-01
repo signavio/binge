@@ -1,0 +1,12 @@
+{
+  "name": "module-b",
+  "dependencies": {
+    "classnames": "2.2.5",
+    "fbjs": "0.8.14",
+    "invariant": "2.2.2",
+    "lodash": "4.17.4",
+    "module-c": "file:../module-c",
+    "moment": "2.11.1",
+    "q": "1.5.0"
+  }
+}

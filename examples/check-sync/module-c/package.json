@@ -1,0 +1,6 @@
+{
+  "name": "module-c",
+  "dependencies": {
+    "angular": "1.6.5"
+  }
+}
