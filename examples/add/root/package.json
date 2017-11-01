@@ -1,0 +1,12 @@
+{
+  "name": "root",
+  "license": "UNLICENSED",
+  "dependencies": {
+      "module-a": "file:../module-a",
+      "module-b": "file:../module-b"
+  },
+  "scripts": {
+      "example": "binge add moment@2.12.0 --exact",
+      "NOTE": "Please cleanup this example's execution result"
+  }
+}
