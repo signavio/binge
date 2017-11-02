@@ -6,7 +6,6 @@
       "module-b": "file:../module-b"
   },
   "scripts": {
-      "example": "binge harmony",
-      "example-verbose": "binge harmony --verbose"
+      "example": "binge harmony"
   }
 }
