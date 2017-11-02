@@ -39,10 +39,6 @@ export default (okCount, reconciledCount, errorCount, rangeCount, cliFlags) => {
         )
     }
 
-    if (!cliFlags.verbose) {
-        console.log('(run the command with the --verbose flag for more info)')
-    }
-
     if (errorCount || reconciledCount || rangeCount) {
         process.exit(1)
     } else {

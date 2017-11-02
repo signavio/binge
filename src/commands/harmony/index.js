@@ -4,8 +4,9 @@ import semver from 'semver'
 
 import hoisting from '../../hoisting'
 import createGraph from '../../graph/create'
-import printResult from './printResult'
-import printResultVerbose from './printResultVerbose'
+
+import printTree from './printTree'
+import printErrors from './printErrors'
 import printSummary from './printSummary'
 
 export default function(cliFlags) {
@@ -25,19 +26,9 @@ export default function(cliFlags) {
 
         const devDependencyRanges = findDevDependencyRanges(entryNode)
 
-        if (cliFlags.verbose) {
-            printResultVerbose(
-                dependencyPointers,
-                dependencyStatus,
-                devDependencyRanges
-            )
-        } else {
-            printResult(
-                dependencyPointers,
-                dependencyStatus,
-                devDependencyRanges
-            )
-        }
+        printTree(dependencyPointers, dependencyStatus, devDependencyRanges)
+
+        printErrors(dependencyPointers, dependencyStatus, devDependencyRanges)
 
         const okCount = dependencyStatus.filter(({ status }) => status === 'OK')
             .length
