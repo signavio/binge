@@ -1,6 +1,6 @@
 {
   "name": "binge",
-  "version": "4.1.0-testing.3",
+  "version": "4.1.0-testing.4",
   "description": "Tool for managing monorepos with local packages",
   "main": "lib/index.js",
   "scripts": {
