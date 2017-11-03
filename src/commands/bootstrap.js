@@ -5,12 +5,10 @@ import path from 'path'
 import createGraph from '../graph/create'
 import { layer as layerTopology } from '../graph/topology'
 import { createInstaller } from '../tasks/install'
-import taskBridge from '../tasks/bridge'
-import taskBuild from '../tasks/build'
-import taskPrune from '../tasks/prune'
 import createReporter from '../createReporter'
-
-import { CONCURRENCY } from '../constants'
+import taskBuild from '../tasks/build'
+import taskDeploy from '../tasks/deploy'
+import taskPrune from '../tasks/prune'
 
 export default function(cliFlags) {
     let entryNode
@@ -42,7 +40,6 @@ export default function(cliFlags) {
 
     function pruneAndInstallNode(node, callback) {
         const done = reporter.task(node.name)
-
         taskInstall(node, (err, results) => {
             done()
             callback(err, results)
@@ -51,27 +48,20 @@ export default function(cliFlags) {
 
     function buildAndBridge(layers, callback) {
         async.mapSeries(layers, buildAndBridgeLayer, (err, nestedResults) => {
-            const results = err
-                ? []
-                : nestedResults.reduce(
-                      (result, next) => [...result, ...next],
-                      []
-                  )
+            const results = (err ? [] : nestedResults).reduce(
+                (result, next) => [...result, ...next],
+                []
+            )
             callback(err, results)
         })
     }
 
     function buildAndBridgeLayer(layer, callback) {
         reporter.series(`Building Layer...`)
-        async.mapLimit(
-            layer,
-            CONCURRENCY,
-            buildAndBridgeNode,
-            (err, results) => {
-                reporter.clear()
-                callback(err, results)
-            }
-        )
+        async.mapSeries(layer, buildAndBridgeNode, (err, results) => {
+            reporter.clear()
+            callback(err, results)
+        })
     }
 
     function buildAndBridgeNode(node, callback) {
@@ -79,7 +69,7 @@ export default function(cliFlags) {
         async.series(
             [
                 done => taskPrune(node, done),
-                done => taskBridge(node, done),
+                done => taskDeploy(node, done),
                 done => taskBuild(node, entryNode, done),
             ],
             (err, results) => {

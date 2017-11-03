@@ -30,19 +30,14 @@ export default function(cliFlags) {
 
         printErrors(dependencyPointers, dependencyStatus, devDependencyRanges)
 
-        const okCount = dependencyStatus.filter(({ status }) => status === 'OK')
-            .length
-        const reconciledCount = dependencyStatus.filter(
-            ({ status }) => status === 'RECONCILED'
-        ).length
-        const errorCount = dependencyStatus.filter(
-            ({ status }) => status === 'ERROR'
-        ).length
-
         printSummary(
-            okCount,
-            reconciledCount,
-            errorCount,
+            // okCount
+            dependencyStatus.filter(({ status }) => status === 'OK').length,
+            // reconciledCount
+            dependencyStatus.filter(({ status }) => status === 'RECONCILED')
+                .length,
+            // errorCount
+            dependencyStatus.filter(({ status }) => status === 'ERROR').length,
             Object.keys(devDependencyRanges).length,
             cliFlags
         )
