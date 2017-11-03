@@ -16,6 +16,11 @@ export default function(cliFlags) {
             stdio: inheritOutput ? 'inherit' : 'pipe',
         })
 
+        if (nodes.length === 0) {
+            taskInstall(nodes[0], end)
+            return
+        }
+
         reporter.series(`Installing...`)
         async.mapSeries(nodes, installNode, (err, results) => {
             reporter.clear()
