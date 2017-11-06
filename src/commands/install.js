@@ -16,7 +16,7 @@ export default function(cliFlags) {
             stdio: inheritOutput ? 'inherit' : 'pipe',
         })
 
-        if (nodes.length === 0) {
+        if (nodes.length === 1) {
             taskInstall(nodes[0], end)
             return
         }

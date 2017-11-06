@@ -42,7 +42,7 @@ export default rootNode => {
         // Initial State
         state = {
             mode: 'watching',
-            spawnedApp: null,
+            spawnedApp: rootNode.isApp ? rootNode : null,
             spawnedPackages: [],
             nodes: [rootNode, ...rootNode.reachable],
             packlists: [rootNode, ...rootNode.reachable].map(node => ({
