@@ -1,5 +1,6 @@
 {
   "isApp": true,
   "isDummy": false,
-  "scriptWatch": "start"  
+  "version": "4.1.1",
+  "scriptWatch": "start"
 }
