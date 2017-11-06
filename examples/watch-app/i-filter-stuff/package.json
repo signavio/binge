@@ -12,6 +12,11 @@
   },
   "scripts": {
     "prebuild": "rimraf lib",
-    "build": "babel src -d lib"
-  }
+    "build": "babel src -d lib",
+    "prewatch": "rimraf lib",
+    "watch": "babel -w src -d lib --source-maps"
+  },
+  "files": [
+      "lib"
+  ]
 }

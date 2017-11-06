@@ -1,10 +1,7 @@
 {
-  "name": "i-print-stuff",
+  "name": "i-provide-text",
   "license": "UNLICENSED",
   "main": "lib/index.js",
-  "dependencies": {
-      "i-provide-colors": "file:../i-provide-colors"
-  },
   "devDependencies": {
     "babel-cli": "6.26.0",
     "babel-preset-env": "1.6.1",
@@ -12,6 +9,11 @@
   },
   "scripts": {
     "prebuild": "rimraf lib",
-    "build": "babel src -d lib"
-  }
+    "build": "babel src -d lib",
+    "prewatch": "rimraf lib",
+    "watch": "babel -w src -d lib --source-maps"
+  },
+  "files":[
+      "lib"
+  ]
 }
