@@ -179,7 +179,7 @@ function end(err, touchedNodes, outputFolder) {
     } else {
         console.log(chalk.green('Success'))
         summary(touchedNodes, outputFolder)
-        process.exit(1)
+        process.exit(0)
     }
 }
 
