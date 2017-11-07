@@ -52,7 +52,11 @@ function findDevDependencyRanges(node) {
         }))
         .map(({ pkgName, devDependencies }) =>
             Object.keys(devDependencies)
-                .filter(name => !semver.valid(devDependencies[name]))
+                .filter(
+                    name =>
+                        !semver.valid(devDependencies[name]) &&
+                        !isFileVersion(devDependencies[name])
+                )
                 .map(name => ({
                     pkgName,
                     name,
@@ -60,4 +64,10 @@ function findDevDependencyRanges(node) {
                 }))
         )
         .reduce((result, next) => [...result, ...next], [])
+}
+
+function isFileVersion(version) {
+    return (
+        typeof version === 'string' && version.toLowerCase().startsWith('file:')
+    )
 }
