@@ -17,8 +17,9 @@ export default function(cliFlags) {
         })
 
         if (nodes.length === 1) {
-            // null
-            taskInstall(nodes[0], end)
+            taskInstall(nodes[0], (err, result) => {
+                end(err, [result])
+            })
             return
         }
 
