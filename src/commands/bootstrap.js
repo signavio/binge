@@ -3,7 +3,6 @@ import chalk from 'chalk'
 import path from 'path'
 
 import createGraph from '../graph/create'
-import { layer as layerTopology } from '../graph/topology'
 import { createInstaller } from '../tasks/install'
 import createReporter from '../createReporter'
 import taskBuild from '../tasks/build'
@@ -14,17 +13,15 @@ export default function(cliFlags) {
     let entryNode
     const reporter = createReporter(cliFlags)
     const taskInstall = createInstaller(['install', '--frozen-lockfile'])
-    createGraph(path.resolve('.'), function(err, nodes) {
+    createGraph(path.resolve('.'), function(err, nodes, layers) {
         if (err) end(err)
 
-        const [entryNode] = nodes
-
-        const layers = layerTopology(entryNode).reverse()
+        const reverseLayers = [...layers].reverse()
 
         async.series(
             [
                 done => pruneAndInstall(nodes, done),
-                done => buildAndBridge(layers, done),
+                done => buildAndBridge(reverseLayers, done),
             ],
             end
         )

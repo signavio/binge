@@ -4,10 +4,8 @@ import path from 'path'
 import fse from 'fs-extra'
 import pad from 'pad'
 import { spawnSync } from 'child_process'
-// import { SANITY } from '../constants'
 
 import createGraph from '../graph/create'
-import { layer as layerTopology } from '../graph/topology'
 
 export default function(cliFlags, cliInput) {
     // eslint-disable-next-line no-unused-vars
@@ -23,12 +21,10 @@ export default function(cliFlags, cliInput) {
         end(folderError)
     }
 
-    createGraph(path.resolve('.'), (err, nodes) => {
+    createGraph(path.resolve('.'), (err, nodes, layers) => {
         if (err) {
             end(err)
         }
-
-        const layers = layerTopology(nodes[0])
 
         const touchedNodes = changedFilePaths(targetBranch)
             .map(filePath => nodeFromPath(nodes, filePath))
