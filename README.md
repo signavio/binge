@@ -1,10 +1,10 @@
 # binge - version-less JavaScript package management for monorepos
-Binge is a version-less JavaScript package management tool for monolithic repositories (*monorepos*).
+binge is a version-less JavaScript package management tool for monorepos.
 
 It helps you to:
-* encourage modularization for a clearer separation of concerns,
-* enforce dependency version consistency across different local packages,
-* improve the developer experience and reduces the build file size by ensuring there is only one version of a dependency across all packages in the repository.
+* achieve a clear separation of concerns through modularization by enabling the quick creation and consumption of local packages,
+* avoid dependency hell by enforcing dependency version consistency across different local packages,
+* overcome the publishing overhead of traditional packages by providing version-less local packages that otherwise behave like standalone npm packages (for example, binge supports custom lifecycle steps like testing, building, linting).
 
 [//]: # (To learn more about *why exactly* you should consider using binge, read our [announcement blog post]https://tech.signavio.com/2017/package-management-binge.)
 
@@ -14,7 +14,7 @@ Install binge by running ``yarn global add binge``.
 **Note**: binge requires [Yarn](https://yarnpkg.com/lang/en/) and doesn't support npm.
 
 ### Repository structure
-Structure your repository as follows:
+You could, for example, structure your repository as follows:
 
 ```
 …
@@ -36,15 +36,17 @@ Structure your repository as follows:
 …
 ```
 
-Your client folder needs to contain a root-level folder for each local package, plus one additional folder that contains the global entry point to (the *root* of) your app.
-In our example (see: [./examples/watch-app](./examples/watch-app)), we name this folder ``app``.
+In our simplified example (see: [./examples/watch-app](./examples/watch-app)), our client folder contains a root-level folder for each local package.
+The ``app`` folder also is the global entry point to (the *root* of) our app.
 
-**Note:** binge supports nested local packages. However, we recommend you don't nest your packages.
-This reduces complexity and allow a clearer overview.
+**Note:** binge supports nested local packages.
+However, we recommend we recommend not to nest too deeply to control complexity and allow a clearer overview.
+Also, make sure there are no dependency circles between (nested) packages.
 
 Local packages have the same structure as ordinary npm packages, except that they are **not versioned**. 
+To include a reference to a local package include it in ``package.json`` as a *file reference*.
 
-The ``package.json`` in the root folder lists the local packages as dependencies:
+The ``package.json`` in the root folder lists the other local packages as dependencies:
 
 ```json
 {
@@ -57,8 +59,11 @@ The ``package.json`` in the root folder lists the local packages as dependencies
 }
 ```
 
+Of course, you can have multiple entry point packages in your repository and also reference local packages in other local packages that aren't entry points.
+
 To build the app, navigate to the ``app`` directory and run ``binge bootstrap``.
-binge now installs the dependencies in the local packages, builds the local packages and deploys them and their dependencies to the ``node_modules`` folder of the ``app`` directory. At that, binge moves shared dependencies up the dependency tree to avoid unnecessary duplication of code.
+binge now installs the dependencies in the local packages, builds the local packages and deploys them and their dependencies to the ``node_modules`` folder of the ``app`` directory.
+For example, if the app is built with webpack, the build command could be ``binge bootstrap && webpack``.
 
 To run the app and watch the source files, run ``binge watch`` in the ``app`` directory.
 
@@ -72,13 +77,17 @@ You find minimal example apps that illustrate the commands at [./examples](./exa
     For example, running ``binge bootstrap`` in [./examples/bootstrap/root](./examples/bootstrap/root):
     * installs the dependencies of the three local packages ``i-filter-stuff``, ``i-print-stuff`` and ``i-prodivde-colors``,
     * builds the three local packages,
-    * deploys the local packages and their dependencies to the ``node_modules`` folder of the ``root`` directory. At that, binge moves shared dependencies up the dependency tree to avoid unnecessary duplication of code.
+    * deploys the local packages and their dependencies to the ``node_modules`` folder of the app directory.
+
+    ``binge bootstrap`` bootstraps not only the current app, but all local packages.
 
     **Note:** ``bootstrap`` also runs ``check`` (see below) and fails if ``check`` fails.
 
 * ``check``:
 
-    Checks if the [yarn-lock.json](https://yarnpkg.com/lang/en/docs/yarn-lock/) and ``package.json`` files in the local package tree are in sync. This helps ensure your dependency versions are consistent across machines.
+    Checks if the [yarn-lock.json](https://yarnpkg.com/lang/en/docs/yarn-lock/) and ``package.json`` files in the local package tree are in sync.
+    Lock files ensure consistent build across machines.
+    This command helps ensure no developer forgets to push lock files changes.
     For example, running ``binge check`` in [./examples/check-sync/root](./examples/check-sync/root) returns:
 
     ```
