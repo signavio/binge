@@ -2,24 +2,29 @@ import sortKeys from './sortKeys'
 import reconcileVersion from './reconcileVersion'
 
 export function apply(packageJson, dependencyDelta = {}, force) {
-    const collect = key =>
-        Object.keys(dependencyDelta[key] || {})
+    const collect = (bagDependencies = {}, bagDelta = {}) =>
+        Object.keys(bagDelta)
             // is in the packageJson
-            .filter(name => force || Boolean(packageJson[key][name]))
+            .filter(name => force || Boolean(bagDependencies[name]))
             // only write if it changed
-            .filter(
-                name => dependencyDelta[key][name] !== packageJson[key][name]
-            )
+            .filter(name => bagDelta[name] !== bagDependencies[name])
             .reduce(
                 (result, name) => ({
                     ...result,
-                    [name]: dependencyDelta[key][name],
+                    [name]: bagDelta[name],
                 }),
                 {}
             )
+
     const appliedDelta = {
-        dependencies: collect('dependencies'),
-        devDependencies: collect('devDependencies'),
+        dependencies: collect(
+            packageJson.dependencies,
+            dependencyDelta.dependencies
+        ),
+        devDependencies: collect(
+            packageJson.devDependencies,
+            dependencyDelta.devDependencies
+        ),
     }
 
     return {
@@ -29,12 +34,12 @@ export function apply(packageJson, dependencyDelta = {}, force) {
             : {
                   ...packageJson,
                   dependencies: sortKeys({
-                      ...packageJson.dependencies,
-                      ...appliedDelta.dependencies,
+                      ...(packageJson.dependencies || {}),
+                      ...(appliedDelta.dependencies || {}),
                   }),
                   devDependencies: sortKeys({
-                      ...packageJson.devDependencies,
-                      ...appliedDelta.devDependencies,
+                      ...(packageJson.devDependencies || {}),
+                      ...(appliedDelta.devDependencies || {}),
                   }),
               },
     }
