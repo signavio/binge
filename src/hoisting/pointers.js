@@ -1,6 +1,10 @@
 export default function(packageJson, reachablePackageJsons) {
-    const pointers = collect(packageJson, reachablePackageJsons)
-    const devPointers = collectDev(packageJson)
+    const pointers = collect(packageJson, reachablePackageJsons, 'dependencies')
+    const devPointers = collect(
+        packageJson,
+        reachablePackageJsons,
+        'devDependencies'
+    )
 
     const promotedPointers = devPointers.filter(devPointer =>
         pointers.some(pointer => devPointer.name === pointer.name)
@@ -12,24 +16,17 @@ export default function(packageJson, reachablePackageJsons) {
     ]
 }
 
-function collect(packageJson, reachablePackageJsons) {
+function collect(packageJson, reachablePackageJsons, key) {
     return [
-        ...toPointers(packageJson.dependencies, packageJson.name),
+        ...toPointers(packageJson[key], packageJson.name),
         ...reachablePackageJsons.reduce(
             (result, childPackageJson) => [
                 ...result,
-                ...toPointers(
-                    childPackageJson.dependencies,
-                    childPackageJson.name
-                ),
+                ...toPointers(childPackageJson[key], childPackageJson.name),
             ],
             []
         ),
     ]
-}
-
-function collectDev(packageJson) {
-    return toPointers(packageJson.devDependencies, packageJson.name)
 }
 
 function toPointers(bag = {}, nodeName) {

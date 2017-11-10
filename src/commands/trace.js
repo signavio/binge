@@ -70,8 +70,7 @@ function changedFilePaths(targetBranch) {
 
 function nodeFromPath(nodes, filePath) {
     // sort nodes by longer path to smaller path
-    // important because local packages can have
-    // local pakcage inside them. Important to match on the longest
+    // local packages can be nested imported to sort by path length
     return (
         [...nodes]
             .sort(sortByPath)

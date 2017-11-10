@@ -1,42 +1,73 @@
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
+import invariant from 'invariant'
 
 import createGraph from '../graph/create'
-import { createInstaller } from '../tasks/install'
+import findBase from '../hoisting/findBase'
+
 import createReporter from '../createReporter'
+import { createInstaller } from '../tasks/install'
+import { dependencies as taskBinLink } from '../tasks/linkBin'
 
 export default function(cliFlags) {
-    const reporter = createReporter(cliFlags)
     createGraph(path.resolve('.'), (err, nodes) => {
         if (err) end(err)
 
-        const inheritOutput = nodes.length === 1
-        const taskInstall = createInstaller(yarnArgsOnly(), {
-            stdio: inheritOutput ? 'inherit' : 'pipe',
+        findBase(nodes[0], (err, nodeBase) => {
+            invariant(!err, 'Never returns error')
+            console.log(
+                nodeBase
+                    ? `Using hoisting base '${nodeBase.name}'`
+                    : `Could not find a suitable hoisting base. Using local hoisting`
+            )
+            if (nodeBase) {
+                installBase(cliFlags, nodes, nodeBase)
+            } else {
+                installLocal(cliFlags, nodes, nodeBase)
+            }
         })
-
-        if (nodes.length === 1) {
-            taskInstall(nodes[0], (err, result) => {
-                end(err, [result])
-            })
-            return
-        }
-
-        reporter.series(`Installing...`)
-        async.mapSeries(nodes, installNode, (err, results) => {
-            reporter.clear()
-            end(err, results)
-        })
-
-        function installNode(node, callback) {
-            const done = reporter.task(node.name)
-            taskInstall(node, (err, result) => {
-                done()
-                callback(err, result)
-            })
-        }
     })
+}
+
+function installBase(cliFlags, nodes, nodeBase) {
+    async.series([installNodeBase, linkNodes], (err, results) => {
+        end(err, !err && [results[0]])
+    })
+
+    function installNodeBase(callback) {
+        const taskInstall = createInstaller(yarnArgsOnly(), {
+            stdio: 'inherit',
+        })
+        taskInstall(nodeBase, callback)
+    }
+
+    function linkNodes(callback) {
+        async.mapSeries(
+            nodes,
+            (node, done) => taskBinLink(node, nodeBase, done),
+            callback
+        )
+    }
+}
+
+function installLocal(cliFlags, nodes) {
+    const reporter = createReporter(cliFlags)
+    const taskInstall = createInstaller(yarnArgsOnly())
+
+    reporter.series(`Installing...`)
+    async.mapSeries(nodes, installNode, (err, results) => {
+        reporter.clear()
+        end(err, results)
+    })
+
+    function installNode(node, callback) {
+        const done = reporter.task(node.name)
+        taskInstall(node, (err, result) => {
+            done()
+            callback(err, result)
+        })
+    }
 }
 
 function yarnArgsOnly() {

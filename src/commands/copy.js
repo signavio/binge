@@ -15,7 +15,7 @@ export default function(cliFlags, params) {
         end(new Error(`Could not find path ${params[1]}`))
     }
 
-    createGraph(path.resolve('.'), function(err, nodes) {
+    createGraph(path.resolve('.'), (err, nodes) => {
         if (err) end(err)
 
         async.mapLimit(nodes, CONCURRENCY, copyIntoNode, end)

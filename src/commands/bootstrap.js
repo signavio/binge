@@ -1,41 +1,67 @@
 import async from 'async'
 import chalk from 'chalk'
+import invariant from 'invariant'
 import path from 'path'
 
 import createGraph from '../graph/create'
-import { createInstaller } from '../tasks/install'
+import findBase from '../hoisting/findBase'
+
 import createReporter from '../createReporter'
+import { createInstaller } from '../tasks/install'
 import taskBuild from '../tasks/build'
 import taskDeploy from '../tasks/deploy'
 import taskPrune from '../tasks/prune'
+import {
+    dependencies as taskLinkBin,
+    localPackages as taskLinkBinLocalPackages,
+} from '../tasks/linkBin'
 
 export default function(cliFlags) {
-    let entryNode
-    const reporter = createReporter(cliFlags)
-    const taskInstall = createInstaller(['install', '--frozen-lockfile'])
-    createGraph(path.resolve('.'), function(err, nodes, layers) {
+    createGraph(path.resolve('.'), (err, nodes, layers) => {
         if (err) end(err)
 
-        const reverseLayers = [...layers].reverse()
+        findBase(nodes[0], (err, nodeBase) => {
+            invariant(!err, 'Never returns error')
 
-        async.series(
-            [
-                done => pruneAndInstall(nodes, done),
-                done => buildAndBridge(reverseLayers, done),
-            ],
-            end
-        )
-    })
+            console.log(
+                nodeBase
+                    ? `Using hoisting base ${nodeBase.name}`
+                    : `Could not find a suitable hoisting base. Using local hoisting`
+            )
 
-    function pruneAndInstall(nodes, callback) {
-        reporter.series(`Installing...`)
-        async.mapSeries(nodes, pruneAndInstallNode, (err, results) => {
-            reporter.clear()
-            callback(err, results)
+            bootstrap(cliFlags, nodes, layers, nodeBase)
         })
+    })
+}
+
+function bootstrap(cliFlags, nodes, layers, nodeBase) {
+    const reporter = createReporter(cliFlags)
+    const [entryNode] = nodes
+    const reverseLayers = [...layers].reverse()
+
+    async.series([install, linkBin, buildAndDeploy], end)
+
+    function install(callback) {
+        if (nodeBase) {
+            installBase(callback)
+        } else {
+            reporter.series(`Installing...`)
+            async.mapSeries(nodes, installNode, (err, results) => {
+                reporter.clear()
+                callback(err, results)
+            })
+        }
     }
 
-    function pruneAndInstallNode(node, callback) {
+    function installBase(callback) {
+        const taskInstall = createInstaller(['install', '--frozen-lockfile'], {
+            stdio: 'inherit',
+        })
+        taskInstall(nodeBase, (err, result) => callback(err, [result]))
+    }
+
+    function installNode(node, callback) {
+        const taskInstall = createInstaller(['install', '--frozen-lockfile'])
         const done = reporter.task(node.name)
         taskInstall(node, (err, results) => {
             done()
@@ -43,36 +69,49 @@ export default function(cliFlags) {
         })
     }
 
-    function buildAndBridge(layers, callback) {
-        async.mapSeries(layers, buildAndBridgeLayer, (err, nestedResults) => {
-            const results = (err ? [] : nestedResults).reduce(
-                (result, next) => [...result, ...next],
-                []
-            )
-            callback(err, results)
-        })
+    function linkBin(callback) {
+        async.mapSeries(
+            nodeBase ? nodes : [],
+            (childNode, done) => taskLinkBin(childNode, nodeBase, done),
+            callback
+        )
     }
 
-    function buildAndBridgeLayer(layer, callback) {
+    function buildAndDeploy(callback) {
+        async.mapSeries(
+            reverseLayers,
+            buildAndDeployLayer,
+            (err, nestedResults) => {
+                const results = (err ? [] : nestedResults).reduce(
+                    (result, next) => [...result, ...next],
+                    []
+                )
+                callback(err, results)
+            }
+        )
+    }
+
+    function buildAndDeployLayer(layer, callback) {
         reporter.series(`Building Layer...`)
-        async.mapSeries(layer, buildAndBridgeNode, (err, results) => {
+        async.mapSeries(layer, buildAndDeployNode, (err, results) => {
             reporter.clear()
             callback(err, results)
         })
     }
 
-    function buildAndBridgeNode(node, callback) {
+    function buildAndDeployNode(node, callback) {
         const done = reporter.task(node.name)
         async.series(
             [
                 done => taskPrune(node, done),
                 done => taskDeploy(node, done),
+                done => taskLinkBinLocalPackages(node, done),
                 done => taskBuild(node, entryNode, done),
             ],
             (err, results) => {
                 done()
                 // pass the install results
-                callback(err, !err && results[2])
+                callback(err, !err && results[3])
             }
         )
     }
@@ -90,7 +129,7 @@ function end(err, results) {
     }
 }
 
-function summary([installResults, buildResults]) {
+function summary([installResults, _, buildResults]) {
     const installCount = installResults.filter(e => e.skipped === false).length
     const installSkipCount = installResults.filter(e => e.skipped === true)
         .length
