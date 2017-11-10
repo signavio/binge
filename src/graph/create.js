@@ -1,10 +1,13 @@
+import async from 'async'
+import semver from 'semver'
+
 import read from './read'
 import reachable from './reachable'
 import topology from './topology'
 import packageJson from '../../package.json'
-import semver from 'semver'
+import findBase from './findBase'
 
-export default function(entryPath, callback) {
+export default function create(entryPath, callback) {
     read(entryPath, (err, rootNode) => {
         if (err) return callback(err)
 
@@ -35,4 +38,28 @@ export default function(entryPath, callback) {
         })
         callback(null, nodes, layers)
     })
+}
+
+export function withBase(entryPath, callback) {
+    create(entryPath, (err, nodes, layers) => {
+        if (err) {
+            callback(err)
+            return
+        }
+
+        findBase(nodes[0], (err, nodeBase) =>
+            callback(err, nodes, layers, nodeBase)
+        )
+    })
+
+    /*
+    async.waterfall([
+        done => create(entryPath, done),
+        (nodes, layers, done) =>
+            findBase(nodes[0], (err, nodeBase) =>
+                done(err, nodes, layers, nodeBase)
+            ),
+        callback,
+    ])
+    */
 }

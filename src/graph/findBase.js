@@ -1,7 +1,7 @@
 import async from 'async'
 import fs from 'fs'
 import path from 'path'
-import createGraph from '../graph/create'
+import createGraph from './create'
 
 export default function(node, callback) {
     async.map(

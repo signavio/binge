@@ -13,14 +13,6 @@ import { empty as emptyDelta } from '../util/dependencyDelta'
 
 export function createInstaller(yarnArgs, spawnOptions) {
     return (node, callback) => {
-        if (node.isDummy === true) {
-            callback(null, {
-                skipped: null,
-                resultDelta: emptyDelta,
-            })
-            return
-        }
-
         invariant(yarnArgs[0] === 'install', 'Should start with install')
         invariant(typeof callback === 'function', 'Expected a function')
 

@@ -8,15 +8,6 @@ import {
 } from '../util/dependencyDelta'
 
 export default function(node, dependencyDelta, force, callback) {
-    if (node.isDummy === true) {
-        callback(null, {
-            node,
-            appliedDelta: emptyDelta,
-            skipped: true,
-        })
-        return
-    }
-
     const { appliedDelta, packageJson } = deltaApply(
         node.packageJson,
         dependencyDelta,

@@ -5,11 +5,6 @@ import hoisting from '../hoisting'
 import parseYarnLock from '../util/parseYarnLock'
 
 export default function(node, callback) {
-    if (node.isDummy === true) {
-        callback(null, null)
-        return
-    }
-
     let yarnLockData
     try {
         yarnLockData = fs.readFileSync(

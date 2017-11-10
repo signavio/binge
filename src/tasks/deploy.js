@@ -4,10 +4,6 @@ import path from 'path'
 import packList from 'npm-packlist'
 
 export default function(node, callback) {
-    if (node.isDummy === true) {
-        return callback(null, [])
-    }
-
     async.map(
         node.reachable,
         (childNode, done) => packNode(node, childNode, done),

@@ -53,13 +53,16 @@ function buildFilePaths(node) {
   * ************
   */
 export function install(node, callback) {
-    findInstalledPJsons(node.path, (err, packageJsonLocations) => {
+    findInstalledPJsons(node.path, (err, packageJsonPaths) => {
         invariant(err === null, 'That should never return an error')
 
         const filePaths = [
-            path.resolve(node.path, 'package.json'),
-            path.resolve(node.path, 'yarn.lock'),
-            ...packageJsonLocations,
+            path.join(node.path, 'package.json'),
+            path.join(node.path, 'yarn.lock'),
+            ...node.reachable.map(childNode =>
+                path.join(childNode.path, 'package.json')
+            ),
+            ...packageJsonPaths,
         ]
 
         hash(filePaths, (err, results) => {

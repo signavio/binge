@@ -1,32 +1,26 @@
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
-import invariant from 'invariant'
 
-import createGraph from '../graph/create'
-import findBase from '../hoisting/findBase'
-
+import { withBase as createGraph } from '../graph/create'
 import createReporter from '../createReporter'
 import { createInstaller } from '../tasks/install'
 import { dependencies as taskBinLink } from '../tasks/linkBin'
 
 export default function(cliFlags) {
-    createGraph(path.resolve('.'), (err, nodes) => {
+    createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
 
-        findBase(nodes[0], (err, nodeBase) => {
-            invariant(!err, 'Never returns error')
-            console.log(
-                nodeBase
-                    ? `Using hoisting base '${nodeBase.name}'`
-                    : `Could not find a suitable hoisting base. Using local hoisting`
-            )
-            if (nodeBase) {
-                installBase(cliFlags, nodes, nodeBase)
-            } else {
-                installLocal(cliFlags, nodes, nodeBase)
-            }
-        })
+        console.log(
+            nodeBase
+                ? `Using hoisting base '${nodeBase.name}'`
+                : `Could not find a suitable hoisting base. Using local hoisting`
+        )
+        if (nodeBase) {
+            installBase(cliFlags, nodes, nodeBase)
+        } else {
+            installLocal(cliFlags, nodes, nodeBase)
+        }
     })
 }
 

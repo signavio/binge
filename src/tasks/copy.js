@@ -2,10 +2,6 @@ import fse from 'fs-extra'
 import path from 'path'
 
 export default function(node, srcPath, options, callback) {
-    if (node.isDummy === true) {
-        return callback(null, false)
-    }
-
     if (options.skipRoot && node.isApp === true) {
         return callback(null, false)
     }

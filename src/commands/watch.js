@@ -5,18 +5,10 @@ import createGraph from '../graph/create'
 import taskWatch from '../tasks/watch'
 
 export default function(callback) {
-    createGraph(path.resolve('.'), thenWatch)
-}
-
-function thenWatch(err, graph) {
-    if (err) end(err)
-
-    const [rootNode] = graph
-    if (!rootNode.isDummy && !rootNode.isApp) {
-        end(`Starting a watch is only supported for app nodes`)
-    }
-
-    taskWatch(rootNode)
+    createGraph(path.resolve('.'), (err, nodes) => {
+        if (err) end(err)
+        taskWatch(nodes[0])
+    })
 }
 
 function end(err) {
