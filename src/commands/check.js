@@ -8,11 +8,7 @@ export default function(cliFlags) {
     createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
 
-        if (!nodeBase) {
-            end(`Binge check requis a base node`)
-        } else {
-            taskCheckYarn(nodeBase)
-        }
+        taskCheckYarn(nodeBase)
     })
 }
 

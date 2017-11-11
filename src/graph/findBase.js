@@ -1,26 +1,24 @@
-import async from 'async'
-import fs from 'fs'
-import path from 'path'
 import createGraph from './create'
 
 export default function(node, callback) {
-    async.map(
-        parentPaths(node),
-        (dirPath, done) => filterNode(node, dirPath, done),
-        (err, result) => {
-            callback(null, err ? null : result.find(Boolean) || null)
-        }
-    )
-}
+    const basePath = node.hoistingPath || parentPath(node)
 
-function filterNode(node, dirPath, callback) {
-    createGraph(dirPath, (err, [baseNode] = []) => {
-        if (err) {
-            callback(null, null)
-        } else {
-            callback(null, isSuitableBaseNode(node, baseNode) ? baseNode : null)
-        }
-    })
+    if (!basePath) {
+        const error = `Could not find a hoisting path`
+        callback(error)
+    } else {
+        createGraph(basePath, (err, [baseNode] = []) => {
+            if (err) {
+                callback(err)
+            }
+
+            const error = isSuitableBaseNode(node, baseNode)
+                ? null
+                : `The package '${baseNode.name}' is not a suitable hoisting base`
+
+            callback(error, baseNode)
+        })
+    }
 }
 
 function isSuitableBaseNode(node, maybeBaseNode) {
@@ -40,15 +38,16 @@ function isSuitableBaseNode(node, maybeBaseNode) {
     return isFolderParent && isGraphParent
 }
 
-function parentPaths(node) {
-    const parts = node.path.split(path.sep)
-    return parts
-        .reduce(
-            (result, next, index) => [
-                ...result,
-                parts.slice(0, index + 1).join(path.sep) || path.sep,
-            ],
-            []
-        )
-        .filter(dirPath => fs.existsSync(dirPath))
+function parentPath(node) {
+    function longestCommonPrefix(paths) {
+        const A = paths.sort()
+        let a1 = A[0]
+        let a2 = A[A.length - 1]
+        const L = a1.length
+        let i = 0
+        while (i < L && a1.charAt(i) === a2.charAt(i)) i++
+        return a1.substring(0, i)
+    }
+
+    return longestCommonPrefix([node, ...node.reachable].map(node => node.path))
 }

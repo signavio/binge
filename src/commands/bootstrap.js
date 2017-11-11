@@ -17,12 +17,7 @@ export default function(cliFlags) {
     createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
 
-        console.log(
-            nodeBase
-                ? `Using hoisting base ${nodeBase.name}`
-                : `Could not find a suitable hoisting base. Using local hoisting`
-        )
-
+        console.log(`Using hoisting base ${nodeBase.name}`)
         bootstrap(cliFlags, nodes, layers, nodeBase)
     })
 }
@@ -35,31 +30,10 @@ function bootstrap(cliFlags, nodes, layers, nodeBase) {
     async.series([install, linkBin, buildAndDeploy], end)
 
     function install(callback) {
-        if (nodeBase) {
-            installBase(callback)
-        } else {
-            reporter.series(`Installing...`)
-            async.mapSeries(nodes, installNode, (err, results) => {
-                reporter.clear()
-                callback(err, results)
-            })
-        }
-    }
-
-    function installBase(callback) {
         const taskInstall = createInstaller(['install', '--frozen-lockfile'], {
             stdio: 'inherit',
         })
         taskInstall(nodeBase, (err, result) => callback(err, [result]))
-    }
-
-    function installNode(node, callback) {
-        const taskInstall = createInstaller(['install', '--frozen-lockfile'])
-        const done = reporter.task(node.name)
-        taskInstall(node, (err, results) => {
-            done()
-            callback(err, results)
-        })
     }
 
     function linkBin(callback) {

@@ -1,4 +1,3 @@
-import async from 'async'
 import semver from 'semver'
 
 import read from './read'

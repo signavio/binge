@@ -4,7 +4,6 @@ import path from 'path'
 import {
     apply as deltaApply,
     isEmpty as deltaIsEmpty,
-    empty as emptyDelta,
 } from '../util/dependencyDelta'
 
 export default function(node, dependencyDelta, force, callback) {

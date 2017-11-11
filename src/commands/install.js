@@ -3,7 +3,6 @@ import chalk from 'chalk'
 import path from 'path'
 
 import { withBase as createGraph } from '../graph/create'
-import createReporter from '../createReporter'
 import { createInstaller } from '../tasks/install'
 import { dependencies as taskBinLink } from '../tasks/linkBin'
 
@@ -11,40 +10,29 @@ export default function(cliFlags) {
     createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
 
-        console.log(
-            nodeBase
-                ? `Using hoisting base '${nodeBase.name}'`
-                : `Could not find a suitable hoisting base. Using local hoisting`
-        )
-        if (nodeBase) {
-            installBase(cliFlags, nodes, nodeBase)
-        } else {
-            installLocal(cliFlags, nodes, nodeBase)
+        console.log(`Using hoisting base '${nodeBase.name}'`)
+        async.series([installNodeBase, linkNodes], (err, results) => {
+            end(err, !err && [results[0]])
+        })
+
+        function installNodeBase(callback) {
+            const taskInstall = createInstaller(yarnArgsOnly(), {
+                stdio: 'inherit',
+            })
+            taskInstall(nodeBase, callback)
+        }
+
+        function linkNodes(callback) {
+            async.mapSeries(
+                nodes,
+                (node, done) => taskBinLink(node, nodeBase, done),
+                callback
+            )
         }
     })
 }
 
-function installBase(cliFlags, nodes, nodeBase) {
-    async.series([installNodeBase, linkNodes], (err, results) => {
-        end(err, !err && [results[0]])
-    })
-
-    function installNodeBase(callback) {
-        const taskInstall = createInstaller(yarnArgsOnly(), {
-            stdio: 'inherit',
-        })
-        taskInstall(nodeBase, callback)
-    }
-
-    function linkNodes(callback) {
-        async.mapSeries(
-            nodes,
-            (node, done) => taskBinLink(node, nodeBase, done),
-            callback
-        )
-    }
-}
-
+/*
 function installLocal(cliFlags, nodes) {
     const reporter = createReporter(cliFlags)
     const taskInstall = createInstaller(yarnArgsOnly())
@@ -63,6 +51,7 @@ function installLocal(cliFlags, nodes) {
         })
     }
 }
+*/
 
 function yarnArgsOnly() {
     const argv = process.argv
