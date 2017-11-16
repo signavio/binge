@@ -2,27 +2,30 @@ import async from 'async'
 import chalk from 'chalk'
 import fse from 'fs-extra'
 import path from 'path'
-import createGraph from '../graph/create'
-import createReporter from '../createReporter'
 
-import { CONCURRENCY } from '../constants'
+import * as log from '../log'
+import duration from '../duration'
+import createGraph from '../graph/create'
 
 export default function(cliFlags, cliInput) {
-    const reporter = createReporter(cliFlags)
     const target = cliInput[1] || 'node_modules'
-    createGraph(path.resolve('.'), function(err, graph) {
+    let progress
+
+    createGraph(path.resolve('.'), (err, nodes) => {
         if (err) end(err)
-        reporter.series(`rm -rf ${target}`)
-        async.mapLimit(graph, CONCURRENCY, nukeNode, err => {
-            reporter.clear()
+
+        log.info(`rm -rf ${target}`)
+        progress = log.progress('nuke', nodes.length)
+        async.mapSeries(nodes, nukeNode, err => {
+            progress.finish()
             end(err)
         })
     })
 
     function nukeNode(node, done) {
-        const reportDone = reporter.task(node.name)
+        progress.text(node.name)
         fse.remove(path.join(node.path, target), err => {
-            reportDone()
+            progress.tick()
             done(err)
         })
     }
@@ -30,11 +33,11 @@ export default function(cliFlags, cliInput) {
 
 function end(err) {
     if (err) {
-        console.log(err)
         console.log(chalk.red('Failure'))
+        console.log(err)
         process.exit(1)
     } else {
-        console.log(chalk.green('Success'))
+        log.success(`in ${duration()}`)
         process.exit(0)
     }
 }

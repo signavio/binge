@@ -19,6 +19,7 @@ export function writeBuild(node, { md5, log }, callback) {
         [
             done => fse.writeFile(pathBuildMD5(node), md5, 'utf8', done),
             done => fse.writeFile(pathBuildLog(node), log, 'utf8', done),
+            done => fse.writeFile(pathBuildLog(node), log, 'utf8', done),
         ],
         callback
     )

@@ -58,6 +58,7 @@ function findFromDependencies(node, packageJson, basePath) {
 
 function entriesFromLocalPackages(node, callback) {
     const entries = node.reachable
+        .filter(node => !node.isApp)
         .map(childNode => findFromLocalPackages(node, childNode))
         .reduce((result, next) => [...result, ...next], [])
 

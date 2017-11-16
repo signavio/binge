@@ -3,10 +3,11 @@ import chalk from 'chalk'
 import path from 'path'
 import fse from 'fs-extra'
 
+import * as log from '../log'
+import duration from '../duration'
+
 import createGraph from '../graph/create'
 import copyTask from '../tasks/copy'
-
-import { CONCURRENCY } from '../constants'
 
 export default function(cliFlags, params) {
     const srcPath = path.resolve(params[1])
@@ -18,7 +19,7 @@ export default function(cliFlags, params) {
     createGraph(path.resolve('.'), (err, nodes) => {
         if (err) end(err)
 
-        async.mapLimit(nodes, CONCURRENCY, copyIntoNode, end)
+        async.map(nodes, copyIntoNode, end)
     })
 
     function copyIntoNode(node, callback) {
@@ -32,10 +33,9 @@ export default function(cliFlags, params) {
 
             process.exit(1)
         } else {
-            console.log(chalk.green('Success'))
             const withoutSkips = result.filter(e => e !== false)
-            console.log(
-                `Copied ${params[1]} into ${withoutSkips.length} local-packages`
+            log.success(
+                `Copied ${params[1]} into ${withoutSkips.length} packages, done in ${duration()}`
             )
             process.exit(0)
         }

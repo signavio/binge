@@ -5,7 +5,7 @@ import packList from 'npm-packlist'
 
 export default function(node, callback) {
     async.map(
-        node.reachable,
+        node.reachable.filter(node => !node.isApp),
         (childNode, done) => packNode(node, childNode, done),
         callback
     )

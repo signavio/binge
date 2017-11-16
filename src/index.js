@@ -10,8 +10,8 @@ import list from './commands/list'
 import nuke from './commands/nuke'
 import outdated from './commands/outdated'
 import remove from './commands/remove'
+import touch from './commands/touch'
 import trace from './commands/trace'
-import upgrade from './commands/upgrade'
 import watch from './commands/watch'
 
 const commands = {
@@ -27,8 +27,8 @@ const commands = {
     nuke,
     outdated,
     remove,
+    touch,
     trace,
-    upgrade,
     watch,
 }
 

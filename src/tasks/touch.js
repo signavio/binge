@@ -1,27 +1,30 @@
-import fse from 'fs-extra'
+import fs from 'fs'
 import path from 'path'
 
-import {
-    apply as deltaApply,
-    isEmpty as deltaIsEmpty,
-} from '../util/dependencyDelta'
+import { apply, applyIf, isEmpty } from '../util/dependencyDelta'
 
 export default function(node, dependencyDelta, force, callback) {
-    const { appliedDelta, packageJson } = deltaApply(
-        node.packageJson,
-        dependencyDelta,
-        force
-    )
+    const { appliedDelta, packageJson } = force
+        ? apply(node.packageJson, dependencyDelta)
+        : applyIf(node.packageJson, dependencyDelta)
 
-    if (!deltaIsEmpty(appliedDelta)) {
+    if (!isEmpty(appliedDelta)) {
         const dataPath = path.join(node.path, 'package.json')
         const packageJsonData = `${JSON.stringify(packageJson, null, 2)}\n`
-        fse.writeFileSync(dataPath, packageJsonData, 'utf8')
+        fs.writeFile(dataPath, packageJsonData, 'utf8', err => {
+            callback(err, {
+                node,
+                appliedDelta,
+                skipped: false,
+            })
+        })
+    } else {
+        process.nextTick(() => {
+            callback(null, {
+                node,
+                appliedDelta,
+                skipped: true,
+            })
+        })
     }
-
-    callback(null, {
-        node,
-        appliedDelta,
-        skipped: deltaIsEmpty(appliedDelta),
-    })
 }

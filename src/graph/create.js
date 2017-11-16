@@ -50,15 +50,4 @@ export function withBase(entryPath, callback) {
             callback(err, nodes, layers, nodeBase)
         )
     })
-
-    /*
-    async.waterfall([
-        done => create(entryPath, done),
-        (nodes, layers, done) =>
-            findBase(nodes[0], (err, nodeBase) =>
-                done(err, nodes, layers, nodeBase)
-            ),
-        callback,
-    ])
-    */
 }

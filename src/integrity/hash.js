@@ -1,5 +1,5 @@
 import async from 'async'
-import fse from 'fs-extra'
+import fs from 'fs'
 import invariant from 'invariant'
 import klawSync from 'klaw-sync'
 import md5 from 'md5-slim'
@@ -76,7 +76,7 @@ function hash(filePaths, callback) {
     async.map(
         filePaths,
         (filePath, done) =>
-            fse.readFile(filePath, 'utf8', (err, data) => {
+            fs.readFile(filePath, 'utf8', (err, data) => {
                 done(null, {
                     md5: err ? null : md5(data),
                     filePath,

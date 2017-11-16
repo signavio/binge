@@ -10,10 +10,7 @@ import readRCFile from '../util/readRCFile'
  * that function validates the graph, and performs a cycle check
  */
 export default function readGraph(rootPath, callback) {
-    invariant(
-        path.isAbsolute(rootPath),
-        `Expects absolute path. Got this instead: ${rootPath}`
-    )
+    invariant(path.isAbsolute(rootPath), `Expected absolute path`)
 
     const cache = {}
     readNode(rootPath, tryEnd)

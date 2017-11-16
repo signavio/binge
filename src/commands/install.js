@@ -2,17 +2,19 @@ import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
 
+import duration from '../duration'
+import * as log from '../log'
 import { withBase as createGraph } from '../graph/create'
-import { createInstaller } from '../tasks/install'
+import createInstaller from '../tasks/install'
 import { dependencies as taskBinLink } from '../tasks/linkBin'
 
 export default function(cliFlags) {
     createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
 
-        console.log(`Using hoisting base '${nodeBase.name}'`)
+        log.info(`using hoisting base ${chalk.yellow(nodeBase.name)}`)
         async.series([installNodeBase, linkNodes], (err, results) => {
-            end(err, !err && [results[0]])
+            end(err, !err && results[0])
         })
 
         function installNodeBase(callback) {
@@ -25,33 +27,16 @@ export default function(cliFlags) {
         function linkNodes(callback) {
             async.mapSeries(
                 nodes,
-                (node, done) => taskBinLink(node, nodeBase, done),
-                callback
+                (node, done) => {
+                    taskBinLink(node, nodeBase, done)
+                },
+                err => {
+                    callback(err)
+                }
             )
         }
     })
 }
-
-/*
-function installLocal(cliFlags, nodes) {
-    const reporter = createReporter(cliFlags)
-    const taskInstall = createInstaller(yarnArgsOnly())
-
-    reporter.series(`Installing...`)
-    async.mapSeries(nodes, installNode, (err, results) => {
-        reporter.clear()
-        end(err, results)
-    })
-
-    function installNode(node, callback) {
-        const done = reporter.task(node.name)
-        taskInstall(node, (err, result) => {
-            done()
-            callback(err, result)
-        })
-    }
-}
-*/
 
 function yarnArgsOnly() {
     const argv = process.argv
@@ -60,27 +45,16 @@ function yarnArgsOnly() {
         .filter(a => a !== '--quiet' && a !== '--install-concurrency')
 }
 
-function end(err, result) {
+function end(err, { skipped, lockTouch } = {}) {
     if (err) {
         console.log(chalk.red('Failure'))
         console.log(err)
         process.exit(1)
     } else {
-        console.log(chalk.green('Success'))
-        summary(result)
+        const installPart = skipped ? 'install skipped' : 'installed the base'
+        const lockPart = lockTouch ? ' (wrote yarn.lock)' : ''
+
+        log.success(`${installPart}${lockPart}, done in ${duration()}`)
         process.exit(0)
     }
-}
-
-function summary(result) {
-    const installCount = result.filter(e => e.skipped === false).length
-    const installSkipCount = result.filter(e => e.skipped === true).length
-
-    const word = count => (count === 1 ? 'node' : 'nodes')
-
-    console.log(
-        `Installed ${installCount} ${word(
-            installCount
-        )}, ${installSkipCount} up-to-date`
-    )
 }

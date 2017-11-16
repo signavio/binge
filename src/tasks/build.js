@@ -12,12 +12,12 @@ export default function(node, entryNode, callback) {
         !node.packageJson.scripts || !node.packageJson.scripts.build
 
     if (
-        node.isDummy === true ||
-        node.isApp === true ||
+        unavailable ||
         node === entryNode ||
-        unavailable
+        node.isApp === true ||
+        node.reachable.some(node => node.isApp)
     ) {
-        callback(null, {})
+        callback(null, { skipped: unavailable ? true : null })
         return
     }
 

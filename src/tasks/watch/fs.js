@@ -8,11 +8,6 @@ import path from 'path'
 import { yarn as spawnYarn } from '../../util/spawnTool'
 
 export function watchProject(rootNode, onReady) {
-    invariant(
-        rootNode.isDummy || rootNode.isApp,
-        'Can only start a watch on a Dummy or on an App'
-    )
-
     function longestCommonPrefix(paths) {
         const A = paths.sort()
         let a1 = A[0]
