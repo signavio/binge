@@ -1,11 +1,19 @@
 import chalk from 'chalk'
 import path from 'path'
 import pad from 'pad'
+import commander from 'commander'
 
 import createGraph from '../graph/create'
 import archy from '../util/archy'
 
-export default function(options) {
+commander
+    .command('graph')
+    .description(
+        'Prints the local-package tree, and layer topology information'
+    )
+    .action(runCommand)
+
+function runCommand() {
     createGraph(path.resolve('.'), function(err, [entryNode], layers) {
         if (err) {
             console.log(err)

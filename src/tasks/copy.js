@@ -1,14 +1,8 @@
 import fse from 'fs-extra'
 import path from 'path'
 
-export default function(node, srcPath, options, callback) {
-    if (options.skipRoot && node.isApp === true) {
-        return callback(null, false)
-    }
-
-    const destName = options.destName
-        ? options.destName
-        : path.basename(srcPath)
+export default function(node, srcPath, name, callback) {
+    const destName = name || path.basename(srcPath)
     const destPath = path.join(node.path, destName)
 
     fse.copy(srcPath, destPath, callback)

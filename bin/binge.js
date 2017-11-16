@@ -5,14 +5,30 @@
  * see: https://github.com/ForbesLindesay/cmd-shim/blob/f59af911f1373239a7537072641d55ff882c3701/index.js#L22
  */
 require('../lib/duration')
-const chalk = require('chalk')
-const meow = require('meow')
-
+// const chalk = require('chalk')
+const commander = require('commander')
 const packageJson = require('../package.json')
-const log = require('../lib/log')
-const binge = require('../lib/index').default
-const ensureRuntime = require('../lib/util/ensureRuntime').default
+// const log = require('../lib/log')
 
+commander
+    .version(packageJson.version)
+    .option(
+        '-l --log-level <level>',
+        'Output log level',
+        /^(silent|error|warning|info|debug)$/i,
+        'info'
+    )
+
+require('../lib/index')
+
+commander.command('').action(function(env) {
+    commander.outputHelp()
+})
+
+commander.parse(process.argv)
+// const ensureRuntime = require('../lib/util/ensureRuntime').default
+
+/*
 ensureRuntime()
 var cli = meow([
     'Usage',
@@ -51,6 +67,7 @@ var cli = meow([
     '     dependency t0 16.0.1 in local-packages that also depend on react.',
 ])
 
+
 const [commandName] = cli.input
 const command = binge[commandName]
 
@@ -63,3 +80,4 @@ if (!command) {
     log.info(packageJson.version, 'version')
     command(cli.flags, cli.input)
 }
+*/

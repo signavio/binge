@@ -1,6 +1,7 @@
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
+import commander from 'commander'
 
 import duration from '../duration'
 import * as log from '../log'
@@ -15,7 +16,14 @@ import {
     localPackages as taskLinkBinLocalPackages,
 } from '../tasks/linkBin'
 
-export default function(cliFlags) {
+commander
+    .command('bootstrap')
+    .description(
+        'install, build and deploy the local-package tree. The command requires yarn.locks to be in sync'
+    )
+    .action(runCommand)
+
+function runCommand() {
     createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
 

@@ -1,12 +1,21 @@
 import chalk from 'chalk'
 import path from 'path'
+import commander from 'commander'
+
 import * as log from '../log'
 import duration from '../duration'
 
 import { withBase as createGraph } from '../graph/create'
 import taskCheckYarn from '../tasks/checkYarn'
 
-export default function(cliFlags) {
+commander
+    .command('check')
+    .description(
+        'check the local-package tree for package.json and yarn.lock sync'
+    )
+    .action(runCommand)
+
+function runCommand() {
     createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
 

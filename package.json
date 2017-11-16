@@ -20,6 +20,7 @@
     "chalk": "2.1.0",
     "chokidar": "1.7.0",
     "cmd-shim": "2.0.2",
+    "commander": "^2.11.0",
     "cross-spawn": "5.1.0",
     "fs-extra": "4.0.2",
     "invariant": "2.2.2",
@@ -27,8 +28,8 @@
     "md5-slim": "1.0.0",
     "meow": "3.7.0",
     "npm-packlist": "1.1.9",
-    "progress": "2.0.0",
     "pad": "2.0.1",
+    "progress": "2.0.0",
     "semver": "5.4.1",
     "semver-intersect": "1.1.2",
     "signal-exit": "3.0.2"

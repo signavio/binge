@@ -1,5 +1,6 @@
 import async from 'async'
 import chalk from 'chalk'
+import commander from 'commander'
 import path from 'path'
 
 import duration from '../duration'
@@ -8,7 +9,16 @@ import { withBase as createGraph } from '../graph/create'
 import createTaskYarn from '../tasks/yarn'
 import taskTouch from '../tasks/touch'
 
-export default function(cliFlags) {
+commander
+    .command('add <dependency...>')
+    .option('-D, --dev', 'will install one or more packages in devDependencies')
+    .option('-E, --exact', 'installs the packages as exact versions. ')
+    .description(
+        'Adds and installs one or more dependencies. Propagates changes to packages that share the same dependency'
+    )
+    .action(runCommand)
+
+function runCommand(packages, options) {
     createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
 
@@ -16,7 +26,14 @@ export default function(cliFlags) {
 
         const [entryNode] = nodes
 
-        const taskAdd = createTaskYarn(yarnArgsOnly(process.argv), {
+        const yarnArgs = [
+            'add',
+            ...packages,
+            options.exact ? '--exact' : null,
+            options.dev ? '--dev' : null,
+        ].filter(Boolean)
+
+        const taskAdd = createTaskYarn(yarnArgs, {
             stdio: 'inherit',
         })
 
@@ -46,10 +63,6 @@ export default function(cliFlags) {
             callback
         )
     }
-}
-
-function yarnArgsOnly(argv) {
-    return argv.slice(argv.indexOf('add')).filter(a => a !== '--quiet')
 }
 
 function end(err, addResult, touchResults) {

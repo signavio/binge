@@ -1,12 +1,19 @@
 import async from 'async'
 import chalk from 'chalk'
+import commander from 'commander'
 import fse from 'fs-extra'
 import path from 'path'
+
 import createGraph from '../graph/create'
 import * as log from '../log'
 import duration from '../duration'
 
-export default function() {
+commander
+    .command('cache-clean')
+    .description('cleans the install and build cache')
+    .action(runCommand)
+
+function runCommand() {
     createGraph(path.resolve('.'), (err, graph) => {
         if (err) end(err)
         async.map(

@@ -4,19 +4,24 @@ import path from 'path'
 import fse from 'fs-extra'
 import pad from 'pad'
 import { spawnSync } from 'child_process'
+import commander from 'commander'
 
 import createGraph from '../graph/create'
 
-export default function(cliFlags, cliInput) {
-    // eslint-disable-next-line no-unused-vars
-    const [_, targetBranch, outputFolder] = cliInput
+commander
+    .command('trace <targetBranch> [outputDir]')
+    .description(
+        'compares the current branch with the target branch. Outputs the trace up list of affected packages'
+    )
+    .action(runCommand)
 
+function runCommand(targetBranch, outputDir) {
     const branchError = checkTargetBranch(targetBranch)
     if (branchError) {
         end(branchError)
     }
 
-    const folderError = checkOutputFolder(outputFolder)
+    const folderError = checkOutputFolder(outputDir)
     if (folderError) {
         end(folderError)
     }
@@ -43,11 +48,11 @@ export default function(cliFlags, cliInput) {
             .filter((entry, i, collection) => collection.indexOf(entry) === i)
             .sort(sortByLayer(layers))
 
-        if (outputFolder) {
-            writeResult(touchedNodes, outputFolder)
+        if (outputDir) {
+            writeResult(touchedNodes, outputDir)
         }
 
-        end(null, touchedNodes, outputFolder)
+        end(null, touchedNodes, outputDir)
     })
 }
 
@@ -98,14 +103,14 @@ function checkTargetBranch(targetBranch) {
     return null
 }
 
-function checkOutputFolder(outputFolder) {
-    if (typeof outputFolder !== 'string' || !outputFolder) {
+function checkOutputFolder(outputDir) {
+    if (typeof outputDir !== 'string' || !outputDir) {
         return null
     }
 
-    return folderExists(outputFolder)
+    return folderExists(outputDir)
         ? null
-        : `${outputFolder} doesn't exist or not a directory`
+        : `${outputDir} doesn't exist or not a directory`
 }
 
 function sortByPath({ path: p1 }, { path: p2 }) {
@@ -121,14 +126,14 @@ function sortByLayer(layers) {
     return (n1, n2) => (layerNumber(n1) > layerNumber(n2) ? 1 : -1)
 }
 
-function writeResult(result, outputFolder) {
+function writeResult(result, outputDir) {
     const write = mode => {
         const content = result
             .filter(node => node.testMode === mode)
             .map(node => node.path)
             .join('\n')
         fse.writeFileSync(
-            path.join(path.resolve(outputFolder), `${mode}.txt`),
+            path.join(path.resolve(outputDir), `${mode}.txt`),
             `${content}\n`,
             'utf8'
         )
@@ -166,19 +171,19 @@ function execGit(...args) {
     return exec('git', args).trim()
 }
 
-function end(err, touchedNodes, outputFolder) {
+function end(err, touchedNodes, outputDir) {
     if (err) {
         console.log(chalk.red('Failure'))
         console.log(err)
         process.exit(1)
     } else {
         console.log(chalk.green('Success'))
-        summary(touchedNodes, outputFolder)
+        summary(touchedNodes, outputDir)
         process.exit(0)
     }
 }
 
-function summary(touchedNodes, outputFolder) {
+function summary(touchedNodes, outputDir) {
     console.log(
         touchedNodes.length
             ? `Traced changes affecting ${touchedNodes.length} local-packages in the tree`

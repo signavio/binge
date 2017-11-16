@@ -1,5 +1,6 @@
 import async from 'async'
 import chalk from 'chalk'
+import commander from 'commander'
 import path from 'path'
 import semver from 'semver'
 
@@ -9,18 +10,26 @@ import { withBase as createGraph } from '../graph/create'
 import createTaskInstall from '../tasks/install'
 import taskTouch from '../tasks/touch'
 
-export default function(cliFlags, cliInput) {
+commander
+    .command('touch [name] [version]')
+    .description(
+        'Update one dependency to a specific version, and write the yarn.lock. Propagates changes to packages that share the same dependency (default simply write yarn.lock)'
+    )
+    .action(runCommand)
+
+function runCommand(name, version) {
     createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
 
-        const [name, version] = cliInput.slice(1)
-        if (!semver.valid(version)) {
+        const nakedRun = !name || !version
+
+        if (!nakedRun && !semver.valid(version)) {
             end(`${version} is not a valid version`)
         }
 
         log.info(`using hoisting base ${chalk.yellow(nodeBase.name)}`)
         const dependencyDelta = {
-            dependencies: { [name]: version },
+            dependencies: nakedRun ? {} : { [name]: version },
             devDependencies: {},
         }
 
@@ -32,8 +41,16 @@ export default function(cliFlags, cliInput) {
                         dependencyDelta,
                         done
                     ),
-                (touchResults, done) => {
-                    install(nodeBase, (err, installResult) =>
+                (touchResults, done) => info(touchResults, done),
+                (touchResults, done) =>
+                    createGraph(
+                        nodeBase.path,
+                        (err, nodes, layers, nodeBase) => {
+                            done(err, touchResults, nodeBase)
+                        }
+                    ),
+                (touchResults, reloadedNodeBase, done) => {
+                    install(reloadedNodeBase, (err, installResult) =>
                         done(err, touchResults, installResult)
                     )
                 },
@@ -43,7 +60,7 @@ export default function(cliFlags, cliInput) {
     })
 
     function touch(nodes, dependencyDelta, callback) {
-        async.map(
+        async.mapSeries(
             nodes,
             (node, done) => {
                 const force = false
@@ -51,6 +68,25 @@ export default function(cliFlags, cliInput) {
             },
             callback
         )
+    }
+
+    function info(touchResults, callback) {
+        touchResults.forEach(({ node, appliedDelta }) => {
+            Object.keys(appliedDelta.dependencies).forEach(name => {
+                log.info(
+                    `${chalk.yellow(node.name)} -> ` +
+                        `${name}@${appliedDelta.dependencies[name]}`
+                )
+            })
+
+            Object.keys(appliedDelta.devDependencies).forEach(name => {
+                log.info(
+                    `${chalk.yellow(node.name)} -> ` +
+                        `${name}@${appliedDelta.devDependencies[name]} (dev)`
+                )
+            })
+        })
+        callback(null, touchResults)
     }
 
     function install(node, callback) {
@@ -76,31 +112,12 @@ function summary(touchResults, installResult) {
     const touchedCount = touchResults.filter(entry => entry.skipped !== true)
         .length
 
-    touchResults.forEach(({ node, appliedDelta }) => {
-        Object.keys(appliedDelta.dependencies).forEach(name => {
-            log.info(
-                `${chalk.yellow(node.name)} -> ` +
-                    `${name}@${appliedDelta.dependencies[name]}`
-            )
-        })
+    const touchPart = touchedCount ? `touched ${touchedCount} packages, ` : ''
+    const installPart = installResult.skipped
+        ? 'install up to date, '
+        : 'installed the base, '
+    const lockPart = installResult.lockTouch ? 'wrote yarn.lock, ' : ''
+    const durationPart = `done in ${duration()}`
 
-        Object.keys(appliedDelta.devDependencies).forEach(name => {
-            log.info(
-                `${chalk.yellow(node.name)} -> ` +
-                    `${name}@${appliedDelta.devDependencies[name]} (dev)`
-            )
-        })
-    })
-
-    const durationPart = `, done in ${duration()}`
-    if (!touchedCount) {
-        log.success(`no action required${durationPart}`)
-    } else {
-        const installPart = installResult.skipped
-            ? ''
-            : ' and installed the base'
-        log.success(
-            `touched ${touchedCount} packages${installPart}${durationPart}`
-        )
-    }
+    log.success(`${touchPart}${installPart}${lockPart}${durationPart}`)
 }

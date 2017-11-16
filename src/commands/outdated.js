@@ -1,5 +1,13 @@
-import createHoisted from './createHoisted'
+import commander from 'commander'
+import yarnHoisted from './yarnHoisted'
 
-const selectArgs = () => process.argv.slice(process.argv.indexOf('outdated'))
+commander
+    .command('outdated [package...]')
+    .description(
+        'Lists version information for one or more dependencies (default all)'
+    )
+    .action(runCommand)
 
-export default createHoisted(selectArgs)
+function runCommand(packages) {
+    yarnHoisted(['outdated', ...packages])
+}

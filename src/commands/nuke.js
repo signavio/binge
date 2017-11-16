@@ -2,15 +2,21 @@ import async from 'async'
 import chalk from 'chalk'
 import fse from 'fs-extra'
 import path from 'path'
+import commander from 'commander'
 
 import * as log from '../log'
 import duration from '../duration'
 import createGraph from '../graph/create'
 
-export default function(cliFlags, cliInput) {
-    const target = cliInput[1] || 'node_modules'
-    let progress
+commander
+    .command('nuke [target]')
+    .description(
+        'Removes target folder or file from each package (default node_modules)'
+    )
+    .action(runCommand)
 
+function runCommand(target = 'node_modules') {
+    let progress
     createGraph(path.resolve('.'), (err, nodes) => {
         if (err) end(err)
 
@@ -23,7 +29,7 @@ export default function(cliFlags, cliInput) {
     })
 
     function nukeNode(node, done) {
-        progress.text(node.name)
+        progress.text(chalk.yellow(node.name))
         fse.remove(path.join(node.path, target), err => {
             progress.tick()
             done(err)

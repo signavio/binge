@@ -11,7 +11,7 @@ export default function(node, dependencyDelta, force, callback) {
     if (!isEmpty(appliedDelta)) {
         const dataPath = path.join(node.path, 'package.json')
         const packageJsonData = `${JSON.stringify(packageJson, null, 2)}\n`
-        fs.writeFile(dataPath, packageJsonData, 'utf8', err => {
+        fs.writeFile(dataPath, packageJsonData, err => {
             callback(err, {
                 node,
                 appliedDelta,
