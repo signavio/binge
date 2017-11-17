@@ -6,7 +6,7 @@ const LEVEL = 'info'
 
 export const progress = (title, total) => {
     let bar = new ProgressBar(
-        `${title} [:bar] :current of :total packages (:name) `,
+        `[:bar] ${title} :current of :total packages :name `,
         {
             complete: '=',
             incomplete: ' ',

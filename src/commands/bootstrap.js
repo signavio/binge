@@ -55,7 +55,7 @@ export default function run(end) {
         }
 
         function buildAndDeploy(callback) {
-            progress = log.progress('bootstraping...', nodes.length)
+            progress = log.progress('bootstraping', nodes.length)
             async.mapSeries(
                 reverseLayers,
                 buildAndDeployLayer,

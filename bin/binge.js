@@ -22,6 +22,7 @@ program
         'Adds and installs one or more dependencies. Propagates changes to packages that share the same dependency'
     )
     .action((...args) => {
+        log.info(packageJson.version, 'version')
         require('../lib/commands/add').runCommand(...args)
     })
 
@@ -31,6 +32,7 @@ program
         'Install, build and deploy the local-package tree. The command requires yarn.locks to be in sync'
     )
     .action((...args) => {
+        log.info(packageJson.version, 'version')
         require('../lib/commands/bootstrap').runCommand(...args)
     })
 
@@ -38,6 +40,7 @@ program
     .command('cache-clean')
     .description('cleans the build and install cache')
     .action((...args) => {
+        log.info(packageJson.version, 'version')
         require('../lib/commands/cacheClean').runCommand(...args)
     })
 
@@ -47,6 +50,7 @@ program
         'Check the local-package tree for package.json and yarn.lock sync'
     )
     .action((...args) => {
+        log.info(packageJson.version, 'version')
         require('../lib/commands/check').runCommand(...args)
     })
 
@@ -54,6 +58,7 @@ program
     .command('copy <file> [newName]')
     .description('Copy a file into each package in the local-package tree')
     .action((...args) => {
+        log.info(packageJson.version, 'version')
         require('../lib/commands/copy').runCommand(...args)
     })
 
@@ -63,6 +68,7 @@ program
         'Prints the local-package tree, and layer topology information'
     )
     .action((...args) => {
+        log.info(packageJson.version, 'version')
         require('../lib/commands/graph').runCommand(...args)
     })
 
@@ -70,6 +76,7 @@ program
     .command('harmony [dependency ...]')
     .description('Check the local-package tree for dependency consistency')
     .action((...args) => {
+        log.info(packageJson.version, 'version')
         require('../lib/commands/harmony').runCommand(...args)
     })
 
@@ -79,6 +86,7 @@ program
         'Removes target folder or file from each package (default node_modules)'
     )
     .action((...args) => {
+        log.info(packageJson.version, 'version')
         require('../lib/commands/nuke').runCommand(...args)
     })
 program
@@ -94,7 +102,10 @@ program
         'will filter the list of dependencies by the pattern flag'
     )
     .description('List installed dependencies, including hoisting')
-    .action((...args) => require('../lib/commands/list').runCommand(...args))
+    .action((...args) => {
+        log.info(packageJson.version, 'version')
+        require('../lib/commands/list').runCommand(...args)
+    })
 
 program
     .command('outdated [package...]')
@@ -102,6 +113,7 @@ program
         'Lists version information for one or more dependencies (default all)'
     )
     .action((...args) => {
+        log.info(packageJson.version, 'version')
         require('../lib/commands/outdated').runCommand(...args)
     })
 
@@ -111,6 +123,7 @@ program
         'Update one dependency to a specific version, and write the yarn.lock. Propagates changes to packages that share the same dependency (default simply write yarn.lock)'
     )
     .action((...args) => {
+        log.info(packageJson.version, 'version')
         require('../lib/commands/touch').runCommand(...args)
     })
 
@@ -120,6 +133,7 @@ program
         'Compares the current branch with the target branch. Outputs the trace up list of affected packages'
     )
     .action((...args) => {
+        log.info(packageJson.version, 'version')
         require('../lib/commands/trace').runCommand(...args)
     })
 
@@ -127,12 +141,14 @@ program
     .command('watch')
     .description('Build and watch the local-package tree')
     .action((...args) => {
+        log.info(packageJson.version, 'version')
         require('../lib/commands/watch').runCommand(...args)
     })
 
 program
     .command('*', null, { noHelp: true }) // null is required to avoid the implicit 'help' command being added
     .action(cmd => {
+        log.info(packageJson.version, 'version')
         log.error(`Command "${cmd}" not found`)
     })
 
