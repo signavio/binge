@@ -1,14 +1,10 @@
-import chalk from 'chalk'
+import * as log from '../../log'
 import pad from 'pad'
 
 /*
  * Looks ugly, but it is just formatting and printing results.
  */
-export default function print(
-    dependencyPointers,
-    dependencyStatus,
-    devDependencyRanges
-) {
+export default function print(dependencyPointers, dependencyStatus) {
     function compare(a, b) {
         if (a.nodeName < b.nodeName) return -1
         if (a.nodeName > b.nodeName) return 1
@@ -21,7 +17,6 @@ export default function print(
     }
 
     const nonOk = dependencyStatus.filter(({ status }) => status !== 'OK')
-    const widthCol1 = calcWidth(['Warning', 'Error']) + 2
     const widthCol2 = calcWidth(nonOk.map(({ name }) => name)) + 2
     const widthCol3 = calcWidth(nonOk.map(({ version }) => version || 'failed'))
 
@@ -32,12 +27,11 @@ export default function print(
             .map(pointer => `${pointer.nodeName}@${pointer.version}`)
             .join(', ')
 
-    const errorText = dependencyStatus
+    dependencyStatus
         .filter(entry => entry.status === 'ERROR')
         .sort(compareByName)
         .map(({ name }) => {
             const prefix =
-                `${chalk.red(pad('Error', widthCol1))}` +
                 `${pad(name, widthCol2)}` +
                 `${pad('failed', widthCol3)}` +
                 ` -> `
@@ -49,14 +43,13 @@ export default function print(
                 ? prefix + postfix1
                 : prefix + postfix2
         })
-        .join('\n')
+        .forEach(text => log.error(text, ' error '))
 
-    const warningText = dependencyStatus
+    dependencyStatus
         .filter(entry => entry.status === 'RECONCILED')
         .sort(compareByName)
         .map(({ name, version }) => {
             const prefix =
-                `${chalk.yellowBright(pad('Warning', widthCol1))}` +
                 `${pad(name, widthCol2)}` +
                 `${pad(version, widthCol3)}` +
                 ` -> `
@@ -69,39 +62,7 @@ export default function print(
                 ? prefix + postfix1
                 : prefix + postfix2
         })
-        .join('\n')
-
-    const rangesText = devDependencyRanges
-        .sort(compareByName)
-        .map(
-            ({ pkgName, name, version }) =>
-                `${chalk.yellowBright(pad('Warning', widthCol1))}` +
-                `${pad(name, widthCol2)} -> ${pkgName}@${version}`
-        )
-        .join('\n')
-
-    if (warningText || errorText) {
-        console.log('Hoisting problems:')
-    }
-
-    if (errorText) {
-        console.log(errorText)
-    }
-
-    if (warningText) {
-        console.log(warningText)
-    }
-    if (warningText || errorText) {
-        console.log()
-    }
-
-    if (rangesText) {
-        console.log(
-            'Not related with hoisting, but ranges were found in devDependencies:'
-        )
-        console.log(rangesText)
-        console.log()
-    }
+        .forEach(text => log.warning(text))
 }
 
 function calcWidth(names) {

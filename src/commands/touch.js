@@ -1,23 +1,20 @@
 import async from 'async'
 import chalk from 'chalk'
-import commander from 'commander'
 import path from 'path'
 import semver from 'semver'
 
 import duration from '../duration'
 import * as log from '../log'
+
 import { withBase as createGraph } from '../graph/create'
 import createTaskInstall from '../tasks/install'
 import taskTouch from '../tasks/touch'
 
-commander
-    .command('touch [name] [version]')
-    .description(
-        'Update one dependency to a specific version, and write the yarn.lock. Propagates changes to packages that share the same dependency (default simply write yarn.lock)'
-    )
-    .action(runCommand)
+export function runCommand(name, version) {
+    run(name, version, end)
+}
 
-function runCommand(name, version) {
+export function run(name, version, end) {
     createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
 
@@ -112,7 +109,9 @@ function summary(touchResults, installResult) {
     const touchedCount = touchResults.filter(entry => entry.skipped !== true)
         .length
 
-    const touchPart = touchedCount ? `touched ${touchedCount} packages, ` : ''
+    const touchPart = touchedCount
+        ? `touched ${touchedCount} packages, `
+        : 'no packages touched, '
     const installPart = installResult.skipped
         ? 'install up to date, '
         : 'installed the base, '

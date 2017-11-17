@@ -1,24 +1,17 @@
 import chalk from 'chalk'
 import path from 'path'
 import pad from 'pad'
-import commander from 'commander'
+
+import * as log from '../log'
+import duration from '../duration'
 
 import createGraph from '../graph/create'
 import archy from '../util/archy'
 
-commander
-    .command('graph')
-    .description(
-        'Prints the local-package tree, and layer topology information'
-    )
-    .action(runCommand)
-
-function runCommand() {
+export function runCommand() {
     createGraph(path.resolve('.'), function(err, [entryNode], layers) {
         if (err) {
-            console.log(err)
-            console.log(chalk.red('Failure'))
-            process.exit(1)
+            end(err)
         }
 
         console.log('Christmas Tree:')
@@ -33,5 +26,16 @@ function runCommand() {
                 )
             )
         })
+        end(null)
     })
+}
+
+function end(err) {
+    if (err) {
+        console.log(chalk.red('Failure'))
+        console.log(err)
+        process.exit(1)
+    } else {
+        log.success(`done in ${duration()}`)
+    }
 }

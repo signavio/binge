@@ -1,6 +1,5 @@
 import async from 'async'
 import chalk from 'chalk'
-import commander from 'commander'
 import path from 'path'
 
 import duration from '../duration'
@@ -9,16 +8,11 @@ import { withBase as createGraph } from '../graph/create'
 import createTaskYarn from '../tasks/yarn'
 import taskTouch from '../tasks/touch'
 
-commander
-    .command('add <dependency...>')
-    .option('-D, --dev', 'will install one or more packages in devDependencies')
-    .option('-E, --exact', 'installs the packages as exact versions. ')
-    .description(
-        'Adds and installs one or more dependencies. Propagates changes to packages that share the same dependency'
-    )
-    .action(runCommand)
+export function runCommand(packages, options) {
+    run(packages, options, end)
+}
 
-function runCommand(packages, options) {
+export default function run(packages, options, end) {
     createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
 

@@ -4,7 +4,7 @@ import path from 'path'
 import createGraph from '../graph/create'
 import taskWatch from '../tasks/watch'
 
-export default function(callback) {
+export function runCommand() {
     createGraph(path.resolve('.'), (err, nodes) => {
         if (err) end(err)
         taskWatch(nodes[0])

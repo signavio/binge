@@ -6,7 +6,11 @@ import * as log from '../log'
 import { withBase as createGraph } from '../graph/create'
 import createYarnTask from '../tasks/yarn'
 
-export default (yarnArgs, spawnOptions = { stdio: 'inherit' }) => {
+export default (
+    yarnArgs,
+    spawnOptions = { stdio: 'inherit' },
+    end = defaultEnd
+) => {
     const yarnTask = createYarnTask(yarnArgs, spawnOptions)
 
     createGraph(path.resolve('.'), (err, nodes, layers, baseNode) => {
@@ -18,7 +22,7 @@ export default (yarnArgs, spawnOptions = { stdio: 'inherit' }) => {
     })
 }
 
-function end(err) {
+function defaultEnd(err) {
     if (err) {
         console.log(chalk.red('Failure'))
         console.log(err)

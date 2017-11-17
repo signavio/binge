@@ -1,16 +1,11 @@
 #!/usr/bin/env node
-/*
- * The "shebang" above is required for npm to correctly and install package the
- * package bin shortcut on windows
- * see: https://github.com/ForbesLindesay/cmd-shim/blob/f59af911f1373239a7537072641d55ff882c3701/index.js#L22
- */
-require('../lib/duration')
-// const chalk = require('chalk')
-const commander = require('commander')
-const packageJson = require('../package.json')
-// const log = require('../lib/log')
 
-commander
+require('../lib/duration')
+const program = require('commander')
+const packageJson = require('../package.json')
+const log = require('../lib/log')
+
+program
     .version(packageJson.version)
     .option(
         '-l --log-level <level>',
@@ -19,13 +14,134 @@ commander
         'info'
     )
 
-require('../lib/index')
+program
+    .command('add <dependency...>')
+    .option('-D, --dev', 'will install one or more packages in devDependencies')
+    .option('-E, --exact', 'installs the packages as exact versions. ')
+    .description(
+        'Adds and installs one or more dependencies. Propagates changes to packages that share the same dependency'
+    )
+    .action((...args) => {
+        require('../lib/commands/add').runCommand(...args)
+    })
 
-commander.command('').action(function(env) {
-    commander.outputHelp()
-})
+program
+    .command('bootstrap')
+    .description(
+        'Install, build and deploy the local-package tree. The command requires yarn.locks to be in sync'
+    )
+    .action((...args) => {
+        require('../lib/commands/bootstrap').runCommand(...args)
+    })
 
-commander.parse(process.argv)
+program
+    .command('cache-clean')
+    .description('cleans the build and install cache')
+    .action((...args) => {
+        require('../lib/commands/cacheClean').runCommand(...args)
+    })
+
+program
+    .command('check')
+    .description(
+        'Check the local-package tree for package.json and yarn.lock sync'
+    )
+    .action((...args) => {
+        require('../lib/commands/check').runCommand(...args)
+    })
+
+program
+    .command('copy <file> [newName]')
+    .description('Copy a file into each package in the local-package tree')
+    .action((...args) => {
+        require('../lib/commands/copy').runCommand(...args)
+    })
+
+program
+    .command('graph')
+    .description(
+        'Prints the local-package tree, and layer topology information'
+    )
+    .action((...args) => {
+        require('../lib/commands/graph').runCommand(...args)
+    })
+
+program
+    .command('harmony [dependency ...]')
+    .description('Check the local-package tree for dependency consistency')
+    .action((...args) => {
+        require('../lib/commands/harmony').runCommand(...args)
+    })
+
+program
+    .command('nuke [target]')
+    .description(
+        'Removes target folder or file from each package (default node_modules)'
+    )
+    .action((...args) => {
+        require('../lib/commands/nuke').runCommand(...args)
+    })
+program
+    .command('list [dependency]')
+    .option(
+        '--depth <level>',
+        'By default, all packages and their dependencies will be displayed.' +
+            ' To restrict the depth of the dependencies listed, zero-indexed',
+        parseInt
+    )
+    .option(
+        '--pattern <pattern>',
+        'will filter the list of dependencies by the pattern flag'
+    )
+    .description('List installed dependencies, including hoisting')
+    .action((...args) => require('../lib/commands/list').runCommand(...args))
+
+program
+    .command('outdated [package...]')
+    .description(
+        'Lists version information for one or more dependencies (default all)'
+    )
+    .action((...args) => {
+        require('../lib/commands/outdated').runCommand(...args)
+    })
+
+program
+    .command('touch [name] [version]')
+    .description(
+        'Update one dependency to a specific version, and write the yarn.lock. Propagates changes to packages that share the same dependency (default simply write yarn.lock)'
+    )
+    .action((...args) => {
+        require('../lib/commands/touch').runCommand(...args)
+    })
+
+program
+    .command('trace <targetBranch> [outputDir]')
+    .description(
+        'Compares the current branch with the target branch. Outputs the trace up list of affected packages'
+    )
+    .action((...args) => {
+        require('../lib/commands/trace').runCommand(...args)
+    })
+
+program
+    .command('watch')
+    .description('Build and watch the local-package tree')
+    .action((...args) => {
+        require('../lib/commands/watch').runCommand(...args)
+    })
+
+program
+    .command('*', null, { noHelp: true }) // null is required to avoid the implicit 'help' command being added
+    .action(cmd => {
+        log.error(`Command "${cmd}" not found`)
+    })
+
+if (!process.argv.slice(2).length) {
+    program.outputHelp()
+} else {
+    program.parse(process.argv)
+}
+
 // const ensureRuntime = require('../lib/util/ensureRuntime').default
 
 /*
@@ -48,36 +164,7 @@ var cli = meow([
     '             the list of affected local-packages.',
     '             Example: binge trace develop',
     '  watch      build and watch the local-package tree',
-    '',
-    'Hoisted Yarn Commands:',
-    '  add',
-    '  list',
-    '  outdated',
-    '  remove',
-    '  upgrade',
-    'Hoisted Yarn Commands follow these steps:',
-    '  1- Hoist package.json',
-    '  2- Call Yarn',
-    '  3- Unhoist package.json, applying the resulting dependency delta',
-    'More on hoisted commands:',
-    '  1- Trailling command arguments are piped to yarn',
-    `  2- For 'add' and 'upgrade', the dependency delta produced is applied to`,
-    '     local-packages that have a dependency intersection with the delta.',
-    `     Example: 'binge add react@16.0.1' will transitively set the react `,
-    '     dependency t0 16.0.1 in local-packages that also depend on react.',
 ])
 
 
-const [commandName] = cli.input
-const command = binge[commandName]
-
-if (!command) {
-    if (commandName) {
-        console.log(chalk.red('Invalid binge command: ' + commandName))
-    }
-    cli.showHelp()
-} else {
-    log.info(packageJson.version, 'version')
-    command(cli.flags, cli.input)
-}
 */

@@ -4,18 +4,17 @@ import path from 'path'
 import fse from 'fs-extra'
 import pad from 'pad'
 import { spawnSync } from 'child_process'
-import commander from 'commander'
+
+import * as log from '../log'
+import duration from '../duration'
 
 import createGraph from '../graph/create'
 
-commander
-    .command('trace <targetBranch> [outputDir]')
-    .description(
-        'compares the current branch with the target branch. Outputs the trace up list of affected packages'
-    )
-    .action(runCommand)
+export function runCommand(targetBranch, outputDir) {
+    return run(targetBranch, outputDir, end)
+}
 
-function runCommand(targetBranch, outputDir) {
+export function run(targetBranch, outputDir, end) {
     const branchError = checkTargetBranch(targetBranch)
     if (branchError) {
         end(branchError)
@@ -177,17 +176,17 @@ function end(err, touchedNodes, outputDir) {
         console.log(err)
         process.exit(1)
     } else {
-        console.log(chalk.green('Success'))
         summary(touchedNodes, outputDir)
+        log.success(`done in ${duration()}`)
         process.exit(0)
     }
 }
 
 function summary(touchedNodes, outputDir) {
-    console.log(
+    log.info(
         touchedNodes.length
-            ? `Traced changes affecting ${touchedNodes.length} local-packages in the tree`
-            : 'No changes found in the local-package tree'
+            ? `traced changes affecting ${touchedNodes.length} packages`
+            : 'no changes found in the package tree'
     )
 
     const length = touchedNodes
@@ -195,6 +194,8 @@ function summary(touchedNodes, outputDir) {
         .reduce((result, next) => (next > result ? next : result), 0)
 
     touchedNodes
-        .map(node => `${pad(node.name, length + 1)} (${node.path})`)
-        .forEach(text => console.log(text))
+        .map(
+            node => `${chalk.yellow(pad(node.name, length + 1))} (${node.path})`
+        )
+        .forEach(text => log.info(text))
 }

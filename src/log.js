@@ -41,23 +41,20 @@ export const debug = (text, title = 'debug') => {
 }
 
 export const info = (text, title = 'info') => {
-    if (!['error', 'warning', 'info'].includes(LEVEL)) {
+    if (!['info', 'debug'].includes(LEVEL)) {
         return
     }
     console.log(`${chalk.gray('binge')} ${chalk.bgGreen(title)} ${text}`)
 }
 
 export const warning = (text, title = 'warning') => {
-    if (!['error', 'warning'].includes(LEVEL)) {
+    if (!['warning', 'info', 'debug'].includes(LEVEL)) {
         return
     }
     console.log(`${chalk.gray('binge')} ${chalk.bgYellow(title)} ${text}`)
 }
 
 export const error = (text, title = 'error') => {
-    if (!['error'].includes(LEVEL)) {
-        return
-    }
     console.log(`${chalk.gray('binge')} ${chalk.bgRed(title)} ${text}`)
 }
 
@@ -66,6 +63,13 @@ export const success = text => {
         return
     }
     console.log(`${chalk.gray('binge')} ${chalk.green('success')} ${text}`)
+}
+
+export const failure = text => {
+    if (LEVEL === 'silent') {
+        return
+    }
+    console.log(`${chalk.gray('binge')} ${chalk.red('failure')} ${text}`)
 }
 
 /*
