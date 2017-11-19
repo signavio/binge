@@ -10,3 +10,7 @@ export function equals(a1, a2) {
         a1.every((e, index) => e === a2[index])
     )
 }
+
+export function flatten(a) {
+    return a.reduce((result, next) => [...result, ...next], [])
+}

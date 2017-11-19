@@ -20,13 +20,9 @@ export function nodeSync(args, options = {}) {
 
 export function gitSync(args) {
     const child = spawnSync('git', args, { stdio: 'pipe' })
-    invariant(
-        child.status === 0,
-        `Git returned with an error status:\n` +
-            `command: ${args.join(' ')}\n` +
-            `error:   ${String(child.stderr)}`
-    )
-    return child.stdout.toString().trim()
+
+    // did git return an error?
+    return child.status === 0 ? child.stdout.toString().trim() : null
 }
 
 export function npm(args, options = {}, callback) {

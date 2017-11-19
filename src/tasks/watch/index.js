@@ -1,4 +1,7 @@
 import onExit from 'signal-exit'
+
+import * as log from '../../log'
+
 import createNextState from './nextState'
 import { createPreEffects, createPostEffects } from './sideEffects'
 import { childLauncher, watchProject } from './fs'
@@ -37,7 +40,7 @@ export default rootNode => {
     const nextState = createNextState(rootNode, dispatchers)
     const postEffects = createPostEffects(rootNode, dispatchers)
 
-    console.log('[Binge] Watch indexing... ')
+    log.info('indexing...')
     watchProject(rootNode, watcher => {
         // Initial State
         state = {
@@ -59,13 +62,13 @@ export default rootNode => {
                 dispatchers.add(changePath)
             })
 
-        console.log(`[Binge] Watch started!`)
+        log.info('watch started!')
         if (rootNode.isApp) {
             childLauncher.watchApp(rootNode)
         }
 
         onExit(() => {
-            console.log('\n[Binge] Exit detected')
+            log.info('Exit detected')
             watcher.close()
             childLauncher.killAll()
         })

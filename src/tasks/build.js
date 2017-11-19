@@ -1,4 +1,5 @@
 import async from 'async'
+import invariant from 'invariant'
 import { yarn as spawnYarn } from '../util/spawnTool'
 import {
     hashBuild as integrityHash,
@@ -7,15 +8,18 @@ import {
     cleanBuild as integrityClean,
 } from '../integrity'
 
-export default function(node, entryNode, callback) {
+import * as packlistCache from '../util/packlistCache'
+
+export default function(node, nodeBase, nodeEntry, callback) {
+    invariant(typeof callback === 'function', 'expected a function')
     const unavailable =
         !node.packageJson.scripts || !node.packageJson.scripts.build
 
     if (
         unavailable ||
-        node === entryNode ||
         node.isApp === true ||
-        node.reachable.some(node => node.isApp)
+        node.path === nodeBase.path ||
+        node.path === nodeEntry.path
     ) {
         callback(null, { skipped: unavailable ? true : null })
         return
@@ -27,7 +31,6 @@ export default function(node, entryNode, callback) {
 
     async.waterfall(
         [
-            // Only read the integrity if it is not a personalizedInstall
             done => integrityRead(node, done),
             // hash the current
             ({ md5: prevMD5 }, done) => {
@@ -43,15 +46,16 @@ export default function(node, entryNode, callback) {
                     done(null, integrityMatch)
                 }
             },
-            // If there is a mismatch, clean first
+            // If there is a mismatch, clean
             (integrityMatch, done) => {
                 if (!integrityMatch) {
+                    packlistCache.put(node.path, null)
                     integrityClean(node, err => done(err, integrityMatch))
                 } else {
                     done(null, integrityMatch)
                 }
             },
-            // If integrities match skip the Build. Otherwise install
+            // If integrities match skip the Build. Otherwise build
             (integrityMatch, done) => {
                 if (!integrityMatch) {
                     spawnYarn(['run', 'build'], options, err => {
@@ -72,13 +76,13 @@ export default function(node, entryNode, callback) {
                 }
             },
             // Write the final integrity
-            ({ md5, log, skipped }, done) => {
+            ({ md5, log, skipped, ...rest }, done) => {
                 if (md5) {
                     integrityWrite(node, { md5, log }, err =>
-                        done(err, { skipped })
+                        done(err, { skipped, ...rest })
                     )
                 } else {
-                    done(null, { skipped })
+                    done(null, { skipped, ...rest })
                 }
             },
         ],

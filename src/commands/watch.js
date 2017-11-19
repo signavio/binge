@@ -1,5 +1,6 @@
-import chalk from 'chalk'
 import path from 'path'
+
+import log from '../log'
 
 import createGraph from '../graph/create'
 import taskWatch from '../tasks/watch'
@@ -13,11 +14,7 @@ export function runCommand() {
 
 function end(err) {
     if (err) {
-        console.log(chalk.red('Failure'))
-        console.log(err)
+        log.failure(err)
         process.exit(1)
-    } else {
-        console.log(chalk.green('Success'))
-        process.exit(0)
     }
 }

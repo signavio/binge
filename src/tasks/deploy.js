@@ -1,7 +1,8 @@
 import async from 'async'
 import fse from 'fs-extra'
 import path from 'path'
-import packList from 'npm-packlist'
+import invariant from 'invariant'
+import * as packlistCache from '../util/packlistCache'
 
 export default function(node, callback) {
     async.map(
@@ -14,7 +15,8 @@ export default function(node, callback) {
 function packNode(node, childNode, callback) {
     const srcPath = childNode.path
     const destPath = path.join(node.path, 'node_modules', childNode.name)
-    packList({ path: childNode.path }).then(files => {
+    packlistCache.get(childNode.path, (err, files) => {
+        invariant(!err, 'should never return an error')
         async.map(
             files,
             (filePath, done) => {

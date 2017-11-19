@@ -4,85 +4,14 @@ import fse from 'fs-extra'
 import path from 'path'
 import cmdShim from 'cmd-shim'
 
-export function dependencies(node, nodeBase, callback) {
-    entriesFromDependencies(node, nodeBase, (err, entries) => {
+import { flatten } from '../util/array'
+
+export default function(node, nodeBase, callback) {
+    invariant(typeof callback === 'function', 'Expected a function')
+    readEntries(node, nodeBase, (err, entries) => {
         invariant(!err, 'Should never have error result')
         async.mapSeries(entries, link, callback)
     })
-}
-
-export function localPackages(node, callback) {
-    entriesFromLocalPackages(node, (err, entries) => {
-        invariant(!err, 'Should never have error result')
-        async.mapSeries(entries, link, callback)
-    })
-}
-
-/*
- * Produces:
- * [ scriptName, scriptPath, binPath ]
- *
- */
-function entriesFromDependencies(node, nodeBase, callback) {
-    readPackageJsons(node, nodeBase, (err, packageJsons) => {
-        invariant(!err, 'Should never have error result')
-        const entries = packageJsons
-            .map(packageJson =>
-                findFromDependencies(node, packageJson, nodeBase.path)
-            )
-            .reduce((result, next) => [...result, ...next], [])
-        callback(null, entries)
-    })
-}
-
-/*
- * Produces:
- * [ scriptName, scriptPath, binPath ]
- */
-function findFromDependencies(node, packageJson, basePath) {
-    const entries =
-        typeof packageJson.bin === 'string'
-            ? [[packageJson.name, packageJson.name, packageJson.bin]]
-            : Object.keys(packageJson.bin || {}).map(scriptName => [
-                  packageJson.name,
-                  scriptName,
-                  packageJson.bin[scriptName],
-              ])
-
-    return entries.map(([pkgName, scriptName, scriptCmd]) => [
-        scriptName,
-        path.resolve(path.join(basePath, 'node_modules', pkgName, scriptCmd)),
-        path.join(node.path, 'node_modules', '.bin'),
-    ])
-}
-
-function entriesFromLocalPackages(node, callback) {
-    const entries = node.reachable
-        .filter(node => !node.isApp)
-        .map(childNode => findFromLocalPackages(node, childNode))
-        .reduce((result, next) => [...result, ...next], [])
-
-    callback(null, entries)
-}
-
-/*
- * Produces:
- * [ scriptName, scriptPath, binPath ]
- */
-function findFromLocalPackages(nodeDestination, nodeSource) {
-    const entries =
-        typeof nodeSource.packageJson.bin === 'string'
-            ? [[nodeSource.name, nodeSource.packageJson.bin]]
-            : Object.keys(nodeSource.packageJson.bin || {}).map(scriptName => [
-                  scriptName,
-                  nodeSource.packageJson.bin[scriptName],
-              ])
-
-    return entries.map(([scriptName, scriptCmd]) => [
-        scriptName,
-        path.resolve(path.join(nodeSource.path, scriptCmd)),
-        path.join(nodeDestination.path, 'node_modules', '.bin'),
-    ])
 }
 
 function link([scriptName, scriptPath, binPath], callback) {
@@ -99,6 +28,84 @@ function link([scriptName, scriptPath, binPath], callback) {
             callback
         )
     }
+}
+
+function readEntries(node, nodeBase, callback) {
+    invariant(typeof callback === 'function', 'Expected a function')
+
+    if (node.path !== nodeBase.path) {
+        async.series(
+            [
+                done => readFromDependencies(node, nodeBase, done),
+                done => readFromLocalPackages(node, done),
+            ],
+            (err, result) => {
+                callback(err, !err && flatten(result))
+            }
+        )
+    } else {
+        readFromLocalPackages(node, callback)
+    }
+}
+
+function readFromDependencies(node, nodeBase, callback) {
+    readPackageJsons(node, nodeBase, (err, packageJsons) => {
+        invariant(!err, 'Should never have error result')
+        const entries = packageJsons.map(packageJson =>
+            mapFromDependencies(node, packageJson, nodeBase.path)
+        )
+
+        callback(null, flatten(entries))
+    })
+}
+
+function readFromLocalPackages(node, callback) {
+    const entries = node.reachable
+        .filter(node => !node.isApp)
+        .map(childNode => mapFromLocalPackages(node, childNode))
+
+    callback(null, flatten(entries))
+}
+
+/*
+ * Produces:
+ * [ scriptName, scriptPath, binPath ]
+ */
+function mapFromDependencies(node, packageJson, basePath) {
+    const entries =
+        typeof packageJson.bin === 'string'
+            ? [[packageJson.name, packageJson.name, packageJson.bin]]
+            : Object.keys(packageJson.bin || {}).map(scriptName => [
+                  packageJson.name,
+                  scriptName,
+                  packageJson.bin[scriptName],
+              ])
+
+    return entries.map(([pkgName, scriptName, scriptCmd]) => [
+        scriptName,
+        path.resolve(path.join(basePath, 'node_modules', pkgName, scriptCmd)),
+        path.join(node.path, 'node_modules', '.bin'),
+    ])
+}
+
+/*
+ * Produces:
+ * [ scriptName, scriptPath, binPath ]
+ */
+function mapFromLocalPackages(nodeDestination, nodeSource) {
+    const entries =
+        typeof nodeSource.packageJson.bin === 'string'
+            ? [[nodeSource.name, nodeSource.packageJson.bin]]
+            : Object.keys(nodeSource.packageJson.bin || {}).map(scriptName => [
+                  scriptName,
+                  nodeSource.packageJson.bin[scriptName],
+              ])
+
+    return entries.map(([scriptName, scriptCmd]) => [
+        scriptName,
+        path.resolve(path.join(nodeSource.path, scriptCmd)),
+        path.join(nodeDestination.path, 'node_modules', '.bin'),
+    ])
 }
 
 function readPackageJsons(node, baseNode, callback) {

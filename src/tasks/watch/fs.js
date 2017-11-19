@@ -5,6 +5,8 @@ import invariant from 'invariant'
 import npmPacklist from 'npm-packlist'
 import path from 'path'
 
+import * as log from '../../log'
+
 import { yarn as spawnYarn } from '../../util/spawnTool'
 
 export function watchProject(rootNode, onReady) {
@@ -81,20 +83,20 @@ export const childLauncher = (() => {
         }
 
         let timeoutId
-        const wait = () => {
+        const wait = (ms = 2000) => {
             clearTimeout(timeoutId)
             timeoutId = setTimeout(() => {
                 child.stdout.removeListener('data', wait)
                 callback()
-            }, 2000)
+            }, ms)
         }
 
         child.stdout.on('data', wait)
-        wait()
+        wait(5000)
     }
     function kill(bag) {
         Object.keys(bag || {}).forEach(name => {
-            console.log(`[Binge] Stopped  ${chalk.yellow(name)}`)
+            log.info(`stopped  ${chalk.yellow(name)}`)
             if (bag[name].stdin) {
                 bag[name].stdin.pause()
             }
@@ -176,10 +178,12 @@ export function packlist(node, callback) {
             callback(null, absoluteFilePaths)
         })
         .catch(err => {
-            console.log(
-                'There was a problem getting the packlist of node' + node.name
+            log.error(
+                'There was a problem getting the packlist of node' +
+                    node.name +
+                    '\n' +
+                    err
             )
-            console.log(err)
             process.exit(1)
         })
 }
@@ -189,7 +193,5 @@ function logCopy(srcPath, destPath) {
     srcPath = path.relative(cwd, srcPath)
     destPath = path.relative(cwd, destPath)
 
-    console.log(
-        `[Binge] ${chalk.yellow(destPath)} <- ${chalk.magenta(srcPath)}`
-    )
+    log.info(`${chalk.yellow(destPath)} <- ${chalk.magenta(srcPath)}`, 'copy')
 }

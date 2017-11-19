@@ -1,3 +1,4 @@
+import path from 'path'
 import createGraph from './create'
 
 export default function(node, callback) {
@@ -7,7 +8,7 @@ export default function(node, callback) {
         const error = `Could not find a hoisting path`
         callback(error)
     } else {
-        createGraph(basePath, (err, [baseNode] = []) => {
+        createGraph(path.resolve(basePath), (err, [baseNode] = []) => {
             if (err) {
                 callback(err)
             }
