@@ -131,10 +131,10 @@ function readYarnLock(node) {
 }
 
 function makeError(node, title, detail = '') {
-    return new Error(
-        `\n[Binge] ${title}\n` +
-            `[Binge] Node name: ${node.name}\n` +
-            `[Binge] Node path: ${node.path}\n` +
-            (detail ? `[Binge] ${detail}` : '')
+    return (
+        `${title}\n` +
+        `[Binge] Node name: ${node.name}\n` +
+        `[Binge] Node path: ${node.path}\n` +
+        (detail ? `[Binge] ${detail}` : '')
     )
 }

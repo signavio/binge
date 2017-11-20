@@ -61,8 +61,7 @@ export default function run(packages, options, end) {
 
 function end(err, addResult, touchResults) {
     if (err) {
-        console.log(chalk.red('Failure'))
-        console.log(err)
+        log.failure(err)
         process.exit(1)
     } else {
         summary(addResult, touchResults)

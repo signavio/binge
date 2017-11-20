@@ -1,11 +1,10 @@
 import async from 'async'
-import chalk from 'chalk'
 import fse from 'fs-extra'
 import path from 'path'
 
-import createGraph from '../graph/create'
 import * as log from '../log'
 import duration from '../duration'
+import createGraph from '../graph/create'
 
 export function runCommand() {
     run(end)
@@ -28,8 +27,7 @@ export function run(end) {
 
 function end(err, result) {
     if (err) {
-        console.log(chalk.red('Failure'))
-        console.log(err)
+        log.failure(err)
         process.exit(1)
     } else {
         log.success(

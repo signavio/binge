@@ -1,5 +1,6 @@
 import path from 'path'
 
+import * as log from '../../log'
 import hoisting from '../../hoisting'
 import createGraph from '../../graph/create'
 
@@ -13,7 +14,10 @@ export function runCommand(dependencies) {
 
 export function run(dependencies, end) {
     createGraph(path.resolve('.'), (err, nodes) => {
-        if (err) end(err)
+        if (err) {
+            log.failure(err)
+            process.exit(1)
+        }
 
         const [entryNode] = nodes
 

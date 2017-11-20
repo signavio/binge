@@ -32,8 +32,7 @@ export function runCommand() {
 
 function end(err) {
     if (err) {
-        console.log(chalk.red('Failure'))
-        console.log(err)
+        log.failure(err)
         process.exit(1)
     } else {
         log.success(`done in ${duration()}`)

@@ -73,7 +73,7 @@ program
     })
 
 program
-    .command('harmony [dependency ...]')
+    .command('harmony [dependency...]')
     .description('Check the local-package tree for dependency consistency')
     .action((...args) => {
         log.info(packageJson.version, 'version')
@@ -150,6 +150,7 @@ program
     .action(cmd => {
         log.info(packageJson.version, 'version')
         log.error(`Command "${cmd}" not found`)
+        process.exit(1)
     })
 
 if (!process.argv.slice(2).length) {

@@ -96,8 +96,7 @@ export function run(name, version, end) {
 
 function end(err, touchResults, installResult = {}) {
     if (err) {
-        console.log(chalk.red('Failure'))
-        console.log(err)
+        log.failure(err)
         process.exit(1)
     } else {
         summary(touchResults, installResult)

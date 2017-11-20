@@ -22,8 +22,7 @@ export function run(end) {
 
 function end(err) {
     if (err) {
-        console.log(chalk.red('Failure'))
-        console.log(err)
+        log.failure(err)
         process.exit(1)
     } else {
         log.success(`yarn.lock is in sync, done in ${duration()}`)

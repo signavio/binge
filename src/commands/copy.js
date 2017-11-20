@@ -1,5 +1,4 @@
 import async from 'async'
-import chalk from 'chalk'
 import fse from 'fs-extra'
 import path from 'path'
 
@@ -35,8 +34,7 @@ export function run(file, newName, end) {
 
 function end(err, results, srcPath) {
     if (err) {
-        console.log(chalk.red('Failure'))
-        console.log(err)
+        log.failure(err)
         process.exit(1)
     } else {
         const withoutSkips = results.filter(e => e !== false)

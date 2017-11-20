@@ -85,7 +85,7 @@ function applyDefaults(result = {}) {
 
 function makeError(title, path, rawError) {
     return (
-        `[Binge] ${title}\n` +
+        `${title}\n` +
         `[Binge] at -> ${path}\n` +
         `[Binge] raw error:\n` +
         String(rawError)

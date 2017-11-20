@@ -172,8 +172,7 @@ function execGit(...args) {
 
 function end(err, touchedNodes, outputDir) {
     if (err) {
-        console.log(chalk.red('Failure'))
-        console.log(err)
+        log.failure(err)
         process.exit(1)
     } else {
         summary(touchedNodes, outputDir)

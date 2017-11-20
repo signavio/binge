@@ -134,8 +134,7 @@ function progressHelper(progress, layer) {
 
 function end(err, results) {
     if (err) {
-        console.log(chalk.red('Failure'))
-        console.log(err)
+        log.failure(err)
         process.exit(1)
     } else {
         summary(results)

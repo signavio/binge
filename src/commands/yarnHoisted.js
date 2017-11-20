@@ -1,4 +1,3 @@
-import chalk from 'chalk'
 import path from 'path'
 import duration from '../duration'
 import * as log from '../log'
@@ -24,8 +23,7 @@ export default (
 
 function defaultEnd(err) {
     if (err) {
-        console.log(chalk.red('Failure'))
-        console.log(err)
+        log.failure(err)
         process.exit(1)
     } else {
         log.success(`done in ${duration()}`)
