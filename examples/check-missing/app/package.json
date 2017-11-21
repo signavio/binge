@@ -1,5 +1,5 @@
 {
-  "name": "root",
+  "name": "app",
   "dependencies": {
       "module-a": "file:../module-a",
       "module-b": "file:../module-b"
