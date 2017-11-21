@@ -38,7 +38,7 @@ program
 
 program
     .command('cache-clean')
-    .description('Cleans the build and installs the cache.')
+    .description('Cleans the build cache and the install cache.')
     .action((...args) => {
         log.info(packageJson.version, 'version')
         require('../lib/commands/cacheClean').runCommand(...args)
@@ -120,7 +120,7 @@ program
 program
     .command('touch [name] [version]')
     .description(
-        'Updates a dependency to a specific version, and writes to yarn.lock. Propagates changes to packages that share the same dependency. Defaults to simply writing to yarn.lock)'
+        'Updates a dependency to a specific version, and writes to yarn.lock. Propagates changes to packages that share the same dependency. Defaults to simply writing to yarn.lock'
     )
     .action((...args) => {
         log.info(packageJson.version, 'version')
