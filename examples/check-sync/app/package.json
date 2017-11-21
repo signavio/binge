@@ -1,6 +1,6 @@
 {
-  "name": "root",
-  "license": "UNLICENSED",  
+  "name": "app",
+  "license": "UNLICENSED",
   "dependencies": {
       "module-a": "file:../module-a",
       "module-b": "file:../module-b"
