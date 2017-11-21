@@ -5,6 +5,7 @@ import path from 'path'
 import cmdShim from 'cmd-shim'
 
 import { flatten } from '../util/array'
+import packageNamespace from '../util/packageNamespace'
 
 export default function(node, nodeBase, callback) {
     invariant(typeof callback === 'function', 'Expected a function')
@@ -109,21 +110,10 @@ function mapFromLocalPackages(nodeDestination, nodeSource) {
 }
 
 function readPackageJsons(node, baseNode, callback) {
-    const moduleNamespace = name => {
-        const PRIVATE_MODULE = /^@.+\//
-        if (!PRIVATE_MODULE.test(name)) {
-            return [name]
-        }
-
-        const [prefix] = PRIVATE_MODULE.exec(name)
-        const postfix = name.slice(prefix.length)
-        return [prefix, postfix]
-    }
-
     const pathsFromBag = (bag = {}) =>
         Object.keys(bag)
             .filter(name => !bag[name].startsWith('file:'))
-            .map(moduleNamespace)
+            .map(packageNamespace)
             .map(namespace =>
                 path.join(
                     ...[

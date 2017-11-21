@@ -46,7 +46,7 @@ export function createPreEffects(rootNode, dispatchers) {
     function packageOrphan(state, action) {
         const node = nodeFromChangePath(state.nodes, action.changePath)
 
-        const postfix = state.spawnedApp
+        const text = state.spawnedApp
             ? `won't start ${chalk.yellow(node.name)}, because ${chalk.yellow(
                   state.spawnedApp.name
               )} doesn't depend on it`
@@ -54,7 +54,7 @@ export function createPreEffects(rootNode, dispatchers) {
                   node.name
               )}, because no app is being watched`
 
-        log.warning(`${chalk.yellowBright('Warning')} ` + postfix)
+        log.warning(text)
     }
 
     function packageStart(state, action) {

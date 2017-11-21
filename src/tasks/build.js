@@ -1,5 +1,4 @@
 import async from 'async'
-import invariant from 'invariant'
 import { yarn as spawnYarn } from '../util/spawnTool'
 import {
     hashBuild as integrityHash,
@@ -11,9 +10,22 @@ import {
 import * as packlistCache from '../util/packlistCache'
 
 export default function(node, nodeBase, nodeEntry, callback) {
-    invariant(typeof callback === 'function', 'expected a function')
-    const unavailable =
-        !node.packageJson.scripts || !node.packageJson.scripts.build
+    // const unavailable =
+    //    !node.packageJson.scripts || !node.packageJson.scripts.build
+
+    const isDefaultBuild =
+        node.packageJson.scripts && node.packageJson.scripts.build
+
+    const isCustomBuild =
+        node.packageJson.scripts &&
+        node.scriptBuild &&
+        node.packageJson.scripts[node.scriptBuild]
+
+    const scriptBuild = isCustomBuild
+        ? node.scriptBuild
+        : isDefaultBuild ? 'build' : null
+
+    const unavailable = !scriptBuild
 
     if (
         unavailable ||
@@ -58,31 +70,31 @@ export default function(node, nodeBase, nodeEntry, callback) {
             // If integrities match skip the Build. Otherwise build
             (integrityMatch, done) => {
                 if (!integrityMatch) {
-                    spawnYarn(['run', 'build'], options, err => {
-                        done(err, { skipped: false })
+                    spawnYarn(['run', scriptBuild], options, err => {
+                        done(err, { upToDate: false })
                     })
                 } else {
-                    done(null, { skipped: true })
+                    done(null, { upToDate: true })
                 }
             },
             // Hash the local-package content
-            ({ skipped }, done) => {
-                if (!skipped) {
+            ({ upToDate }, done) => {
+                if (!upToDate) {
                     integrityHash(node, (err, { md5, log }) =>
-                        done(err, { md5, log, skipped })
+                        done(err, { md5, log, upToDate })
                     )
                 } else {
-                    done(null, { md5: null, log: null, skipped })
+                    done(null, { md5: null, log: null, upToDate })
                 }
             },
             // Write the final integrity
-            ({ md5, log, skipped, ...rest }, done) => {
+            ({ md5, log, upToDate, ...rest }, done) => {
                 if (md5) {
                     integrityWrite(node, { md5, log }, err =>
-                        done(err, { skipped, ...rest })
+                        done(err, { upToDate, ...rest })
                     )
                 } else {
-                    done(null, { skipped, ...rest })
+                    done(null, { upToDate, ...rest })
                 }
             },
         ],
