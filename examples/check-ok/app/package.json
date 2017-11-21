@@ -1,5 +1,5 @@
 {
-  "name": "root",
+  "name": "app",
   "license": "UNLICENSED",
   "dependencies": {
       "module-a": "file:../module-a",
