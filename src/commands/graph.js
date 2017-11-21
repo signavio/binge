@@ -9,20 +9,26 @@ import createGraph from '../graph/create'
 import archy from '../util/archy'
 
 export function runCommand() {
-    createGraph(path.resolve('.'), function(err, [entryNode], layers) {
+    createGraph(path.resolve('.'), (err, [entryNode] = [], layers) => {
         if (err) {
             end(err)
         }
 
-        console.log('Christmas Tree:')
-        console.log(archy(entryNode))
+        // const treeText = archy(entryNode).split('\n')
+        log.info(`Christmas Tree:`)
+        archy(entryNode)
+            .split('\n')
+            .map(line => line.trim())
+            .filter(Boolean)
+            .forEach(line => log.info(line, ''))
 
-        console.log('Layers:')
+        log.info('Layers:')
         layers.forEach((layer, index) => {
             layer.forEach(node =>
-                console.log(
+                log.info(
                     pad(index * 2, ``) +
-                        `${index + 1} ${chalk.yellow(node.name)}`
+                        `${index + 1} ${chalk.yellow(node.name)}`,
+                    ''
                 )
             )
         })
