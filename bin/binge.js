@@ -65,7 +65,7 @@ program
 program
     .command('graph')
     .description(
-        'Prints the local-package tree, and layer topology information.'
+        'Prints the local package tree, and layer topology information.'
     )
     .action((...args) => {
         log.info(packageJson.version, 'version')
@@ -83,7 +83,7 @@ program
 program
     .command('nuke [target]')
     .description(
-        'Removes the target folder or file from each packag. Defaults to node_modules.'
+        'Removes the target folder or file from each package. Defaults to node_modules.'
     )
     .action((...args) => {
         log.info(packageJson.version, 'version')
