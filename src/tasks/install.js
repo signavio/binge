@@ -49,30 +49,30 @@ export default (yarnArgs, spawnOptions) => {
                     if (!integrityMatch) {
                         taskYarn(node, (err, { resultDelta, lockTouch }) =>
                             done(err, {
-                                skipped: false,
+                                upToDate: false,
                                 resultDelta,
                                 lockTouch,
                             })
                         )
                     } else {
                         done(null, {
-                            skipped: true,
+                            upToDate: true,
                             resultDelta: emptyDelta,
                             lockTouch: false,
                         })
                     }
                 },
                 // Hash the node modules content
-                ({ skipped, ...rest }, done) => {
-                    if (!skipped) {
+                ({ upToDate, ...rest }, done) => {
+                    if (!upToDate) {
                         integrityHash(node, (err, { md5, log }) => {
-                            done(err, { md5, log, skipped, ...rest })
+                            done(err, { md5, log, upToDate, ...rest })
                         })
                     } else {
                         done(null, {
                             md5: null,
                             log: null,
-                            skipped,
+                            upToDate,
                             ...rest,
                         })
                     }

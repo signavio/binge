@@ -108,7 +108,7 @@ function buildFilePathsRaw(node, ignoredFilesPaths, callback) {
   * ************
   */
 export function install(node, callback) {
-    findInstalledPJsons(node.path, (err, packageJsonPaths) => {
+    findInstalledPJsons(node, (err, packageJsonPaths) => {
         invariant(err === null, 'That should never return an error')
 
         const filePaths = [

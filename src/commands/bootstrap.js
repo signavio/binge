@@ -49,12 +49,12 @@ export default function run(end) {
                 }
             )
 
-            taskInstall(nodeBase, (err, { skipped, ...rest }) => {
-                if (skipped) {
-                    log.info(`yarn install skipped, up to date`)
+            taskInstall(nodeBase, (err, { upToDate, ...rest }) => {
+                if (upToDate) {
+                    log.info(`yarn install up to date`)
                 }
 
-                callback(err, { skipped, ...rest })
+                callback(err, { upToDate, ...rest })
             })
         }
 
@@ -87,7 +87,7 @@ export default function run(end) {
 
         function buildAndDeployLayer(layer, callback) {
             progressTick = progressHelper(progress, layer)
-            async.map(
+            async.mapSeries(
                 layer,
                 (node, done) => buildAndDeployNode(node, done),
                 callback
@@ -143,20 +143,32 @@ function end(err, results) {
 }
 
 function summary([installResult, _, buildResults]) {
-    const buildCount = buildResults.filter(e => e.skipped === false).length
-    const buildSkipCount = buildResults.filter(e => e.skipped === true).length
+    const bootstrapCount = buildResults.length
+    const buildCount = buildResults.filter(e => e.upToDate === false).length
+    const buildUpToDateCount = buildResults.filter(e => e.upToDate === true)
+        .length
+    const buildSkipCount =
+        buildResults.length - (buildCount + buildUpToDateCount)
 
     const word = count => (count === 1 ? 'package' : 'packages')
 
     const installPart = installResult.skipped
-        ? 'install skipped'
+        ? 'install up to date'
         : 'installed the base'
     const lockPart = installResult.lockTouch ? ' (wrote yarn.lock)' : ''
 
-    const buildPart = `, built ${buildCount} ${word(
+    const bootstrapPart = `, ${bootstrapCount} ${word(
+        bootstrapCount
+    )} bootstrapped`
+
+    const buildPart = `(built ${buildCount} ${word(
         buildCount
-    )} (${buildSkipCount} skipped)`
+    )}, ${buildUpToDateCount} up to date, ${buildSkipCount} skipped)`
+
     const durationPart = `, done in ${duration()}`
 
-    log.success(`${installPart}${lockPart}${buildPart}${durationPart}`)
+    log.success(
+        `${installPart}${lockPart}${bootstrapPart}${durationPart}\n` +
+            `              ${buildPart}`
+    )
 }
