@@ -1,11 +1,15 @@
 import async from 'async'
-import fse from 'fs-extra'
+import fs from 'fs'
 import invariant from 'invariant'
 import klawSync from 'klaw-sync'
 import md5 from 'md5-slim'
 import pad from 'pad'
 import path from 'path'
 
+import * as log from '../log'
+
+import * as ignoredCache from '../util/ignoredCache'
+import * as packlistCache from '../util/packlistCache'
 import findInstalledPJsons from '../util/findInstalledPJsons'
 
 /*
@@ -14,37 +18,88 @@ import findInstalledPJsons from '../util/findInstalledPJsons'
  * ************
  */
 export function build(node, callback) {
-    const filePaths = buildFilePaths(node)
-    hash(filePaths, (err, results) => {
-        invariant(!err, 'The hash function should never return a error')
+    async.waterfall(
+        [
+            done => buildFilePaths(node, done),
+            (filePaths, done) => hash(filePaths, done),
+        ],
+        (err, results) => {
+            invariant(!err, 'The hash function should never return a error')
 
-        /*
-         * Build file paths should always
-         *
-         */
-        const miss = results.find(entry => entry.md5 === null)
-        if (miss) {
-            console.log(
-                `[Binge] Warning: Build hash, missing a file path: ${miss.filePath}`
-            )
+            const miss = results.find(entry => entry.md5 === null)
+            if (miss) {
+                log.warning(`build hash, missing a file path: ${miss.filePath}`)
+            }
+
+            callback(null, hashReduce(results))
         }
+    )
+}
 
-        callback(null, hashReduce(results))
+function buildFilePaths(node, callback) {
+    const ignoredFilePaths = ignoredCache.get(node.path)
+    return ignoredFilePaths
+        ? buildFilePathsIO(node, ignoredFilePaths, callback)
+        : buildFilePathsRaw(node, [], callback)
+}
+
+function buildFilePathsIO(node, ignoredFilePaths, callback) {
+    async.parallel(
+        [
+            done => buildFilePathsInput(node, ignoredFilePaths, done),
+            done => buildFilePathsOutput(node, done),
+        ],
+        (err, [inputFiles, outputFiles] = []) => {
+            const result =
+                !err &&
+                [...inputFiles, ...outputFiles].filter(
+                    (version, i, collection) =>
+                        collection.indexOf(version) === i
+                )
+            callback(err, result)
+        }
+    )
+}
+
+function buildFilePathsInput(...args) {
+    buildFilePathsRaw(...args)
+}
+
+function buildFilePathsOutput(node, callback) {
+    packlistCache.get(node.path, (err, files) => {
+        const result = err
+            ? null
+            : files.map(filePath => path.join(node.path, filePath))
+
+        callback(err, result)
     })
 }
 
-function buildFilePaths(node) {
-    const walkFilter = item =>
-        item.stats.isFile() ||
-        (item.path.indexOf('.gradle') === -1 &&
-            item.path.indexOf('node_modules') === -1)
+function buildFilePathsRaw(node, ignoredFilesPaths, callback) {
+    const walkFilter = item => {
+        const isNodeModules = () =>
+            item.stats.isDirectory() &&
+            path.basename(item.path) === 'node_modules'
+        const isDotFolder = () =>
+            item.stats.isDirectory() && path.basename(item.path).startsWith('.')
 
-    return klawSync(node.path, {
-        noRecurseOnFailedFilter: true,
-        filter: walkFilter,
+        const isIgnored = () => ignoredFilesPaths.includes(item.path)
+
+        return (
+            !isIgnored() &&
+            (item.stats.isFile() || (!isNodeModules() && !isDotFolder()))
+        )
+    }
+
+    process.nextTick(() => {
+        const result = klawSync(node.path, {
+            noRecurseOnFailedFilter: true,
+            filter: walkFilter,
+        })
+            .filter(entry => entry.stats.isFile())
+            .map(entry => entry.path)
+        callback(null, result)
     })
-        .filter(entry => entry.stats.isFile())
-        .map(entry => entry.path)
 }
 
 /*
@@ -53,13 +108,16 @@ function buildFilePaths(node) {
   * ************
   */
 export function install(node, callback) {
-    findInstalledPJsons(node.path, (err, packageJsonLocations) => {
+    findInstalledPJsons(node.path, (err, packageJsonPaths) => {
         invariant(err === null, 'That should never return an error')
 
         const filePaths = [
-            path.resolve(node.path, 'package.json'),
-            path.resolve(node.path, 'yarn.lock'),
-            ...packageJsonLocations,
+            path.join(node.path, 'package.json'),
+            path.join(node.path, 'yarn.lock'),
+            ...node.reachable.map(childNode =>
+                path.join(childNode.path, 'package.json')
+            ),
+            ...packageJsonPaths,
         ]
 
         hash(filePaths, (err, results) => {
@@ -73,7 +131,7 @@ function hash(filePaths, callback) {
     async.map(
         filePaths,
         (filePath, done) =>
-            fse.readFile(filePath, 'utf8', (err, data) => {
+            fs.readFile(filePath, 'utf8', (err, data) => {
                 done(null, {
                     md5: err ? null : md5(data),
                     filePath,

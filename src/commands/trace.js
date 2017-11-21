@@ -4,31 +4,31 @@ import path from 'path'
 import fse from 'fs-extra'
 import pad from 'pad'
 import { spawnSync } from 'child_process'
-// import { SANITY } from '../constants'
+
+import * as log from '../log'
+import duration from '../duration'
 
 import createGraph from '../graph/create'
-import { layer as layerTopology } from '../graph/topology'
 
-export default function(cliFlags, cliInput) {
-    // eslint-disable-next-line no-unused-vars
-    const [_, targetBranch, outputFolder] = cliInput
+export function runCommand(targetBranch, outputDir) {
+    return run(targetBranch, outputDir, end)
+}
 
+export function run(targetBranch, outputDir, end) {
     const branchError = checkTargetBranch(targetBranch)
     if (branchError) {
         end(branchError)
     }
 
-    const folderError = checkOutputFolder(outputFolder)
+    const folderError = checkOutputFolder(outputDir)
     if (folderError) {
         end(folderError)
     }
 
-    createGraph(path.resolve('.'), (err, nodes) => {
+    createGraph(path.resolve('.'), (err, nodes, layers) => {
         if (err) {
             end(err)
         }
-
-        const layers = layerTopology(nodes[0])
 
         const touchedNodes = changedFilePaths(targetBranch)
             .map(filePath => nodeFromPath(nodes, filePath))
@@ -47,11 +47,11 @@ export default function(cliFlags, cliInput) {
             .filter((entry, i, collection) => collection.indexOf(entry) === i)
             .sort(sortByLayer(layers))
 
-        if (outputFolder) {
-            writeResult(touchedNodes, outputFolder)
+        if (outputDir) {
+            writeResult(touchedNodes, outputDir)
         }
 
-        end(null, touchedNodes, outputFolder)
+        end(null, touchedNodes, outputDir)
     })
 }
 
@@ -74,8 +74,7 @@ function changedFilePaths(targetBranch) {
 
 function nodeFromPath(nodes, filePath) {
     // sort nodes by longer path to smaller path
-    // important because local packages can have
-    // local pakcage inside them. Important to match on the longest
+    // local packages can be nested imported to sort by path length
     return (
         [...nodes]
             .sort(sortByPath)
@@ -103,14 +102,14 @@ function checkTargetBranch(targetBranch) {
     return null
 }
 
-function checkOutputFolder(outputFolder) {
-    if (typeof outputFolder !== 'string' || !outputFolder) {
+function checkOutputFolder(outputDir) {
+    if (typeof outputDir !== 'string' || !outputDir) {
         return null
     }
 
-    return folderExists(outputFolder)
+    return folderExists(outputDir)
         ? null
-        : `${outputFolder} doesn't exist or not a directory`
+        : `${outputDir} doesn't exist or not a directory`
 }
 
 function sortByPath({ path: p1 }, { path: p2 }) {
@@ -126,14 +125,14 @@ function sortByLayer(layers) {
     return (n1, n2) => (layerNumber(n1) > layerNumber(n2) ? 1 : -1)
 }
 
-function writeResult(result, outputFolder) {
+function writeResult(result, outputDir) {
     const write = mode => {
         const content = result
             .filter(node => node.testMode === mode)
             .map(node => node.path)
             .join('\n')
         fse.writeFileSync(
-            path.join(path.resolve(outputFolder), `${mode}.txt`),
+            path.join(path.resolve(outputDir), `${mode}.txt`),
             `${content}\n`,
             'utf8'
         )
@@ -171,23 +170,22 @@ function execGit(...args) {
     return exec('git', args).trim()
 }
 
-function end(err, touchedNodes, outputFolder) {
+function end(err, touchedNodes, outputDir) {
     if (err) {
-        console.log(chalk.red('Failure'))
-        console.log(err)
+        log.failure(err)
         process.exit(1)
     } else {
-        console.log(chalk.green('Success'))
-        summary(touchedNodes, outputFolder)
+        summary(touchedNodes, outputDir)
+        log.success(`done in ${duration()}`)
         process.exit(0)
     }
 }
 
-function summary(touchedNodes, outputFolder) {
-    console.log(
+function summary(touchedNodes, outputDir) {
+    log.info(
         touchedNodes.length
-            ? `Traced changes affecting ${touchedNodes.length} local-packages in the tree`
-            : 'No changes found in the local-package tree'
+            ? `traced changes affecting ${touchedNodes.length} packages`
+            : 'no changes found in the package tree'
     )
 
     const length = touchedNodes
@@ -195,6 +193,8 @@ function summary(touchedNodes, outputFolder) {
         .reduce((result, next) => (next > result ? next : result), 0)
 
     touchedNodes
-        .map(node => `${pad(node.name, length + 1)} (${node.path})`)
-        .forEach(text => console.log(text))
+        .map(
+            node => `${chalk.yellow(pad(node.name, length + 1))} (${node.path})`
+        )
+        .forEach(text => log.info(text))
 }

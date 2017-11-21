@@ -1,10 +1,12 @@
-import read from './read'
-import reachable from './reachable'
-import { flat as flatTopology } from './topology'
-import packageJson from '../../package.json'
 import semver from 'semver'
 
-export default function(entryPath, callback) {
+import read from './read'
+import reachable from './reachable'
+import topology from './topology'
+import packageJson from '../../package.json'
+import findBase from './findBase'
+
+export default function create(entryPath, callback) {
     read(entryPath, (err, rootNode) => {
         if (err) return callback(err)
 
@@ -23,16 +25,29 @@ export default function(entryPath, callback) {
             )
             return
         }
-        const result = flatTopology(rootNode)
-
-        if (result instanceof Error) {
-            // Might have a cycle. Only possibility for error being triggered here
-            callback(result, null)
-        } else {
-            result.forEach(node => {
-                node.reachable = reachable(node)
-            })
-            callback(null, result)
+        const { layers, error } = topology(rootNode)
+        if (error) {
+            callback(error)
+            return
         }
+
+        const nodes = [rootNode, ...reachable(rootNode)]
+        nodes.forEach(node => {
+            node.reachable = reachable(node)
+        })
+        callback(null, nodes, layers)
+    })
+}
+
+export function withBase(entryPath, callback) {
+    create(entryPath, (err, nodes, layers) => {
+        if (err) {
+            callback(err)
+            return
+        }
+
+        findBase(nodes[0], (err, nodeBase) =>
+            callback(err, nodes, layers, nodeBase)
+        )
     })
 }

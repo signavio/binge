@@ -2,14 +2,14 @@
  * Returns layers of nodes.
  *
  * Each layer is organized by dependency level. Layers are are topologically
- * relevant. Nodes in the same layer can be safely solved concurrently
+ * relevant. Nodes in the same layer can be safely built concurrently
  */
 
 import reachable from './reachable'
 
-export function layer(startNode) {
+export default function(startNode) {
     let pending = [startNode, ...reachable(startNode)]
-    let result = []
+    let layers = []
 
     /*
      * isTight: A node with one or more pending children
@@ -26,16 +26,18 @@ export function layer(startNode) {
 
     for (; pending.length; ) {
         if (isLocked()) {
-            return new Error('Dependency Graph contains cycles')
+            return {
+                error: `The local-package graph contanis cycles`,
+                layers: null,
+                allNodes: null,
+            }
         }
-        result = [loosen(), ...result]
+        layers = [loosen(), ...layers]
         pending = tighten()
     }
 
-    return result
-}
-
-export function flat(startNode) {
-    // flatten the layers into a single array
-    return Array.prototype.concat.apply([], layer(startNode))
+    return {
+        layers,
+        error: null,
+    }
 }

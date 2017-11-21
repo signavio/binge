@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import invariant from 'invariant'
+import * as log from '../../log'
 
 import {
     isAppStart,
@@ -53,7 +54,7 @@ export function createPreEffects(rootNode, dispatchers) {
                   node.name
               )}, because no app is being watched`
 
-        console.log(`[Binge] ${chalk.yellowBright('Warning')} ` + postfix)
+        log.warning(`${chalk.yellowBright('Warning')} ` + postfix)
     }
 
     function packageStart(state, action) {
@@ -129,11 +130,11 @@ export function createPostEffects(rootNode, dispatchers) {
 }
 
 function printWatchStarting(node) {
-    console.log(`[Binge] Starting ${chalk.yellow(node.name)}...`)
+    log.info(`starting ${chalk.yellow(node.name)}...`)
 }
 
 function printWatchStarted(node) {
-    console.log(`[Binge] Started  ${chalk.yellow(node.name)}`)
+    log.info(`started ${chalk.yellow(node.name)}`)
 }
 
 function printNoWatchWarning(node) {
@@ -141,19 +142,18 @@ function printNoWatchWarning(node) {
     const missingConfig = !node[configKey]
 
     if (missingConfig) {
-        console.log(
-            `[Binge] ${chalk.yellowBright(
-                'Warning'
-            )} ${configKey} not found on ${chalk.yellow(node.name)}'s .bingerc`
+        log.info(
+            ` ${configKey} not found in ${chalk.yellow(
+                node.name
+            )}'s .bingerc (pure copy only)`
         )
         return
     }
 
     if (!nodeHasWatchConfig(node)) {
-        console.log(
-            `[Binge] ${chalk.yellowBright('Warning')} ` +
-                `${node[configKey]} script ` +
-                `(defined in .bingerc) was not found on the ${chalk.yellow(
+        log.warning(
+            `${node[configKey]} script ` +
+                `(defined in .bingerc) was not found in the ${chalk.yellow(
                     node.name
                 )}'s package.json'`
         )

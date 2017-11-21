@@ -1,11 +1,17 @@
 import async from 'async'
-import chalk from 'chalk'
 import fse from 'fs-extra'
 import path from 'path'
+
+import * as log from '../log'
+import duration from '../duration'
 import createGraph from '../graph/create'
 
-export default function() {
-    createGraph(path.resolve('.'), function(err, graph) {
+export function runCommand() {
+    run(end)
+}
+
+export function run(end) {
+    createGraph(path.resolve('.'), (err, graph) => {
         if (err) end(err)
         async.map(
             graph,
@@ -21,12 +27,12 @@ export default function() {
 
 function end(err, result) {
     if (err) {
-        console.log(err)
-        console.log(chalk.red('Failure'))
+        log.failure(err)
         process.exit(1)
     } else {
-        console.log(chalk.green('Success'))
-        console.log(`Clean cache for ${result.length} nodes`)
+        log.success(
+            `clean cache for ${result.length} packages, done in ${duration()}`
+        )
         process.exit(0)
     }
 }

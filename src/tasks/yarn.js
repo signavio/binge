@@ -1,5 +1,6 @@
 import fse from 'fs-extra'
 import path from 'path'
+import invariant from 'invariant'
 import onExit from 'signal-exit'
 
 import { yarn as spawnYarn } from '../util/spawnTool'
@@ -11,6 +12,8 @@ import {
 } from '../util/dependencyDelta'
 
 export default (yarnArgs, spawnOptions) => (node, callback) => {
+    invariant(typeof callback === 'function', 'callback is not a function')
+
     const { dependencies, devDependencies, canHoist } = hoisting(
         node.packageJson,
         node.reachable.map(({ packageJson }) => packageJson)
@@ -31,7 +34,7 @@ export default (yarnArgs, spawnOptions) => (node, callback) => {
         return
     }
 
-    const lockDataPrev = readPackageLock(node)
+    const lockDataPrev = readYarnLock(node)
     const packageJsonHoistedPrev = {
         ...node.packageJson,
         ...{
@@ -66,7 +69,7 @@ export default (yarnArgs, spawnOptions) => (node, callback) => {
             } = restorePackageJson(node, packageJsonHoistedPrev)
 
             const lockDataNext =
-                !error && !errorRestore ? readPackageLock(node) : null
+                !error && !errorRestore ? readYarnLock(node) : null
 
             const resultDelta =
                 !error && !errorRestore
@@ -117,7 +120,7 @@ function restorePackageJson(node) {
     }
 }
 
-function readPackageLock(node) {
+function readYarnLock(node) {
     const dataPath = path.join(node.path, 'yarn.lock')
     try {
         // read the result
@@ -128,10 +131,10 @@ function readPackageLock(node) {
 }
 
 function makeError(node, title, detail = '') {
-    return new Error(
-        `\n[Binge] ${title}\n` +
-            `[Binge] Node name: ${node.name}\n` +
-            `[Binge] Node path: ${node.path}\n` +
-            (detail ? `[Binge] ${detail}` : '')
+    return (
+        `${title}\n` +
+        `[Binge] Node name: ${node.name}\n` +
+        `[Binge] Node path: ${node.path}\n` +
+        (detail ? `[Binge] ${detail}` : '')
     )
 }

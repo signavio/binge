@@ -40,15 +40,20 @@ export default function(pkgPath, callback) {
 
 function invalidKeys(result) {
     const VALID_KEYS = [
+        'hoistingPath',
         'isApp',
         'isDummy',
-        'testMode',
         'scriptBuild',
         'scriptWatch',
+        'testMode',
         'version',
     ]
 
     const VALIDATORS = {
+        hoistingPath: () =>
+            typeof result.hoistingPath === 'undefined' ||
+            (typeof result.hoistingPath === 'string' &&
+                fs.existsSync(result.hoistingPath)),
         isApp: () => ['boolean', 'undefined'].includes(typeof result.isApp),
         isDummy: () => ['boolean', 'undefined'].includes(typeof result.isDummy),
         testMode: () =>
@@ -80,7 +85,7 @@ function applyDefaults(result = {}) {
 
 function makeError(title, path, rawError) {
     return (
-        `[Binge] ${title}\n` +
+        `${title}\n` +
         `[Binge] at -> ${path}\n` +
         `[Binge] raw error:\n` +
         String(rawError)

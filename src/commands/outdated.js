@@ -1,5 +1,5 @@
-import createHoisted from './createHoisted'
+import yarnHoisted from './yarnHoisted'
 
-const selectArgs = () => process.argv.slice(process.argv.indexOf('outdated'))
-
-export default createHoisted(selectArgs)
+export function runCommand(packages) {
+    yarnHoisted(['outdated', ...packages], { stdio: 'inherit' }, () => {})
+}

@@ -2,113 +2,161 @@ import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
 
-import createGraph from '../graph/create'
-import { layer as layerTopology } from '../graph/topology'
-import { createInstaller } from '../tasks/install'
-import createReporter from '../createReporter'
+import duration from '../duration'
+import * as log from '../log'
+
+import { flatten } from '../util/array'
+import { init as initIgnoredCache } from '../util/ignoredCache'
+
+import { withBase as createGraph } from '../graph/create'
+import createInstaller from '../tasks/install'
 import taskBuild from '../tasks/build'
 import taskDeploy from '../tasks/deploy'
+import taskLinkBin from '../tasks/linkBin'
 import taskPrune from '../tasks/prune'
+import taskIgnored from '../tasks/ignored'
 
-export default function(cliFlags) {
-    let entryNode
-    const reporter = createReporter(cliFlags)
-    const taskInstall = createInstaller(['install', '--frozen-lockfile'])
-    createGraph(path.resolve('.'), function(err, nodes) {
+export function runCommand() {
+    run(end)
+}
+
+export default function run(end) {
+    createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
 
-        const [entryNode] = nodes
+        let progress
+        let progressTick
+        const [nodeEntry] = nodes
+        // start from deeper layers and discard the base
+        const reversedLayers = [...layers].reverse()
 
-        const layers = layerTopology(entryNode).reverse()
+        log.info(`using hoisting base ${chalk.yellow(nodeBase.name)}`)
 
         async.series(
             [
-                done => pruneAndInstall(nodes, done),
-                done => buildAndBridge(layers, done),
+                done => install(done),
+                done => ignoredPaths(done),
+                done => buildAndDeploy(done),
             ],
             end
         )
-    })
 
-    function pruneAndInstall(nodes, callback) {
-        reporter.series(`Installing...`)
-        async.mapSeries(nodes, pruneAndInstallNode, (err, results) => {
-            reporter.clear()
-            callback(err, results)
-        })
-    }
-
-    function pruneAndInstallNode(node, callback) {
-        const done = reporter.task(node.name)
-        taskInstall(node, (err, results) => {
-            done()
-            callback(err, results)
-        })
-    }
-
-    function buildAndBridge(layers, callback) {
-        async.mapSeries(layers, buildAndBridgeLayer, (err, nestedResults) => {
-            const results = (err ? [] : nestedResults).reduce(
-                (result, next) => [...result, ...next],
-                []
+        function install(callback) {
+            const taskInstall = createInstaller(
+                ['install', '--frozen-lockfile'],
+                {
+                    stdio: 'inherit',
+                }
             )
-            callback(err, results)
-        })
-    }
 
-    function buildAndBridgeLayer(layer, callback) {
-        reporter.series(`Building Layer...`)
-        async.mapSeries(layer, buildAndBridgeNode, (err, results) => {
-            reporter.clear()
-            callback(err, results)
-        })
-    }
+            taskInstall(nodeBase, (err, { skipped, ...rest }) => {
+                if (skipped) {
+                    log.info(`yarn install skipped, up to date`)
+                }
 
-    function buildAndBridgeNode(node, callback) {
-        const done = reporter.task(node.name)
-        async.series(
-            [
-                done => taskPrune(node, done),
-                done => taskDeploy(node, done),
-                done => taskBuild(node, entryNode, done),
-            ],
-            (err, results) => {
-                done()
-                // pass the install results
-                callback(err, !err && results[2])
-            }
-        )
+                callback(err, { skipped, ...rest })
+            })
+        }
+
+        function ignoredPaths(callback) {
+            taskIgnored(nodeBase, (err, ignoredMap) => {
+                if (!err) {
+                    initIgnoredCache(ignoredMap)
+                }
+                callback(err)
+            })
+        }
+
+        function buildAndDeploy(callback) {
+            progress = log.progress('bootstraping', nodes.length)
+            buildAndDeployLayers((err, result) => {
+                progress.finish()
+                callback(err, result)
+            })
+        }
+
+        function buildAndDeployLayers(callback) {
+            async.mapSeries(
+                reversedLayers,
+                (layer, done) => buildAndDeployLayer(layer, done),
+                (err, result) => {
+                    callback(err, !err && flatten(result))
+                }
+            )
+        }
+
+        function buildAndDeployLayer(layer, callback) {
+            progressTick = progressHelper(progress, layer)
+            async.map(
+                layer,
+                (node, done) => buildAndDeployNode(node, done),
+                callback
+            )
+        }
+
+        function buildAndDeployNode(node, callback) {
+            async.series(
+                [
+                    done => taskPrune(node, nodeBase, done),
+                    done => taskDeploy(node, done),
+                    done => taskLinkBin(node, nodeBase, done),
+                    done => taskBuild(node, nodeBase, nodeEntry, done),
+                ],
+                (err, results) => {
+                    progressTick(node.name)
+                    // pass the build results
+                    callback(err, !err && results[3])
+                }
+            )
+        }
+    })
+}
+
+function progressHelper(progress, layer) {
+    let flows = layer.map(node => node.name)
+    let doneFlows = []
+    progress.text(flows.map(name => chalk.yellow(name)).join(' '))
+
+    return doneName => {
+        doneFlows = [...doneFlows, doneName]
+        const text = flows
+            .map(
+                name =>
+                    doneFlows.includes(name)
+                        ? chalk.gray(name)
+                        : chalk.yellow(name)
+            )
+            .join(' ')
+        progress.text(text)
+        progress.tick()
     }
 }
 
 function end(err, results) {
     if (err) {
-        console.log(chalk.red('Failure'))
-        console.log(err)
+        log.failure(err)
         process.exit(1)
     } else {
-        console.log(chalk.green('Success'))
         summary(results)
         process.exit(0)
     }
 }
 
-function summary([installResults, buildResults]) {
-    const installCount = installResults.filter(e => e.skipped === false).length
-    const installSkipCount = installResults.filter(e => e.skipped === true)
-        .length
-
+function summary([installResult, _, buildResults]) {
     const buildCount = buildResults.filter(e => e.skipped === false).length
     const buildSkipCount = buildResults.filter(e => e.skipped === true).length
 
-    const word = count => (count === 1 ? 'node' : 'nodes')
+    const word = count => (count === 1 ? 'package' : 'packages')
 
-    console.log(
-        `Installed ${installCount} ${word(
-            installCount
-        )}, ${installSkipCount} up-to-date`
-    )
-    console.log(
-        `Built ${buildCount} ${word(buildCount)}, ${buildSkipCount} up-to-date`
-    )
+    const installPart = installResult.skipped
+        ? 'install skipped'
+        : 'installed the base'
+    const lockPart = installResult.lockTouch ? ' (wrote yarn.lock)' : ''
+
+    const buildPart = `, built ${buildCount} ${word(
+        buildCount
+    )} (${buildSkipCount} skipped)`
+    const durationPart = `, done in ${duration()}`
+
+    log.success(`${installPart}${lockPart}${buildPart}${durationPart}`)
 }

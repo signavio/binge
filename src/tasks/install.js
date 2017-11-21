@@ -11,16 +11,8 @@ import {
 
 import { empty as emptyDelta } from '../util/dependencyDelta'
 
-export function createInstaller(yarnArgs, spawnOptions) {
+export default (yarnArgs, spawnOptions) => {
     return (node, callback) => {
-        if (node.isDummy === true) {
-            callback(null, {
-                skipped: null,
-                resultDelta: emptyDelta,
-            })
-            return
-        }
-
         invariant(yarnArgs[0] === 'install', 'Should start with install')
         invariant(typeof callback === 'function', 'Expected a function')
 
@@ -55,16 +47,18 @@ export function createInstaller(yarnArgs, spawnOptions) {
                 // If integrities match skip the install. Otherwise install
                 (integrityMatch, done) => {
                     if (!integrityMatch) {
-                        taskYarn(node, (err, { resultDelta }) =>
+                        taskYarn(node, (err, { resultDelta, lockTouch }) =>
                             done(err, {
                                 skipped: false,
                                 resultDelta,
+                                lockTouch,
                             })
                         )
                     } else {
                         done(null, {
                             skipped: true,
                             resultDelta: emptyDelta,
+                            lockTouch: false,
                         })
                     }
                 },

@@ -1,11 +1,19 @@
 import collectPointers from './pointers'
 import collectStatus from './status'
 
-export default function(packageJson, reachablePackageJsons) {
-    const [pointers, devPointers] = collectPointers(
+export default function(packageJson, reachablePackageJsons, nameFilter = []) {
+    let [pointers, devPointers] = collectPointers(
         packageJson,
         reachablePackageJsons
     )
+
+    pointers = nameFilter.length
+        ? pointers.filter(({ name }) => nameFilter.includes(name))
+        : pointers
+
+    devPointers = nameFilter.length
+        ? devPointers.filter(({ name }) => nameFilter.includes(name))
+        : devPointers
 
     const dependencyStatus = collectStatus(pointers, devPointers)
 

@@ -1,27 +1,61 @@
 import sortKeys from './sortKeys'
-import reconcileVersion from './reconcileVersion'
 
-export function apply(packageJson, dependencyDelta = {}, force) {
-    const collect = key =>
-        Object.keys(dependencyDelta[key] || {})
+export function applyIf(packageJson, dependencyDelta = {}) {
+    const collect = (bagDependencies = {}, bagDelta = {}) =>
+        Object.keys(bagDelta)
             // is in the packageJson
-            .filter(name => force || Boolean(packageJson[key][name]))
+            .filter(name => Boolean(bagDependencies[name]))
             // only write if it changed
-            .filter(
-                name => dependencyDelta[key][name] !== packageJson[key][name]
-            )
+            .filter(name => bagDelta[name] !== bagDependencies[name])
             .reduce(
                 (result, name) => ({
                     ...result,
-                    [name]: dependencyDelta[key][name],
+                    [name]: bagDelta[name],
                 }),
                 {}
             )
-    const appliedDelta = {
-        dependencies: collect('dependencies'),
-        devDependencies: collect('devDependencies'),
+
+    const allFromDelta = {
+        ...(dependencyDelta.dependencies || {}),
+        ...(dependencyDelta.devDependencies || {}),
     }
 
+    const appliedDelta = {
+        dependencies: collect(packageJson.dependencies, allFromDelta),
+        devDependencies: collect(packageJson.devDependencies, allFromDelta),
+    }
+
+    return applyResult(packageJson, appliedDelta)
+}
+
+export function apply(packageJson, dependencyDelta = {}, force) {
+    const collect = (bagDependencies = {}, bagDelta = {}) =>
+        Object.keys(bagDelta)
+            // only write if it changed
+            .filter(name => bagDelta[name] !== bagDependencies[name])
+            .reduce(
+                (result, name) => ({
+                    ...result,
+                    [name]: bagDelta[name],
+                }),
+                {}
+            )
+
+    const appliedDelta = {
+        dependencies: collect(
+            packageJson.dependencies,
+            dependencyDelta.dependencies
+        ),
+        devDependencies: collect(
+            packageJson.devDependencies,
+            dependencyDelta.devDependencies
+        ),
+    }
+
+    return applyResult(packageJson, appliedDelta)
+}
+
+function applyResult(packageJson, appliedDelta) {
     return {
         appliedDelta,
         packageJson: isEmpty(appliedDelta)
@@ -29,12 +63,12 @@ export function apply(packageJson, dependencyDelta = {}, force) {
             : {
                   ...packageJson,
                   dependencies: sortKeys({
-                      ...packageJson.dependencies,
-                      ...appliedDelta.dependencies,
+                      ...(packageJson.dependencies || {}),
+                      ...(appliedDelta.dependencies || {}),
                   }),
                   devDependencies: sortKeys({
-                      ...packageJson.devDependencies,
-                      ...appliedDelta.devDependencies,
+                      ...(packageJson.devDependencies || {}),
+                      ...(appliedDelta.devDependencies || {}),
                   }),
               },
     }
@@ -61,22 +95,6 @@ export function infer(prevPackageJson, nextPackageJson) {
     return {
         dependencies: collect('dependencies'),
         devDependencies: collect('devDependencies'),
-    }
-}
-
-export function pinDownRanges(dependencyDelta) {
-    const pinDown = key =>
-        Object.keys(dependencyDelta[key] || {}).reduce(
-            (result, name) => ({
-                ...result,
-                [name]: reconcileVersion(dependencyDelta[key][name]),
-            }),
-            {}
-        )
-
-    return {
-        dependencies: pinDown('dependencies'),
-        devDependencies: pinDown('devDependencies'),
     }
 }
 

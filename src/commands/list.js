@@ -1,5 +1,10 @@
-import createHoisted from './createHoisted'
+import yarnHoisted from './yarnHoisted'
 
-const selectArgs = () => process.argv.slice(process.argv.indexOf('list'))
-
-export default createHoisted(selectArgs)
+export function runCommand(dependency, options) {
+    yarnHoisted([
+        'list',
+        ...(dependency ? [dependency] : []),
+        ...(options.depth ? ['--depth', String(options.depth)] : []),
+        ...(options.pattern ? ['--pattern', options.pattern] : []),
+    ])
+}

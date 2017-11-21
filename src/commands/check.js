@@ -1,42 +1,31 @@
-import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
 
-import createGraph from '../graph/create'
-import createReporter from '../createReporter'
+import * as log from '../log'
+import duration from '../duration'
 
+import { withBase as createGraph } from '../graph/create'
 import taskCheckYarn from '../tasks/checkYarn'
 
-export default function(cliFlags) {
-    const reporter = createReporter(cliFlags)
-    createGraph(path.resolve('.'), function(err, nodes) {
+export function runCommand() {
+    run(end)
+}
+
+export function run(end) {
+    createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
-        reporter.series('Checking...')
-        async.map(nodes, checkNode, (err, result) => {
-            reporter.clear()
-            end(err, result)
-        })
+
+        log.info(`using hoisting base ${chalk.yellow(nodeBase.name)}`)
+        taskCheckYarn(nodeBase, end)
     })
+}
 
-    function checkNode(node, callback) {
-        const done = reporter.task(node.name)
-        taskCheckYarn(node, err => {
-            done()
-            callback(err)
-        })
-    }
-
-    function end(err, result) {
-        if (err) {
-            console.log(chalk.red('Failure'))
-            console.log(err)
-            process.exit(1)
-        } else {
-            console.log(chalk.green('Success'))
-            console.log(
-                `${result.length} local-packages checked for lock consistency`
-            )
-            process.exit(0)
-        }
+function end(err) {
+    if (err) {
+        log.failure(err)
+        process.exit(1)
+    } else {
+        log.success(`yarn.lock is in sync, done in ${duration()}`)
+        process.exit(0)
     }
 }
