@@ -16,10 +16,10 @@ program
 
 program
     .command('add <dependency...>')
-    .option('-D, --dev', 'will install one or more packages in devDependencies')
-    .option('-E, --exact', 'installs the packages as exact versions. ')
+    .option('-D, --dev', 'Installs one or more packages as dev dependencies.')
+    .option('-E, --exact', 'Installs the packages as exact versions.')
     .description(
-        'Adds and installs one or more dependencies. Propagates changes to packages that share the same dependency'
+        'Adds and installs one or more dependencies. Propagates changes to packages that share this dependency/these dependencies.'
     )
     .action((...args) => {
         log.info(packageJson.version, 'version')
@@ -29,7 +29,7 @@ program
 program
     .command('bootstrap')
     .description(
-        'Install, build and deploy the local-package tree. The command requires yarn.locks to be in sync'
+        'Installs, builds and deploys the local package tree. Requires yarn.locks to be in sync.'
     )
     .action((...args) => {
         log.info(packageJson.version, 'version')
@@ -38,7 +38,7 @@ program
 
 program
     .command('cache-clean')
-    .description('cleans the build and install cache')
+    .description('Cleans the build and installs the cache.')
     .action((...args) => {
         log.info(packageJson.version, 'version')
         require('../lib/commands/cacheClean').runCommand(...args)
@@ -47,7 +47,7 @@ program
 program
     .command('check')
     .description(
-        'Check the local-package tree for package.json and yarn.lock sync'
+        'Checks the local package tree for package.json and yarn.lock sync.'
     )
     .action((...args) => {
         log.info(packageJson.version, 'version')
@@ -56,7 +56,7 @@ program
 
 program
     .command('copy <file> [newName]')
-    .description('Copy a file into each package in the local-package tree')
+    .description('Copies the file into each package of the local package tree.')
     .action((...args) => {
         log.info(packageJson.version, 'version')
         require('../lib/commands/copy').runCommand(...args)
@@ -65,7 +65,7 @@ program
 program
     .command('graph')
     .description(
-        'Prints the local-package tree, and layer topology information'
+        'Prints the local-package tree, and layer topology information.'
     )
     .action((...args) => {
         log.info(packageJson.version, 'version')
@@ -74,7 +74,7 @@ program
 
 program
     .command('harmony [dependency...]')
-    .description('Check the local-package tree for dependency consistency')
+    .description('Checks the local package tree for dependency consistency.')
     .action((...args) => {
         log.info(packageJson.version, 'version')
         require('../lib/commands/harmony').runCommand(...args)
@@ -83,7 +83,7 @@ program
 program
     .command('nuke [target]')
     .description(
-        'Removes target folder or file from each package (default node_modules)'
+        'Removes the target folder or file from each packag. Defaults to node_modules.'
     )
     .action((...args) => {
         log.info(packageJson.version, 'version')
@@ -99,9 +99,9 @@ program
     )
     .option(
         '--pattern <pattern>',
-        'will filter the list of dependencies by the pattern flag'
+        'Filters the list of dependencies by the pattern flag.'
     )
-    .description('List installed dependencies, including hoisting')
+    .description('Lists installed dependencies, including hoisting.')
     .action((...args) => {
         log.info(packageJson.version, 'version')
         require('../lib/commands/list').runCommand(...args)
@@ -110,7 +110,7 @@ program
 program
     .command('outdated [package...]')
     .description(
-        'Lists version information for one or more dependencies (default all)'
+        'Lists version information for one or more dependencies. Defaults to all packages.'
     )
     .action((...args) => {
         log.info(packageJson.version, 'version')
@@ -120,7 +120,7 @@ program
 program
     .command('touch [name] [version]')
     .description(
-        'Update one dependency to a specific version, and write the yarn.lock. Propagates changes to packages that share the same dependency (default simply write yarn.lock)'
+        'Updates a dependency to a specific version, and writes to yarn.lock. Propagates changes to packages that share the same dependency. Defaults to simply writing to yarn.lock)'
     )
     .action((...args) => {
         log.info(packageJson.version, 'version')
@@ -130,7 +130,7 @@ program
 program
     .command('trace <targetBranch> [outputDir]')
     .description(
-        'Compares the current branch with the target branch. Outputs the trace up list of affected packages'
+        'Compares the current branch with the target branch. Outputs the trace up list of affected packages.'
     )
     .action((...args) => {
         log.info(packageJson.version, 'version')
@@ -139,7 +139,7 @@ program
 
 program
     .command('watch')
-    .description('Build and watch the local-package tree')
+    .description('Builds and watches the local package tree.')
     .action((...args) => {
         log.info(packageJson.version, 'version')
         require('../lib/commands/watch').runCommand(...args)
