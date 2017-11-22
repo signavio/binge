@@ -74,6 +74,10 @@ program
 
 program
     .command('harmony [dependency...]')
+    .option(
+        '--fix',
+        'Harmonizes unsynced dependencies across package locks, writes the yarn.lock file.'
+    )
     .description('Checks the local package tree for dependency consistency.')
     .action((...args) => {
         log.info(packageJson.version, 'version')
@@ -115,16 +119,6 @@ program
     .action((...args) => {
         log.info(packageJson.version, 'version')
         require('../lib/commands/outdated').runCommand(...args)
-    })
-
-program
-    .command('touch [name] [version]')
-    .description(
-        'Updates a dependency to a specific version, and writes to yarn.lock. Propagates changes to packages that share the same dependency. Defaults to simply writing to yarn.lock'
-    )
-    .action((...args) => {
-        log.info(packageJson.version, 'version')
-        require('../lib/commands/touch').runCommand(...args)
     })
 
 program
