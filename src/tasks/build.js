@@ -1,5 +1,6 @@
 import async from 'async'
 import { yarn as spawnYarn } from '../util/spawnTool'
+import { scriptBuild } from '../util/node'
 import {
     hashBuild as integrityHash,
     readBuild as integrityRead,
@@ -10,22 +11,7 @@ import {
 import * as packlistCache from '../util/packlistCache'
 
 export default function(node, nodeBase, nodeEntry, callback) {
-    // const unavailable =
-    //    !node.packageJson.scripts || !node.packageJson.scripts.build
-
-    const isDefaultBuild =
-        node.packageJson.scripts && node.packageJson.scripts.build
-
-    const isCustomBuild =
-        node.packageJson.scripts &&
-        node.scriptBuild &&
-        node.packageJson.scripts[node.scriptBuild]
-
-    const scriptBuild = isCustomBuild
-        ? node.scriptBuild
-        : isDefaultBuild ? 'build' : null
-
-    const unavailable = !scriptBuild
+    const unavailable = !scriptBuild(node)
 
     if (
         unavailable ||
@@ -35,10 +21,6 @@ export default function(node, nodeBase, nodeEntry, callback) {
     ) {
         callback(null, { skipped: unavailable ? true : null })
         return
-    }
-
-    const options = {
-        cwd: node.path,
     }
 
     async.waterfall(
@@ -70,9 +52,15 @@ export default function(node, nodeBase, nodeEntry, callback) {
             // If integrities match skip the Build. Otherwise build
             (integrityMatch, done) => {
                 if (!integrityMatch) {
-                    spawnYarn(['run', scriptBuild], options, err => {
-                        done(err, { upToDate: false })
-                    })
+                    spawnYarn(
+                        ['run', scriptBuild(node)],
+                        {
+                            cwd: node.path,
+                        },
+                        err => {
+                            done(err, { upToDate: false })
+                        }
+                    )
                 } else {
                     done(null, { upToDate: true })
                 }

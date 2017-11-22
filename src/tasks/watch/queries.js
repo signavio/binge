@@ -86,16 +86,3 @@ export function nodeFromChangePath(nodes, changePath) {
 
     return node || null
 }
-
-export function nodeHasWatchConfig(node) {
-    const configKey = 'scriptWatch'
-    const hasRcConfig = Boolean(node[configKey])
-
-    return Boolean(
-        hasRcConfig &&
-            typeof node[configKey] === 'string' &&
-            node.packageJson &&
-            node.packageJson.scripts &&
-            node.packageJson.scripts[node[configKey]]
-    )
-}

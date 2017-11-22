@@ -7,9 +7,11 @@ import path from 'path'
 
 import * as log from '../../log'
 
+import { scriptWatch } from '../../util/node'
+
 import { yarn as spawnYarn } from '../../util/spawnTool'
 
-export function watchProject(rootNode, onReady) {
+export function watchProject(rootNode, callback) {
     function longestCommonPrefix(paths) {
         const A = paths.sort()
         let a1 = A[0]
@@ -28,7 +30,7 @@ export function watchProject(rootNode, onReady) {
         .watch(rootPath, {
             ignored: /node_modules|\.gradle/,
         })
-        .on('ready', () => onReady(watcher))
+        .on('ready', () => callback(watcher))
 }
 
 export const childLauncher = (() => {
@@ -72,8 +74,11 @@ export const childLauncher = (() => {
             stdio: ['ignore', 'pipe', 'inherit'],
         }
 
-        const scriptName = packageNode.scriptWatch
-        const child = spawnYarn(['run', scriptName], options, () => {})
+        const child = spawnYarn(
+            ['run', scriptWatch(packageNode)],
+            options,
+            () => {}
+        )
         state = {
             ...state,
             packages: {
@@ -87,7 +92,7 @@ export const childLauncher = (() => {
             clearTimeout(timeoutId)
             timeoutId = setTimeout(() => {
                 child.stdout.removeListener('data', wait)
-                callback()
+                callback(null)
             }, ms)
         }
 

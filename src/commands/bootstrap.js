@@ -152,7 +152,7 @@ function summary([installResult, _, buildResults]) {
 
     const word = count => (count === 1 ? 'package' : 'packages')
 
-    const installPart = installResult.skipped
+    const installPart = installResult.upToDate
         ? 'install up to date'
         : 'installed the base'
     const lockPart = installResult.lockTouch ? ' (wrote yarn.lock)' : ''

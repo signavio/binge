@@ -68,6 +68,7 @@ export default rootNode => {
         }
 
         onExit(() => {
+            console.log()
             log.info('Exit detected')
             watcher.close()
             childLauncher.killAll()

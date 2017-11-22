@@ -75,7 +75,6 @@ function findNpmPath() {
     const basePath = parts.slice(0, parts.indexOf('client') + 1).join(path.sep)
     return path.join(
         basePath,
-        '_',
         '.gradle',
         'npm',
         'node_modules',
@@ -90,7 +89,6 @@ function findYarnPath() {
     const basePath = parts.slice(0, parts.indexOf('client') + 1).join(path.sep)
     return path.join(
         basePath,
-        '_',
         '.gradle',
         'yarn',
         'node_modules',
