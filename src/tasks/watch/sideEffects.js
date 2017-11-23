@@ -2,6 +2,8 @@ import chalk from 'chalk'
 import invariant from 'invariant'
 import * as log from '../../log'
 
+import { scriptWatch } from '../../util/node'
+
 import {
     isAppStart,
     isFileAdd,
@@ -9,7 +11,6 @@ import {
     isPackageOrphan,
     isPackageStart,
     nodeFromChangePath,
-    nodeHasWatchConfig,
 } from './queries'
 
 import { childLauncher, copyFile, packlist } from './fs'
@@ -87,11 +88,11 @@ export function createPostEffects(rootNode, dispatchers) {
 
     function appStart(state, action) {
         const node = nodeFromChangePath(state.nodes, action.changePath)
-        if (nodeHasWatchConfig(node)) {
-            printWatchStarting(node)
+        if (scriptWatch(node)) {
+            printAppWatchStarting(node)
             childLauncher.watchApp(node)
         } else {
-            printNoWatchWarning(node)
+            printAppNoWatch(node)
         }
     }
 
@@ -100,7 +101,9 @@ export function createPostEffects(rootNode, dispatchers) {
         packlist(node, (err, files) => {
             invariant(!err, 'Not expecting an err')
             dispatchers.packList(node, files)
-            dispatchers.change(action.changePath)
+            process.nextTick(() => {
+                dispatchers.change(action.changePath)
+            })
         })
     }
 
@@ -113,49 +116,52 @@ export function createPostEffects(rootNode, dispatchers) {
 
     function packageStart(state, action) {
         const node = nodeFromChangePath(state.nodes, action.changePath)
-        if (nodeHasWatchConfig(node)) {
-            printWatchStarting(node)
-            childLauncher.watchPackage(node, () => {
-                packlist(node, (err, files) => {
-                    invariant(!err, 'Not expecting an err')
-                    dispatchers.packList(node, files)
+        printPackageWatchStarting(node)
+        childLauncher.watchPackage(node, () => {
+            packlist(node, (err, files) => {
+                invariant(!err, 'Not expecting an err')
+                dispatchers.packList(node, files)
+                process.nextTick(() => {
                     dispatchers.packageReady()
-                    printWatchStarted(node)
+                    printPackageWatchStarted(node)
                 })
             })
-        } else {
-            printNoWatchWarning(node)
-        }
+        })
     }
 }
 
-function printWatchStarting(node) {
+function printPackageWatchStarting(node) {
+    if (scriptWatch(node)) {
+        log.info(`starting ${chalk.yellow(node.name)}...`)
+    } else {
+        log.info(
+            `no suitable watch script for ${chalk.yellow(
+                node.name
+            )}. Plain copy will be used.`
+        )
+    }
+}
+
+function printPackageWatchStarted(node) {
+    if (scriptWatch(node)) {
+        log.info(`starting ${chalk.yellow(node.name)}...`)
+    }
+}
+
+function printAppWatchStarting(node) {
     log.info(`starting ${chalk.yellow(node.name)}...`)
 }
 
-function printWatchStarted(node) {
-    log.info(`started ${chalk.yellow(node.name)}`)
-}
-
-function printNoWatchWarning(node) {
-    const configKey = 'scriptWatch'
-    const missingConfig = !node[configKey]
-
-    if (missingConfig) {
-        log.info(
-            ` ${configKey} not found in ${chalk.yellow(
-                node.name
-            )}'s .bingerc (pure copy only)`
-        )
-        return
-    }
-
-    if (!nodeHasWatchConfig(node)) {
+function printAppNoWatch(node) {
+    if (!node.scriptWatch) {
         log.warning(
-            `${node[configKey]} script ` +
-                `(defined in .bingerc) was not found in the ${chalk.yellow(
-                    node.name
-                )}'s package.json'`
+            `'scriptWatch' not found in ${chalk.yellow(node.name)}'s .bingerc`
+        )
+    } else {
+        log.warning(
+            `The configured scriptWatch '${node.scriptWatch}' not found in ${chalk.yellow(
+                node.name
+            )}'s package.json`
         )
     }
 }

@@ -1,5 +1,8 @@
 import { expect } from 'chai'
-import reconcileVersion from '../../src/util/reconcileVersion'
+import {
+    reconcile as reconcileVersion,
+    greatest as greatestVersion,
+} from '../../src/util/version'
 
 describe('util', () => {
     describe('reconcileVersion', () => {
@@ -81,6 +84,49 @@ describe('util', () => {
 
         it('Single version', () => {
             expect(reconcileVersion('2.3.4')).to.equal('2.3.4')
+        })
+    })
+
+    describe('greatestVersion', () => {
+        it('empty array returns null', () => {
+            expect(greatestVersion([])).to.equal(null)
+        })
+
+        it('rubish array return null', () => {
+            expect(greatestVersion(['abcde'])).to.equal(null)
+            expect(greatestVersion(['abcde', 'abcdef'])).to.equal(null)
+        })
+
+        it('rubish and versions returns version', () => {
+            expect(greatestVersion(['abcde', '1.2.3'])).to.equal('1.2.3')
+        })
+
+        it('ranges', () => {
+            expect(
+                greatestVersion(['^5.0.0', '10.0.x', '^1.2.x', null])
+            ).to.equal('10.0.0')
+
+            expect(
+                greatestVersion(['10.0.x', '^5.0.0', '^1.2.x', null])
+            ).to.equal('10.0.0')
+
+            expect(
+                greatestVersion(['^1.2.x', '^5.0.0', '^23.2.0', null])
+            ).to.equal('23.2.0')
+        })
+
+        it('versions', () => {
+            expect(greatestVersion(['5.0.0', '5.2.1', '4.2.0'])).to.equal(
+                '5.2.1'
+            )
+
+            expect(greatestVersion(['5.2.1', '5.0.0', '4.2.0'])).to.equal(
+                '5.2.1'
+            )
+
+            expect(greatestVersion(['5.0.0', '4.2.0', '5.2.1'])).to.equal(
+                '5.2.1'
+            )
         })
     })
 })

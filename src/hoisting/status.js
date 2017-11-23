@@ -1,6 +1,13 @@
 import semver from 'semver'
-import reconcileVersion from '../util/reconcileVersion'
+import { reconcile as reconcileVersion } from '../util/version'
 
+/*
+ * return {
+ *     name,
+ *     version: reconciledVersion,
+ *     status,
+ * }
+ */
 export default function status(pointers, devPointers) {
     return [
         ...pointers

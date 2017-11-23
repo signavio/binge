@@ -1,3 +1,10 @@
+/*
+ * {
+ *   nodeName,
+ *   name,
+ *   version: bag[name],
+ * }
+ */
 export default function(packageJson, reachablePackageJsons) {
     const pointers = collect(packageJson, reachablePackageJsons, 'dependencies')
     const devPointers = collect(

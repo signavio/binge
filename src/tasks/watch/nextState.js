@@ -6,10 +6,11 @@ import {
     isPackageStart,
     isPacklist,
     nodeFromChangePath,
-    nodeHasWatchConfig,
 } from './queries'
 
-const MAX_SPAWN = 3
+import { scriptWatch } from '../../util/node'
+
+const MAX_SPAWN = 4
 
 export default (rootNode, dispatchers) => {
     const appStart = createAppStart(rootNode, dispatchers)
@@ -43,7 +44,7 @@ function createAppStart(rootNode, dispatchers) {
         const appNode = nodeFromChangePath(state.nodes, action.changePath)
         return {
             ...state,
-            spawnedApp: nodeHasWatchConfig(appNode) ? appNode : null,
+            spawnedApp: scriptWatch(appNode) ? appNode : null,
             localPackages: [],
         }
     }
@@ -69,7 +70,7 @@ function createPackageReady(rootNode, dispatchers) {
 function createPackageStart(rootNode, dispatchers) {
     return (state, action) => {
         const packageNode = nodeFromChangePath(state.nodes, action.changePath)
-        if (!nodeHasWatchConfig(packageNode)) {
+        if (!scriptWatch(packageNode)) {
             return state
         }
 
