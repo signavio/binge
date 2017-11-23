@@ -2,7 +2,22 @@ import invariant from 'invariant'
 import semver from 'semver'
 import { intersect } from 'semver-intersect'
 
-export default function(rawVersions) {
+export function greatest(rawVersions) {
+    const isVersion = r => semver.valid(r)
+    const isRange = r => !semver.valid(r) && semver.validRange(r)
+    const compareVersions = (v1, v2) => (semver.gte(v1, v2) ? -1 : 1)
+
+    return (
+        rawVersions
+            .map(v => (isRange(v) ? rangeToVersion(v) : v))
+            .map(v => (isVersion(v) ? v : null))
+            .filter(Boolean)
+            .sort(compareVersions)
+            .find(Boolean) || null
+    )
+}
+
+export function reconcile(rawVersions) {
     const versions = (Array.isArray(rawVersions) ? rawVersions : [rawVersions])
         .map(rawVersion => semver.valid(rawVersion))
         // remove nulls

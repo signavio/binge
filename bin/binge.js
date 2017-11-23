@@ -17,7 +17,6 @@ program
 program
     .command('add <dependency...>')
     .option('-D, --dev', 'Installs one or more packages as dev dependencies.')
-    .option('-E, --exact', 'Installs the packages as exact versions.')
     .description(
         'Adds and installs one or more dependencies. Propagates changes to packages that share this dependency/these dependencies.'
     )

@@ -6,7 +6,7 @@ import duration from '../duration'
 import * as log from '../log'
 import { withBase as createGraph } from '../graph/create'
 import createTaskYarn from '../tasks/yarn'
-import taskTouch from '../tasks/touch'
+import taskTouch, { print as touchInfo } from '../tasks/touch'
 
 export function runCommand(packages, options) {
     run(packages, options, end)
@@ -23,7 +23,7 @@ export default function run(packages, options, end) {
         const yarnArgs = [
             'add',
             ...packages,
-            options.exact ? '--exact' : null,
+            '--exact',
             options.dev ? '--dev' : null,
         ].filter(Boolean)
 
@@ -73,23 +73,13 @@ function summary(addResult, touchResults) {
     const touchedCount = touchResults.filter(entry => entry.skipped !== true)
         .length
 
-    touchResults.forEach(({ node, appliedDelta }) => {
-        Object.keys(appliedDelta.dependencies).forEach(name => {
-            log.info(
-                `${chalk.yellow(node.name)} -> ` +
-                    `${name}@${appliedDelta.dependencies[name]}`
-            )
-        })
+    touchInfo(touchResults)
 
-        Object.keys(appliedDelta.devDependencies).forEach(name => {
-            log.info(
-                `${chalk.yellow(node.name)} -> ` +
-                    `${name}@${appliedDelta.devDependencies[name]} (dev)`
-            )
-        })
-    })
-
-    log.success(`touched ${touchedCount} packages, done in ${duration()}`)
+    if (touchedCount) {
+        log.success(`wrote ${touchedCount} package.json, done in ${duration()}`)
+    } else {
+        log.success(`nothing changed, done in ${duration()}`)
+    }
 }
 
 /*

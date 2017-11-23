@@ -1,5 +1,6 @@
 import collectPointers from './pointers'
 import collectStatus from './status'
+import collectFixing from './fixing'
 
 export default function(packageJson, reachablePackageJsons, nameFilter = []) {
     let [pointers, devPointers] = collectPointers(
@@ -15,13 +16,15 @@ export default function(packageJson, reachablePackageJsons, nameFilter = []) {
         ? devPointers.filter(({ name }) => nameFilter.includes(name))
         : devPointers
 
+    const dependencyPointers = [...pointers, ...devPointers]
     const dependencyStatus = collectStatus(pointers, devPointers)
 
     return {
         dependencies: dependencies(pointers, dependencyStatus),
         devDependencies: devDependencies(devPointers, dependencyStatus),
-        dependencyPointers: [...pointers, ...devPointers],
+        dependencyPointers,
         dependencyStatus,
+        dependencyFixing: collectFixing(dependencyPointers, dependencyStatus),
         canHoist: canHoist(dependencyStatus),
     }
 }
