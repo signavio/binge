@@ -4,7 +4,7 @@ binge is a version-less JavaScript package management tool for monorepos.
 It helps you to:
 * achieve a clear separation of concerns through modularization by enabling the quick creation and consumption of local packages,
 * avoid dependency hell by enforcing dependency version consistency across different local packages,
-* overcome the publishing overhead of traditional packages by providing version-less local packages that otherwise behave like standalone npm packages (for example, binge supports custom lifecycle steps like testing, building, linting).
+* overcome the publishing overhead of traditional packages by providing version-less local packages that otherwise behave like standalone npm packages. For example, binge supports npm package semantics, which enables custom lifecycle steps like testing, building and linting.
 
 [//]: # (To learn more about *why exactly* you should consider using binge, read our [announcement blog post]https://tech.signavio.com/2017/package-management-binge.)
 
@@ -62,7 +62,7 @@ The ``package.json`` in the root folder lists the other local packages as depend
 Of course, you can have multiple entry point packages in your repository and also reference local packages in other local packages that aren't entry points.
 
 To build the app, navigate to the ``app`` directory and run ``binge bootstrap``.
-binge now installs the dependencies in the local packages, builds the local packages and deploys them and their dependencies to the ``node_modules`` folder of the ``app`` directory.
+binge now installs all dependencies in the hoisting location, builds the local packages, connects all ``bin`` folders, and deploys the local packages to the ``node_modules`` folder of the ``app`` directory.
 For example, if the app is built with webpack, the build command could be ``binge bootstrap && webpack``.
 
 To run the app and watch the source files, run ``binge watch`` in the ``app`` directory.
@@ -74,12 +74,12 @@ You find minimal example apps that illustrate the commands at [./examples](./exa
 * ``bootstrap``:
 
     Installs, builds and deploys the local package tree.
-    For example, running ``binge bootstrap`` in [./examples/bootstrap/root](./examples/bootstrap/root):
-    * installs the dependencies of the three local packages ``i-filter-stuff``, ``i-print-stuff`` and ``i-prodivde-colors``,
+    For example, running ``binge bootstrap`` in [./examples/bootstrap/app](./examples/bootstrap/app):
+    * installs the dependencies of the three local packages ``i-filter-stuff``, ``i-print-stuff`` and ``i-provide-colors``,
     * builds the three local packages,
-    * deploys the local packages and their dependencies to the ``node_modules`` folder of the app directory.
+    * deploys the local packages to the ``node_modules`` folder of the app directory.
 
-    ``binge bootstrap`` bootstraps not only the current app, but all local packages.
+    ``binge bootstrap`` bootstraps not only the entry point, but all local packages.
 
     **Note:** ``bootstrap`` also runs ``check`` (see below) and fails if ``check`` fails.
 
@@ -88,7 +88,7 @@ You find minimal example apps that illustrate the commands at [./examples](./exa
     Checks if the [yarn-lock.json](https://yarnpkg.com/lang/en/docs/yarn-lock/) and ``package.json`` files in the local package tree are in sync.
     Lock files ensure consistent build across machines.
     This command helps ensure no developer forgets to push lock files changes.
-    For example, running ``binge check`` in [./examples/check-sync/root](./examples/check-sync/root) returns:
+    For example, running ``binge check`` in [./examples/check-sync/app](./examples/check-sync/app) returns:
 
     ```
     Failure
@@ -102,16 +102,16 @@ You find minimal example apps that illustrate the commands at [./examples](./exa
 
     Copies a file into each node of the local package tree.
     This is helpful to manage configuration file or credentials when preparing production releases.
-    For example, when creating the file ``.cred`` in [./examples/bootstrap](./examples/bootstrap), navigating to ``root`` and running ``binge copy ../.cred``, binge copies the file ``.cred`` to the following directories:
+    For example, when creating the file ``.cred`` in [./examples/bootstrap](./examples/bootstrap), navigating to ``app`` and running ``binge copy ../.cred``, binge copies the file ``.cred`` to the following directories:
     * ``i-filter-stuff``,
     * ``i-print-stuff``,
     * ``i-provide-colors``,
     * ``root``.
 
-* ``graph``:
+*  ``graph``:
 
     Prints the package tree and the layer topology (the build order of the nodes).
-    For example, running ``binge graph`` [./examples/bootstrap/root](./examples/bootstrap/root) returns:
+    For example, running ``binge graph`` [./examples/bootstrap/app](./examples/bootstrap/app) returns:
 
     ```
     [Binge] Christmas Tree
@@ -154,14 +154,15 @@ You find minimal example apps that illustrate the commands at [./examples](./exa
     Warning  fbjs  0.8.14 -> module-a@0.8.14, module-b@0.8.14, module-c@^0.8.14
     ```
 
-* ``install``:
+* ``touch``:
 
-    Installs all reachable nodes in the local package tree to the ``node_modules`` folder of the global entry point. For example, running ``binge install`` in [./examples/bootstrap/root](./examples/bootstrap/root) installs the dependencies of the three local packages ``module-a``, ``module-b`` and ``module-c`` into the corresponding local ``node_modules`` folders, as well as into the ``node_modules`` folder of the global entry point ``root``.
+    If you run it without arguments, ``touch`` refreshes or creates the ``yarn.lock`` file and installs all reachable nodes in the local package tree to the ``node_modules`` folder of the global entry point. For example, running ``binge touch`` in [./examples/bootstrap/root](./examples/bootstrap/app) refreshes  [./examples/bootstrap/yarn.lock](./examples/bootstrap/yarn.lock) and installs the dependencies of the three local packages ``module-a``, ``module-b`` and ``module-c`` into the corresponding local ``node_modules`` folders, as well as into the ``node_modules`` folder of the global entry point ``root``.
+    If provided with arguments, ``touch`` updates the provided dependencies in all local packages before updating ``yarn.lock`` and installing.
 
 * ``nuke``:
 
     Removes the ``node_modules`` folders in the local package tree.
-    For example, running ``binge nuke`` in [./examples/bootstrap/root](./examples/bootstrap/root) deletes ``node_modules`` folders in the following directories:
+    For example, running ``binge nuke`` in [./examples/bootstrap/app](./examples/bootstrap/app) deletes ``node_modules`` folders in the following directories:
     * ``i-filter-stuff``,
     * ``i-print-stuff``,
     * ``i-provide-colors``,
@@ -207,7 +208,7 @@ The following table gives an overview of the core differences between binge and 
 
 | Lerna | binge |Explanation
 | --- | --- | --- |
-|Versioned packages|Unversioned packages|Lerna requires you to version local packages. While versioning is great for external stakeholders, who install the package via a package manager, binge assumes versioning packages within a monorepo is confusing and cumbersome. Let's look at an example: Package ``A``, ``B``, ``C`` are in the same repo. The current versions are ``A=1``, ``B=2`` ``C=1``. ``A`` depends on ``B=1``, ``C`` on ``B=2``. This means we are currently accumulating technical debt. The desired state is to release a new version of ``B`` that is compatible with both ``A`` and ``C``. Developers working on ``C`` have the incompatible code of ``B`` checked out (as it's in the same repo) and need to switch to a legacy branch/tag to work on the compatible version of ``B``.|
+|Versioned packages|Unversioned packages|Lerna requires you to version local packages. While versioning is great for external stakeholders, who install the package via a package manager, binge assumes versioning packages within a monorepo is confusing and source of overhead. This carries even more weight as the monorepo and development team grow in size. Let's look at an example: Package ``A``, ``B``, ``C`` are in the same repo. The current versions are ``A=1``, ``B=2`` ``C=1``. ``A`` depends on ``B=1``, ``C`` on ``B=2``. This means we are currently accumulating technical debt. The desired state is to release a new version of ``B`` that is compatible with both ``A`` and ``C``. Developers working on ``C`` have the incompatible code of ``B`` checked out (as it's in the same repo) and need to switch to a legacy branch/tag to work on the compatible version of ``B``.|
 |Allows multiple versions of same dependency across packages|Enforces consistent dependency version across packages |binge ensures dependency versions are consistent across your local packages. This reduces the file size of your application and improves the developer experience (developers don't need to worry where in your code version 1.x and where version 2.x of the same library is used).|
 |Watches all packages simultaneously|Optimizes watch processes|Lerna watches all of your packages simultaneously, which can result in a large number of concurrent watch processes. binge watches one app at a time and optimizes watch processes by running it only for packages that are affected by recent changes. This frees CPU and RAM resources.|
 |Symlinks|No symlinks|Lerna uses [symmetric links](https://en.wikipedia.org/wiki/Symbolic_link) to reference sub-dependencies. These sub-dependencies can't be de-duped and are not handled consistently to 'normal' dependencies by yarn. For example, ``yarn list`` doesn't consider symlinked sub-dependencies. binge addresses this problem by properly installing sub-dependencies into the ``node_modules`` folder of the global entry point.|
