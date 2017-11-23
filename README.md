@@ -156,11 +156,6 @@ You find minimal example apps that illustrate the commands at [./examples](./exa
 
     ``binge harmony --fix`` harmonizes dependencies across all packages. Updates the ``yarn.lock`` files in the local packages and in the entry point accordingly. ``harmony --fix`` does **not** update ``package.json`` files. Fixing inconsistencies there requires explicit (manual) action.
 
-* ``touch``:
-
-    If you run it without arguments, ``touch`` refreshes or creates the ``yarn.lock`` file and installs all reachable nodes in the local package tree to the ``node_modules`` folder of the global entry point. For example, running ``binge touch`` in [./examples/bootstrap/root](./examples/bootstrap/app) refreshes  [./examples/bootstrap/yarn.lock](./examples/bootstrap/yarn.lock) and installs the dependencies of the three local packages ``module-a``, ``module-b`` and ``module-c`` into the corresponding local ``node_modules`` folders, as well as into the ``node_modules`` folder of the global entry point ``root``.
-    If provided with arguments, ``touch`` updates the provided dependencies in all local packages before updating ``yarn.lock`` and installing.
-
 * ``nuke``:
 
     Removes the ``node_modules`` folders in the local package tree.
@@ -187,7 +182,6 @@ Similarly to [Lerna](https://github.com/lerna/lerna/blob/master/doc/hoist.md), b
 This means binge moves shared dependencies up the dependency tree to avoid unnecessary duplication of code.
 To support proper hoisting, run the following Yarn commands via binge (for example: run ``binge add left-pad``):
 
-* ``add``,
 * ``list``,
 * ``outdated``,
 * ``remove``,
