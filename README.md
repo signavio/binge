@@ -154,6 +154,8 @@ You find minimal example apps that illustrate the commands at [./examples](./exa
     Warning  fbjs  0.8.14 -> module-a@0.8.14, module-b@0.8.14, module-c@^0.8.14
     ```
 
+    ``binge harmony --fix`` harmonizes dependencies across all packages. Updates the ``yarn.lock`` files in the local packages and in the entry point accordingly. ``harmony --fix`` does **not** update ``package.json`` files. Fixing inconsistencies there requires explicit (manual) action.
+
 * ``touch``:
 
     If you run it without arguments, ``touch`` refreshes or creates the ``yarn.lock`` file and installs all reachable nodes in the local package tree to the ``node_modules`` folder of the global entry point. For example, running ``binge touch`` in [./examples/bootstrap/root](./examples/bootstrap/app) refreshes  [./examples/bootstrap/yarn.lock](./examples/bootstrap/yarn.lock) and installs the dependencies of the three local packages ``module-a``, ``module-b`` and ``module-c`` into the corresponding local ``node_modules`` folders, as well as into the ``node_modules`` folder of the global entry point ``root``.
