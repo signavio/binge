@@ -144,7 +144,7 @@ function printPackageWatchStarting(node) {
 
 function printPackageWatchStarted(node) {
     if (scriptWatch(node)) {
-        log.info(`starting ${chalk.yellow(node.name)}...`)
+        log.info(`started ${chalk.yellow(node.name)}`)
     }
 }
 
