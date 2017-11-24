@@ -1,0 +1,11 @@
+{
+  "name": "app",
+  "license": "UNLICENSED",
+  "dependencies": {
+      "i-filter-stuff": "file:../i-filter-stuff",
+      "i-print-stuff": "file:../i-print-stuff"
+  },
+  "scripts": {
+      "example": "binge bootstrap && node example.js"
+  }
+}

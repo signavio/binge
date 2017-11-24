@@ -1,6 +1,6 @@
 {
   "name": "binge",
-  "version": "5.0.4",
+  "version": "5.0.7",
   "description": "Tool for managing monorepos with local packages",
   "main": "lib/index.js",
   "scripts": {
@@ -24,6 +24,7 @@
     "cross-spawn": "5.1.0",
     "fs-extra": "4.0.2",
     "invariant": "2.2.2",
+    "is-ci": "1.0.10",
     "klaw-sync": "3.0.0",
     "md5-slim": "1.0.0",
     "npm-packlist": "1.1.9",

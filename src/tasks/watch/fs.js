@@ -88,7 +88,7 @@ export const childLauncher = (() => {
         }
 
         let timeoutId
-        const wait = (ms = 2000) => {
+        const wait = ms => {
             clearTimeout(timeoutId)
             timeoutId = setTimeout(() => {
                 child.stdout.removeListener('data', wait)
@@ -96,7 +96,7 @@ export const childLauncher = (() => {
             }, ms)
         }
 
-        child.stdout.on('data', wait)
+        child.stdout.on('data', () => wait(2000))
         wait(5000)
     }
     function kill(bag) {

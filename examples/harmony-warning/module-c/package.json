@@ -1,0 +1,8 @@
+{
+  "name": "module-c",
+  "dependencies": {
+    "classnames": "2.2.5",
+    "fbjs": "^0.8.14",
+    "q": "1.5.1"
+   }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "module-b",
+  "dependencies": {
+    "react": "16.0.0",
+    "module-c": "file:../module-c"
+  }
+}

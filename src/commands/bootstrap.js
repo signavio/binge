@@ -87,7 +87,7 @@ export default function run(end) {
 
         function buildAndDeployLayer(layer, callback) {
             progressTick = progressHelper(progress, layer)
-            async.mapSeries(
+            async.map(
                 layer,
                 (node, done) => buildAndDeployNode(node, done),
                 callback

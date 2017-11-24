@@ -1,0 +1,7 @@
+{
+  "name": "root",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "app": "file:./app"
+  }
+}
