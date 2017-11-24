@@ -2,9 +2,9 @@
 binge is a version-less JavaScript package management tool for monorepos.
 
 It helps you to:
-* achieve a clear separation of concerns through modularization by enabling the quick creation and consumption of local packages,
-* avoid dependency hell by enforcing dependency version consistency across different local packages,
-* overcome the publishing overhead of traditional packages by providing version-less local packages that otherwise behave like standalone npm packages. For example, binge supports npm package semantics, which enables custom lifecycle steps like testing, building and linting.
+* achieve a clear separation of concerns through modularization by enabling the quick creation and consumption of local packages
+* avoid dependency hell by enforcing dependency version consistency across different local packages
+* overcome the publishing overhead of traditional packages by providing version-less local packages that otherwise behave like standalone npm packages. For example, binge supports npm package semantics, which enables custom lifecycle steps like testing, building and linting
 
 [//]: # (To learn more about *why exactly* you should consider using binge, read our [announcement blog post]https://tech.signavio.com/2017/package-management-binge.)
 
@@ -43,7 +43,7 @@ The ``app`` folder also is the global entry point to (the *root* of) our app.
 However, we recommend we recommend not to nest too deeply to control complexity and allow a clearer overview.
 Also, make sure there are no dependency circles between (nested) packages.
 
-Local packages have the same structure as ordinary npm packages, except that they are **not versioned**. 
+Local packages have the same structure as ordinary npm packages, except that they are **not versioned**.
 To include a reference to a local package include it in ``package.json`` as a *file reference*.
 
 The ``package.json`` in the root folder lists the other local packages as dependencies:
