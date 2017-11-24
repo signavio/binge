@@ -10,7 +10,7 @@ const LEVEL = 'info'
 let bar
 
 export const progress = (title, total) => {
-    if (!(isCI || !process.stdout.isTTY)) {
+    if (isCI || !process.stdout.isTTY) {
         info(title)
         return {
             text: () => {},
