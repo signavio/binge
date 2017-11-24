@@ -1,0 +1,19 @@
+{
+  "name": "i-provide-text",
+  "license": "UNLICENSED",
+  "main": "lib/index.js",
+  "devDependencies": {
+    "babel-cli": "6.26.0",
+    "babel-preset-env": "1.6.1",
+    "rimraf": "2.6.2"
+  },
+  "scripts": {
+    "prebuild": "rimraf lib",
+    "build": "babel src -d lib",
+    "prewatch": "rimraf lib",
+    "watch": "babel -w src -d lib --source-maps"
+  },
+  "files":[
+      "lib"
+  ]
+}
