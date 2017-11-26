@@ -1,14 +1,9 @@
 import chalk from 'chalk'
 import chokidar from 'chokidar'
-import fse from 'fs-extra'
 import invariant from 'invariant'
-import npmPacklist from 'npm-packlist'
-import path from 'path'
 
 import * as log from '../../log'
-
 import { scriptWatch } from '../../util/node'
-
 import { yarn as spawnYarn } from '../../util/spawnTool'
 
 export function watchProject(rootNode, callback) {
@@ -66,7 +61,7 @@ export const childLauncher = (() => {
         }
     }
 
-    function watchPackage(packageNode, callback) {
+    function watchPackage(packageNode) {
         invariant(packageNode.isApp === false, 'Expected an app node')
 
         const options = {
@@ -74,34 +69,21 @@ export const childLauncher = (() => {
             stdio: ['ignore', 'pipe', 'inherit'],
         }
 
-        const child = spawnYarn(
-            ['run', scriptWatch(packageNode)],
-            options,
-            () => {}
-        )
         state = {
             ...state,
             packages: {
                 ...state.packages,
-                [packageNode.name]: child,
+                [packageNode.name]: spawnYarn(
+                    ['run', scriptWatch(packageNode)],
+                    options,
+                    () => {}
+                ),
             },
         }
-
-        let timeoutId
-        const wait = ms => {
-            clearTimeout(timeoutId)
-            timeoutId = setTimeout(() => {
-                child.stdout.removeListener('data', wait)
-                callback(null)
-            }, ms)
-        }
-
-        child.stdout.on('data', () => wait(2000))
-        wait(5000)
     }
     function kill(bag) {
         Object.keys(bag || {}).forEach(name => {
-            log.info(`stopped  ${chalk.yellow(name)}`)
+            log.info(`stopped ${chalk.yellow(name)}`)
             if (bag[name].stdin) {
                 bag[name].stdin.pause()
             }
@@ -137,66 +119,3 @@ export const childLauncher = (() => {
         }
     }
 })()
-
-export function copyFile(appNode, packageNode, changePath) {
-    const srcNode = packageNode
-    const srcDirPath = packageNode.path
-    const srcFilePath = changePath
-    const destNode = appNode
-
-    invariant(
-        srcFilePath.startsWith(srcDirPath),
-        'Resource expected to be a child of srcNode'
-    )
-
-    const internalFilePath = changePath.substring(
-        srcDirPath.length,
-        srcFilePath.length
-    )
-    invariant(
-        path.isAbsolute(srcFilePath),
-        'srcFilePath expected to be absolute'
-    )
-
-    const destFilePath = path.join(
-        destNode.path,
-        'node_modules',
-        srcNode.name,
-        internalFilePath
-    )
-
-    invariant(
-        path.isAbsolute(destFilePath),
-        'destFilePath expected to be absolute'
-    )
-
-    logCopy(srcFilePath, destFilePath)
-    fse.copySync(srcFilePath, destFilePath)
-}
-
-export function packlist(node, callback) {
-    npmPacklist({ path: node.path })
-        .then(files => {
-            const absoluteFilePaths = files.map(filePath =>
-                path.join(node.path, filePath)
-            )
-            callback(null, absoluteFilePaths)
-        })
-        .catch(err => {
-            log.error(
-                'There was a problem getting the packlist of node' +
-                    node.name +
-                    '\n' +
-                    err
-            )
-            process.exit(1)
-        })
-}
-
-function logCopy(srcPath, destPath) {
-    const cwd = process.cwd()
-    srcPath = path.relative(cwd, srcPath)
-    destPath = path.relative(cwd, destPath)
-
-    log.info(`${chalk.yellow(destPath)} <- ${chalk.magenta(srcPath)}`, 'copy')
-}

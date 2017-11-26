@@ -5,8 +5,6 @@ import isCI from 'is-ci'
 // silent, error, warning, info, debug
 const LEVEL = 'info'
 
-//  isCi || !process.stdout.isTTY
-
 let bar
 
 export const progress = (title, total) => {

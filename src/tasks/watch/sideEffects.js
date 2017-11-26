@@ -1,19 +1,16 @@
 import chalk from 'chalk'
-import invariant from 'invariant'
 import * as log from '../../log'
 
 import { scriptWatch } from '../../util/node'
 
 import {
     isAppStart,
-    isFileAdd,
-    isFileCopy,
     isPackageOrphan,
     isPackageStart,
     nodeFromChangePath,
 } from './queries'
 
-import { childLauncher, copyFile, packlist } from './fs'
+import { childLauncher } from './fs'
 
 const MAX_SPAWN = 3
 
@@ -26,18 +23,6 @@ export function createPreEffects(rootNode, dispatchers) {
         } else if (isPackageStart(state, action)) {
             packageStart(state, action)
         }
-
-        // } else if (isFileAdd(state, action)) {
-        //      fileAdd(state, action)
-        // } else if (isFileCopy(state, action)) {
-        //      fileCopy(state, action)
-        // } else if (isPackageReady(state, action)) {
-        //      packageReady(state, action)
-        // } else if (isPackageWait(state, action)) {
-        //      packageWait(state, action)
-        // } else if (isPacklist(state, action)) {
-        //      packlist(state, action)
-        // }
     }
 
     function appStart(state, action) {
@@ -70,20 +55,9 @@ export function createPostEffects(rootNode, dispatchers) {
     return (prevState, nextState, action) => {
         if (isAppStart(prevState, action)) {
             appStart(prevState, action)
-        } else if (isFileAdd(prevState, action)) {
-            fileAdd(prevState, action)
-        } else if (isFileCopy(prevState, action)) {
-            fileCopy(prevState, action)
         } else if (isPackageStart(prevState, action)) {
             packageStart(prevState, action)
         }
-        // else if (isPackageReady(prevState, action)) {
-        //     packageReady(prevState, action)
-        // else if (isPackageWait(prevState, action)) {
-        //     packageWait(prevState, action)
-        // } else if (isPacklist(prevState, action)) {
-        //     packlist(prevState, action)
-        // }
     }
 
     function appStart(state, action) {
@@ -96,55 +70,18 @@ export function createPostEffects(rootNode, dispatchers) {
         }
     }
 
-    function fileAdd(state, action) {
-        const node = nodeFromChangePath(state.nodes, action.changePath)
-        packlist(node, (err, files) => {
-            invariant(!err, 'Not expecting an err')
-            dispatchers.packList(node, files)
-            process.nextTick(() => {
-                dispatchers.change(action.changePath)
-            })
-        })
-    }
-
-    function fileCopy(state, action) {
-        const appNode = state.spawnedApp
-        const packageNode = nodeFromChangePath(state.nodes, action.changePath)
-
-        copyFile(appNode, packageNode, action.changePath)
-    }
-
     function packageStart(state, action) {
         const node = nodeFromChangePath(state.nodes, action.changePath)
         printPackageWatchStarting(node)
-        childLauncher.watchPackage(node, () => {
-            packlist(node, (err, files) => {
-                invariant(!err, 'Not expecting an err')
-                dispatchers.packList(node, files)
-                process.nextTick(() => {
-                    dispatchers.packageReady()
-                    printPackageWatchStarted(node)
-                })
-            })
-        })
+        childLauncher.watchPackage(node)
     }
 }
 
 function printPackageWatchStarting(node) {
     if (scriptWatch(node)) {
-        log.info(`starting ${chalk.yellow(node.name)}...`)
+        log.info(`watching ${chalk.yellow(node.name)}`)
     } else {
-        log.info(
-            `no suitable watch script for ${chalk.yellow(
-                node.name
-            )}. Plain copy will be used.`
-        )
-    }
-}
-
-function printPackageWatchStarted(node) {
-    if (scriptWatch(node)) {
-        log.info(`started ${chalk.yellow(node.name)}`)
+        log.info(`no watch task configured for ${chalk.yellow(node.name)}`)
     }
 }
 
