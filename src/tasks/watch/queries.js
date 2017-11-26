@@ -1,5 +1,5 @@
 export function isAppStart(state, action) {
-    if (action.type !== 'CHANGE' || state.mode !== 'watching') {
+    if (action.type !== 'CHANGE') {
         return false
     }
 
@@ -7,36 +7,8 @@ export function isAppStart(state, action) {
     return node !== null && node.isApp === true && state.spawnedApp !== node
 }
 
-export function isFileAdd(state, action) {
-    if (action.type !== 'ADD' || state.mode !== 'watching') {
-        return false
-    }
-    const node = nodeFromChangePath(state.nodes, action.changePath)
-    return node !== null && state.spawnedPackages.includes(node)
-}
-
-export function isFileCopy(state, action) {
-    if (action.type !== 'CHANGE' || state.mode !== 'watching') {
-        return false
-    }
-
-    const node = nodeFromChangePath(state.nodes, action.changePath)
-    return (
-        node !== null &&
-        state.spawnedPackages.includes(node) &&
-        state.packlists.some(
-            entry =>
-                entry.node === node && entry.files.includes(action.changePath)
-        )
-    )
-}
-
-export function isPackageReady(state, action) {
-    return action.type === 'PACKAGE_READY'
-}
-
 export function isPackageOrphan(state, action) {
-    if (action.type !== 'CHANGE' || state.mode !== 'watching') {
+    if (action.type !== 'CHANGE') {
         return false
     }
 
@@ -49,11 +21,7 @@ export function isPackageOrphan(state, action) {
 }
 
 export function isPackageStart(state, action) {
-    if (
-        action.type !== 'CHANGE' ||
-        state.mode !== 'watching' ||
-        !state.spawnedApp
-    ) {
+    if (action.type !== 'CHANGE' || !state.spawnedApp) {
         return false
     }
 
@@ -63,10 +31,6 @@ export function isPackageStart(state, action) {
         state.spawnedApp.reachable.includes(node) &&
         !state.spawnedPackages.includes(node)
     )
-}
-
-export function isPacklist(state, action) {
-    return action.type === 'PACKLIST'
 }
 
 export function nodeFromChangePath(nodes, changePath) {

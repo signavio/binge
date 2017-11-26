@@ -44,7 +44,6 @@ export default rootNode => {
     watchProject(rootNode, watcher => {
         // Initial State
         state = {
-            mode: 'watching',
             spawnedApp: rootNode.isApp ? rootNode : null,
             spawnedPackages: [],
             nodes: [rootNode, ...rootNode.reachable],
@@ -69,7 +68,7 @@ export default rootNode => {
 
         onExit(() => {
             console.log()
-            log.info('Exit detected')
+            log.info('exit detected')
             watcher.close()
             childLauncher.killAll()
         })
