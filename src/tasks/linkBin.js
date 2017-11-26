@@ -104,14 +104,7 @@ function mapFromLocalPackages(nodeDestination, nodeSource) {
 
     return entries.map(([scriptName, scriptCmd]) => [
         scriptName,
-        path.resolve(
-            path.join(
-                nodeDestination.path,
-                'node_modules',
-                nodeSource.name,
-                scriptCmd
-            )
-        ),
+        path.resolve(path.join(nodeSource.path, scriptCmd)),
         path.join(nodeDestination.path, 'node_modules', '.bin'),
     ])
 }
