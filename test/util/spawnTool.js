@@ -27,9 +27,8 @@ describe('util', () => {
         if (process.platform !== 'win32') {
             it('gitSync', () => {
                 const result = gitSync(['rev-parse', '--verify', 'master'])
-                expect(
-                    typeof result === 'string' && result.length > 0
-                ).to.equal(true)
+                expect(typeof result).to.equal('string')
+                expect(result.length).to.be.greaterThan(0)
             })
         }
     })
