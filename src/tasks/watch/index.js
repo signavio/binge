@@ -4,7 +4,7 @@ import onExit from 'signal-exit'
 import * as log from '../../log'
 
 import createNextState from './nextState'
-import { childLauncher, watchProject, kill } from './fs'
+import { watchApp, watchProject, kill } from './fs'
 
 export default rootNode => {
     let state
@@ -45,7 +45,7 @@ export default rootNode => {
             state = {
                 spawnedApp: rootNode.isApp
                     ? {
-                          child: childLauncher.watchApp(rootNode),
+                          child: watchApp(rootNode),
                           node: rootNode,
                       }
                     : null,
