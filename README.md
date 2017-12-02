@@ -167,6 +167,13 @@ You find minimal example apps that illustrate the commands at [./examples](./exa
 
     ``binge nuke fileName`` removes the specified file from all local packages and the root package, analogous to ``binge copy``.
 
+* ``remove dependencyName``
+
+    Removes one or multiple specified dependencies from the current package.
+    For example, running  ``binge remove invariant`` in [./examples/bootstrap/i-filter-stuff](./examples/bootstrap/i-filter-stuff) removes the dependency ``invariant`` from [./examples/bootstrap/i-filter-stuff/package.json](./examples/bootstrap/i-filter-stuff/package.json).
+
+    ``binge remove --all dependencyName`` removes one or multiple specified dependencies from *all* packages.
+
 * ``trace targetBranch, ?outputFolder``:
 
     Compares the current branch with the target branch, transitively finding changed files.
