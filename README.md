@@ -98,11 +98,11 @@ You find minimal example apps that illustrate the commands at [./examples](./exa
     'angular' wanted 1.6.5 but no match found on the lock file
     ```
 
-*  ``copy``:
+*  ``copy <file> [newName]``:
 
-    Copies a file into each node of the local package tree.
+    Copies a file into each node of the local package tree, optionally with the newly specified file name.
     This is helpful to manage configuration file or credentials when preparing production releases.
-    For example, when creating the file ``.cred`` in [./examples/bootstrap](./examples/bootstrap), navigating to ``app`` and running ``binge copy ../.cred``, binge copies the file ``.cred`` to the following directories:
+    For example, when creating the file ``.cred`` in [./examples/bootstrap](./examples/bootstrap), navigating to ``app`` and running ``binge copy ../.cred .credentials``, binge copies the file ``.cred`` with the new name ``.credentials`` to the following directories:
     * ``i-filter-stuff``,
     * ``i-print-stuff``,
     * ``i-provide-colors``,
@@ -156,7 +156,7 @@ You find minimal example apps that illustrate the commands at [./examples](./exa
 
     ``binge harmony --fix`` harmonizes dependencies across all packages. Updates the ``yarn.lock`` files in the local packages and in the entry point accordingly. ``harmony --fix`` does **not** update ``package.json`` files. Fixing inconsistencies there requires explicit (manual) action.
 
-* ``nuke``:
+* ``nuke [target]``:
 
     Removes the ``node_modules`` folders in the local package tree.
     For example, running ``binge nuke`` in [./examples/bootstrap/app](./examples/bootstrap/app) deletes ``node_modules`` folders in the following directories:
@@ -165,20 +165,28 @@ You find minimal example apps that illustrate the commands at [./examples](./exa
     * ``i-provide-colors``,
     * ``root``.
 
-    ``binge nuke fileName`` removes the specified file from all local packages and the root package, analogous to ``binge copy``.
+    ``binge nuke target`` removes the specified file from all local packages and the root package, analogous to ``binge copy``.
 
-* ``remove dependencyName``
+* ``remove <dependencies...>``
 
     Removes one or multiple specified dependencies from the current package.
     For example, running  ``binge remove invariant`` in [./examples/bootstrap/i-filter-stuff](./examples/bootstrap/i-filter-stuff) removes the dependency ``invariant`` from [./examples/bootstrap/i-filter-stuff/package.json](./examples/bootstrap/i-filter-stuff/package.json).
 
     ``binge remove --all dependencyName`` removes one or multiple specified dependencies from *all* packages.
 
-* ``trace targetBranch, ?outputFolder``:
+* ``trace <targetBranch>``:
 
     Compares the current branch with the target branch, transitively finding changed files.
     Outputs the list of affected local packages.
     ``trace`` helps optimizing the test set your CI server runs when checking a merge request by considering the packages that changed *and* the packages that depend on changed packages.
+    If the ``outputDirectory`` argument is provided, binge adds the following three files to the specified path:
+
+    * ``karma.txt``: Lists all packages that have ``testMode`` in the ``.bingerc`` file (see below) set to ``karma``.
+    * ``mocha.txt``: Lists all packages that have ``testMode`` set to ``mocha``-
+    * ``none.txt``: Lists all packages that have ``testMode`` set to ``none`` or no test mode specified.
+
+    The contents of these files provide your CI server with more details on which tests it should run.
+
 
 * ``watch``:
 
@@ -189,6 +197,8 @@ Similarly to [Lerna](https://github.com/lerna/lerna/blob/master/doc/hoist.md), b
 This means binge moves shared dependencies up the dependency tree to avoid unnecessary duplication of code.
 To support proper hoisting, run the following Yarn commands via binge (for example: run ``binge add left-pad``):
 
+* ``add``,
+* ``cache-clean``,
 * ``list``,
 * ``outdated``,
 * ``remove``,
@@ -202,7 +212,26 @@ Hoisted Yarn Commands follow these steps:
 
 Binge pipes trailing command arguments to Yarn.
 For ``add`` and ``upgrade``, the dependency delta is applied to local packages that have a dependency intersection with the delta.
-For example ``binge add react@16.0.1`` will transitively set the React dependency to ``16.0.1`` in local packages that depend on React.    
+For example ``binge add react@16.0.1`` will transitively set the React dependency to ``16.0.1`` in local packages that depend on React.
+
+## The ``.bingerc`` configuration file
+Optionally, you can add a ``.bingerc`` configuration file to any package root directory.
+This allows you to configure the following settings:
+
+* ``isApp`` (Boolean): Specifies if the package is a full app you can run in your browser.
+* ``scriptBuild``: Overrides the default ``binge watch`` command.
+* ``scriptWatch``: Overrides the default ``yarn/npm build`` command.  
+* ``testMode`` (``none``, ``karma``or ``mocha``): Specifies the test mode to better identify CI-relevant changes (see above; ``binge trace``).
+
+A ``.bingerc`` file could look like this, for example:
+
+```JSON
+{
+    "isApp": true,
+    "testMode": "none",
+    "scriptWatch": "webpack:watch"
+}
+```
 
 ## Binge vs. Lerna
 [Lerna](https://lernajs.io/) is a popular tool for managing JavaScript repository containing multiple packages.
