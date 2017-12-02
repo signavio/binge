@@ -12,7 +12,7 @@ export function isPackageStart(state, action) {
 
 export function isAppCantStart(state, action) {
     const node = nodeFromChangePath(state.nodes, action.changePath)
-    return baseAppStart(state, action) && scriptWatch(!node)
+    return baseAppStart(state, action) && !scriptWatch(node)
 }
 
 export function isPackageCantStart(state, action) {

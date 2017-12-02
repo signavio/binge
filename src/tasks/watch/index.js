@@ -41,23 +41,25 @@ export default rootNode => {
             })
 
         log.info('watch started!')
-        if (rootNode.isApp) {
-            state = {
-                spawnedApp: rootNode.isApp
-                    ? {
-                          child: watchApp(rootNode),
-                          node: rootNode,
-                      }
-                    : null,
-                spawnedPackages: [],
-                nodes: [rootNode, ...rootNode.reachable],
-            }
+        state = {
+            spawnedApp: rootNode.isApp
+                ? {
+                      child: watchApp(rootNode),
+                      node: rootNode,
+                  }
+                : null,
+            spawnedPackages: [],
+            nodes: [rootNode, ...rootNode.reachable],
         }
 
         onExit(() => {
             console.log()
             log.info('exit detected')
             watcher.close()
+            if (state.spawnedApp) {
+                log.info(`stopped ${chalk.yellow(state.spawnedApp.node.name)}`)
+                kill(state.spawnedApp.child)
+            }
             state.spawnedPackages.forEach(({ node, child }) => {
                 log.info(`stopped ${chalk.yellow(node.name)}`)
                 kill(child)
