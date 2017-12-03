@@ -195,6 +195,10 @@ You find minimal example apps that illustrate the commands at [./examples](./exa
 
 Similarly to [Lerna](https://github.com/lerna/lerna/blob/master/doc/hoist.md), binge *hoists* dependencies.
 This means binge moves shared dependencies up the dependency tree to avoid unnecessary duplication of code.
+This process is called _hoisting_.
+The path of the ``node_modules`` folder to which the packages will be installed is called the *hoisting location*.
+To determine the hoisting location, binge starts at the current level of the directory tree and moves upwards until it finds a package root (a directory with a ``package.json`` file) that can reach all packages, including the entry point, both _physically_ and through the _dependency graph_.
+For example, in [./examples/bootstrap](./examples/bootstrap) the hoisting location of ``app`` will be the root directory, because [./examples/bootstrap/app](./examples/bootstrap/app) is only the _dependency graph_ parent of the other local packages, but not their _physical_ parent.
 To support proper hoisting, run the following Yarn commands via binge (for example: run ``binge add left-pad``):
 
 * ``add``,
