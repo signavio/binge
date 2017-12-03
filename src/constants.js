@@ -23,3 +23,11 @@ export const nodeVersion = () => {
     }
     return nodeVersionCache
 }
+
+export const GRAPH_ERROR = {
+    FS: 0,
+    PACKAGE_JSON: 1,
+    GRAPH: 2,
+    TOPOLOGY: 3,
+    RC_FILE: 4,
+}

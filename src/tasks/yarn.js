@@ -20,12 +20,10 @@ export default (yarnArgs, spawnOptions) => (node, callback) => {
     )
 
     if (!canHoist) {
+        const error = `cant hoist package '${node.name}', execute 'binge harmony' for details on the problem`
         callback(
-            makeError(
-                node,
-                'Not possible to hoist node!',
-                `Execute 'binge harmony' for details on the problem`
-            ),
+            error,
+
             {
                 resultDelta: emptyDelta,
                 lockTouch: false,
@@ -128,13 +126,4 @@ function readYarnLock(node) {
     } catch (e) {
         return null
     }
-}
-
-function makeError(node, title, detail = '') {
-    return (
-        `${title}\n` +
-        `[Binge] Node name: ${node.name}\n` +
-        `[Binge] Node path: ${node.path}\n` +
-        (detail ? `[Binge] ${detail}` : '')
-    )
 }

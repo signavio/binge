@@ -13,10 +13,9 @@ export default function spawn(command, args, options = {}, callback) {
         callback(
             code &&
                 `spawn failed\n` +
-                    `[Binge] cmd -> ${command} ${args.join(' ')}\n` +
-                    (options.cwd ? `[Binge] at  -> ${options.cwd}\n` : '') +
-                    (stderr ? `[Binge] Raw error:\n` : '') +
-                    stderr
+                    `command: ${command} ${args.join(' ')}\n` +
+                    (options.cwd ? `at: ${options.cwd}` : '') +
+                    (stderr ? `, encountered error:\n${stderr}` : '')
         )
     })
 

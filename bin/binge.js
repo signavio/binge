@@ -121,6 +121,17 @@ program
     })
 
 program
+    .command('remove <dependencies...>')
+    .option('--all', 'Removes from all packages')
+    .description(
+        'Removes the listed dependencies from a package, writes the yarn.lock file.'
+    )
+    .action((...args) => {
+        log.info(packageJson.version, 'version')
+        require('../lib/commands/remove').runCommand(...args)
+    })
+
+program
     .command('trace <targetBranch> [outputDir]')
     .description(
         'Compares the current branch with the target branch. Outputs the trace up list of affected packages.'

@@ -54,6 +54,7 @@ export function print(touchResults) {
         .sort(compare)
 
     results.forEach(({ nodeName, name, version }) => {
-        log.info(`${chalk.yellow(nodeName)} -> ` + `${name}@${version}`)
+        const text = version ? `${name}@${version}` : `${name} removed`
+        log.info(`${chalk.yellow(nodeName)} -> ${text}`)
     })
 }
