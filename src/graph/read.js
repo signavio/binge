@@ -5,6 +5,8 @@ import path from 'path'
 
 import readRCFile from '../util/readRCFile'
 
+import { GRAPH_ERROR } from '../constants'
+
 /*
  * Do not call directly. Always call at least readValidation
  * that function validates the graph, and performs a cycle check
@@ -106,12 +108,13 @@ export default function readGraph(rootPath, callback) {
             if (wrongNames.length) {
                 callback(
                     makeError(
-                        'Referencing packages with names that do not the real name',
+                        GRAPH_ERROR.GRAPH,
+                        'referencing packages with names that do not match the real name',
                         node.path,
                         wrongNames
                             .map(
                                 ([name, realName, nodePath]) =>
-                                    `Used '${name}' to reference local-package at ${nodePath}, however its real name is '${realName}'`
+                                    `used '${name}' to reference package located at ${nodePath}, however its real name is '${realName}'`
                             )
                             .join('\n')
                     )
@@ -145,7 +148,14 @@ function readPackageJson(pkgPath, callback) {
 
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
-            callback(makeError('Error reading package.json', pkgPath, err))
+            callback(
+                makeError(
+                    GRAPH_ERROR.FS,
+                    'error reading package.json',
+                    pkgPath,
+                    err
+                )
+            )
             return
         }
 
@@ -162,17 +172,24 @@ function readPackageJson(pkgPath, callback) {
         }
 
         callback(
-            err ? makeError('Error parsing package.json', pkgPath, err) : null,
+            err
+                ? makeError(
+                      GRAPH_ERROR.PACKAGE_JSON,
+                      'error parsing package.json',
+                      pkgPath,
+                      err
+                  )
+                : null,
             { packageJson, packageJsonData }
         )
     })
 }
 
-function makeError(title, path, rawError) {
-    return (
-        `${title}\n` +
-        `[Binge] at -> ${path}\n` +
-        `[Binge] raw error:\n` +
-        String(rawError)
-    )
+function makeError(type, title, path, rawError) {
+    return {
+        type,
+        title,
+        path,
+        rawError: String(rawError),
+    }
 }

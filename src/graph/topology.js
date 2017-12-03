@@ -29,7 +29,6 @@ export default function(startNode) {
             return {
                 error: `The local-package graph contanis cycles`,
                 layers: null,
-                allNodes: null,
             }
         }
         layers = [loosen(), ...layers]

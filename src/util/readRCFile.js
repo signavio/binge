@@ -1,5 +1,6 @@
 import path from 'path'
 import fs from 'fs'
+import { GRAPH_ERROR } from '../constants'
 
 export default function(pkgPath, callback) {
     const filePath = path.join(pkgPath, '.bingerc')
@@ -19,7 +20,14 @@ export default function(pkgPath, callback) {
             error = e
         }
         if (error) {
-            callback(makeError('.bingerc not valid JSON', pkgPath, error))
+            callback(
+                makeError(
+                    GRAPH_ERROR.RC_FILE,
+                    '.bingerc not valid JSON',
+                    pkgPath,
+                    error
+                )
+            )
             return
         }
 
@@ -27,6 +35,7 @@ export default function(pkgPath, callback) {
         if (keys.length) {
             callback(
                 makeError(
+                    GRAPH_ERROR.RC_FILE,
                     '.bingerc has invalid keys',
                     pkgPath,
                     `Invalid keys: ${keys.join(', ')}`
@@ -40,9 +49,7 @@ export default function(pkgPath, callback) {
 
 function invalidKeys(result) {
     const VALID_KEYS = [
-        'hoistingPath',
         'isApp',
-        'isDummy',
         'scriptBuild',
         'scriptWatch',
         'testMode',
@@ -50,12 +57,7 @@ function invalidKeys(result) {
     ]
 
     const VALIDATORS = {
-        hoistingPath: () =>
-            typeof result.hoistingPath === 'undefined' ||
-            (typeof result.hoistingPath === 'string' &&
-                fs.existsSync(result.hoistingPath)),
         isApp: () => ['boolean', 'undefined'].includes(typeof result.isApp),
-        isDummy: () => ['boolean', 'undefined'].includes(typeof result.isDummy),
         testMode: () =>
             ['karma', 'mocha', 'none', undefined].includes(result.testMode),
         scriptBuild: () =>
@@ -73,7 +75,6 @@ function invalidKeys(result) {
 
 function applyDefaults(result = {}) {
     return {
-        isDummy: false,
         isApp: false,
         testMode: 'none',
         scriptWatch: null,
@@ -83,11 +84,11 @@ function applyDefaults(result = {}) {
     }
 }
 
-function makeError(title, path, rawError) {
-    return (
-        `${title}\n` +
-        `[Binge] at -> ${path}\n` +
-        `[Binge] raw error:\n` +
-        String(rawError)
-    )
+function makeError(type, title, path, rawError) {
+    return {
+        type,
+        title,
+        path,
+        rawError: String(rawError),
+    }
 }
