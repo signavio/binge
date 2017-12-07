@@ -25,6 +25,8 @@ export function run(targetBranch, outputDir, end) {
         end(folderError)
     }
 
+    const gitBaseDir = execGit('rev-parse', '--show-toplevel')
+
     createGraph(path.resolve('.'), (err, nodes, layers) => {
         if (err) {
             end(err)
@@ -48,10 +50,10 @@ export function run(targetBranch, outputDir, end) {
             .sort(sortByLayer(layers))
 
         if (outputDir) {
-            writeResult(touchedNodes, outputDir)
+            writeResult(touchedNodes, outputDir, gitBaseDir)
         }
 
-        end(null, touchedNodes, outputDir)
+        end(null, touchedNodes, outputDir, gitBaseDir)
     })
 }
 
@@ -125,11 +127,11 @@ function sortByLayer(layers) {
     return (n1, n2) => (layerNumber(n1) > layerNumber(n2) ? 1 : -1)
 }
 
-function writeResult(result, outputDir) {
+function writeResult(result, outputDir, gitBaseDir) {
     const write = mode => {
         const content = result
             .filter(node => node.testMode === mode)
-            .map(node => node.path)
+            .map(node => path.relative(gitBaseDir, node.path))
             .join('\n')
         fse.writeFileSync(
             path.join(path.resolve(outputDir), `${mode}.txt`),
@@ -170,18 +172,18 @@ function execGit(...args) {
     return exec('git', args).trim()
 }
 
-function end(err, touchedNodes, outputDir) {
+function end(err, touchedNodes, outputDir, gitBaseDir) {
     if (err) {
         log.failure(err)
         process.exit(1)
     } else {
-        summary(touchedNodes, outputDir)
+        summary(touchedNodes, outputDir, gitBaseDir)
         log.success(`done in ${duration()}`)
         process.exit(0)
     }
 }
 
-function summary(touchedNodes, outputDir) {
+function summary(touchedNodes, outputDir, gitBaseDir) {
     log.info(
         touchedNodes.length
             ? `traced changes affecting ${touchedNodes.length} packages`
@@ -194,7 +196,11 @@ function summary(touchedNodes, outputDir) {
 
     touchedNodes
         .map(
-            node => `${chalk.yellow(pad(node.name, length + 1))} (${node.path})`
+            node =>
+                `${chalk.yellow(pad(node.name, length + 1))} ${path.relative(
+                    gitBaseDir,
+                    node.path
+                )}`
         )
-        .forEach(text => log.info(text))
+        .forEach(text => log.info(text, 'trace'))
 }
