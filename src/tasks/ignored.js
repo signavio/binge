@@ -6,7 +6,7 @@ export default function(node, callback) {
     const rawText = gitSync(['status', '--ignored', '-s'])
 
     if (!rawText) {
-        log.error(
+        log.warning(
             'git is not available globally. Will rely on less efficient raw hashes'
         )
         callback(null, null)
