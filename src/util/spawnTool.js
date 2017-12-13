@@ -56,13 +56,7 @@ export function npmSync(args, options = {}) {
         ? spawnSync(process.execPath, [findNpmPath(), ...args], options)
         : spawnSync(['npm'], args, options)
 
-    invariant(
-        child.status === 0,
-        `Npm returned with an error status:\n` +
-            `command: ${args.join(' ')}\n` +
-            `error:   ${String(child.stderr)}`
-    )
-    return child.stdout.toString().trim()
+    return child.status === 0 ? child.stdout.toString().trim() : null
 }
 
 export function isGradleRun() {
