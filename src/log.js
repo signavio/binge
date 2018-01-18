@@ -32,7 +32,11 @@ export const progress = (title, total) => {
         })
 
         return {
-            text: text => bar.tick(0, { name: text }),
+            text: text => {
+                if (process.platform === 'win32') {
+                    bar.tick(0, { name: text })
+                }
+            },
             tick: () => bar.tick(1),
             finish: () => {
                 bar.terminate()
