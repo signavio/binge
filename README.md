@@ -1,4 +1,6 @@
 # binge - version-less JavaScript package management for monorepos
+[![Build Status](https://travis-ci.org/signavio/binge.svg?branch=master)](https://travis-ci.org/signavio/binge)
+
 binge is a version-less JavaScript package management tool for monorepos.
 
 It helps you to:
