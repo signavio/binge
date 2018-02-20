@@ -1,6 +1,7 @@
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
+import invariant from 'invariant'
 
 import * as log from '../log'
 
@@ -65,10 +66,11 @@ export default function run(end) {
 
         function ignoredPaths(callback) {
             taskIgnored(nodeBase, (err, ignoredMap) => {
-                if (!err) {
+                invariant(!err, 'should never return an error')
+                if (ignoredMap) {
                     initIgnoredCache(ignoredMap)
                 }
-                callback(err)
+                callback(null)
             })
         }
 

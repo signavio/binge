@@ -13,6 +13,7 @@ import taskTouch, { print as touchInfo } from '../../tasks/touch'
 export default function runFix(dependencies, end) {
     createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) {
+            log.failure(err)
             end(err)
             return
         }

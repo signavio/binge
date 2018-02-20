@@ -16,21 +16,5 @@ describe('util', () => {
             const result = nodeSync(['--version'], {})
             expect(semver.satisfies(result, NODE_REQUIRED)).to.equal(true)
         })
-
-        it('npm', done => {
-            npm(['--version'], {}, err => {
-                expect(err).to.equal(0)
-                done()
-            })
-        })
-
-        if (process.platform !== 'win32') {
-            it('gitSync', () => {
-                const result = gitSync(['rev-parse', '--verify', 'master'])
-                expect(
-                    typeof result === 'string' && result.length > 0
-                ).to.equal(true)
-            })
-        }
     })
 })

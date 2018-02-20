@@ -46,7 +46,7 @@ export function print(touchResults) {
             ...Object.keys(appliedDelta.devDependencies).map(name => ({
                 nodeName: node.name,
                 name,
-                version: appliedDelta.dependencies[name],
+                version: appliedDelta.devDependencies[name],
                 value: `${node.name} -> ${name} (dev)`,
             })),
         ])
