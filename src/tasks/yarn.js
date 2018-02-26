@@ -1,7 +1,8 @@
 import fse from 'fs-extra'
-import path from 'path'
 import invariant from 'invariant'
 import onExit from 'signal-exit'
+import path from 'path'
+import treeKill from 'tree-kill'
 
 import { yarn as spawnYarn } from '../util/spawnTool'
 import hoisting from '../hoisting'
@@ -50,7 +51,7 @@ export default (yarnArgs, spawnOptions) => (node, callback) => {
 
     const unsubscribe = onExit(() => {
         restorePackageJson(node)
-        child.kill()
+        treeKill(child.pid)
     })
 
     const child = spawnYarn(

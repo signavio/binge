@@ -142,7 +142,7 @@ program
     })
 
 program
-    .command('watch')
+    .command('watch [rootWatchScript]')
     .description('Builds and watches the local package tree.')
     .action((...args) => {
         log.info(packageJson.version, 'version')

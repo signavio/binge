@@ -1,17 +1,18 @@
 import chalk from 'chalk'
 import onExit from 'signal-exit'
+import treeKill from 'tree-kill'
 
 import * as log from '../../log'
 
 import createNextState from './nextState'
-import { watchApp, watchProject, kill } from './fs'
+import { watchRoot, watchProject } from './fs'
 
-export default rootNode => {
+export default (rootNode, rootWatchScript, callback) => {
     let state
 
     const dispatchers = {
         change: changePath =>
-            nextTick(() => {
+            process.nextTick(() => {
                 state = dispatch(state, { type: 'CHANGE', changePath })
             }),
     }
@@ -24,14 +25,11 @@ export default rootNode => {
     const nextState = createNextState(rootNode, dispatchers)
 
     log.info('indexing...')
+    state = {
+        spawnedPackages: [],
+        nodes: [],
+    }
     watchProject(rootNode, watcher => {
-        // Initial State
-        state = {
-            spawnedApp: rootNode.isApp ? rootNode : null,
-            spawnedPackages: [],
-            nodes: [rootNode, ...rootNode.reachable],
-        }
-
         watcher
             .on('change', changePath => {
                 dispatchers.change(changePath)
@@ -42,13 +40,14 @@ export default rootNode => {
 
         log.info('watch started!')
         state = {
-            spawnedApp: rootNode.isApp
-                ? {
-                      child: watchApp(rootNode),
-                      node: rootNode,
-                  }
-                : null,
-            spawnedPackages: [],
+            spawnedPackages: [
+                rootWatchScript
+                    ? {
+                          node: rootNode,
+                          child: watchRoot(rootNode, rootWatchScript),
+                      }
+                    : null,
+            ].filter(Boolean),
             nodes: [rootNode, ...rootNode.reachable],
         }
 
@@ -56,18 +55,17 @@ export default rootNode => {
             console.log()
             log.info('exit detected')
             watcher.close()
-            if (state.spawnedApp) {
-                log.info(`stopped ${chalk.yellow(state.spawnedApp.node.name)}`)
-                kill(state.spawnedApp.child)
-            }
-            state.spawnedPackages.forEach(({ node, child }) => {
-                log.info(`stopped ${chalk.yellow(node.name)}`)
-                kill(child)
+            state.spawnedPackages.forEach(entry => {
+                log.info(
+                    `stopped ${chalk.yellow(entry.node.name)} pid ${entry.child
+                        .pid}`
+                )
+            })
+
+            state.spawnedPackages.forEach(entry => {
+                treeKill(entry.child.pid)
             })
         })
+        callback(null)
     })
-}
-
-function nextTick(fn) {
-    setTimeout(fn, 0)
 }
