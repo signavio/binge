@@ -17,17 +17,28 @@ import taskLinkPackages from '../tasks/linkPackages'
 import taskPrune from '../tasks/prune'
 import taskWatch from '../tasks/watch'
 
-export function runCommand() {
-    run(end)
+export function runCommand(watchScript) {
+    run(watchScript, end)
 }
 
-export default function run(end) {
+export default function run(rootWatchScript, end) {
     createGraph(path.resolve('.'), (err, nodes, layers, nodeBase) => {
         if (err) end(err)
 
         let progress
         let progressTick
         const [nodeEntry] = nodes
+
+        if (
+            rootWatchScript &&
+            (!nodeEntry.packageJson.scripts ||
+                !nodeEntry.packageJson.scripts[rootWatchScript])
+        ) {
+            end(
+                `'${rootWatchScript}' not found at ${nodeEntry.name}'s package.json scripts`
+            )
+        }
+
         // start from deeper layers and discard the base
         const reversedLayers = [...layers].reverse()
 
@@ -38,13 +49,9 @@ export default function run(end) {
                 done => install(done),
                 done => ignoredPaths(done),
                 done => buildAndDeploy(done),
+                done => taskWatch(nodeEntry, rootWatchScript, done),
             ],
-            err => {
-                if (err) {
-                    end(err)
-                }
-                taskWatch(nodes[0])
-            }
+            end
         )
 
         function install(callback) {

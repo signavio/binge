@@ -1,6 +1,6 @@
 import semver from 'semver'
 import { expect } from 'chai'
-import { node, nodeSync, npm, gitSync } from '../../src/util/spawnTool'
+import { node, nodeSync } from '../../src/util/spawnTool'
 
 import { NODE_REQUIRED } from '../../src/constants'
 

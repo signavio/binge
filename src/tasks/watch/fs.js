@@ -1,5 +1,6 @@
 import chokidar from 'chokidar'
 import invariant from 'invariant'
+
 import { scriptWatch } from '../../util/node'
 import { yarn as spawnYarn } from '../../util/spawnTool'
 
@@ -25,6 +26,7 @@ export function watchProject(rootNode, callback) {
         .on('ready', () => callback(watcher))
 }
 
+/*
 export function watchApp(appNode) {
     invariant(appNode.isApp === true, 'Expected an app node')
     const options = {
@@ -35,9 +37,10 @@ export function watchApp(appNode) {
     const scriptName = appNode.scriptWatch
     return spawnYarn(['run', scriptName], options, () => {})
 }
+*/
 
 export function watchPackage(packageNode) {
-    invariant(packageNode.isApp === false, 'Expected an app node')
+    invariant(packageNode.isApp === false, 'Expected a package node')
 
     const options = {
         cwd: packageNode.path,
@@ -47,16 +50,11 @@ export function watchPackage(packageNode) {
     return spawnYarn(['run', scriptWatch(packageNode)], options, () => {})
 }
 
-export function kill(child) {
-    if (child.stdin) {
-        child.stdin.pause()
-    }
-    if (child.stdout) {
-        child.stdout.pause()
+export function watchRoot(node, scriptWatch) {
+    const options = {
+        cwd: node.path,
+        stdio: ['ignore', 'inherit', 'inherit'],
     }
 
-    if (child.stderr) {
-        child.stderr.pause()
-    }
-    child.kill()
+    return spawnYarn(['run', scriptWatch], options, () => {})
 }
