@@ -25,7 +25,7 @@ export function applyIf(packageJson, dependencyDelta = {}) {
         devDependencies: collect(packageJson.devDependencies, allFromDelta),
     }
 
-    return applyResult(packageJson, appliedDelta)
+    return toResult(packageJson, appliedDelta)
 }
 
 export function apply(packageJson, dependencyDelta = {}, force) {
@@ -52,10 +52,35 @@ export function apply(packageJson, dependencyDelta = {}, force) {
         ),
     }
 
-    return applyResult(packageJson, appliedDelta)
+    return toResult(packageJson, appliedDelta)
 }
 
-function applyResult(packageJson, appliedDelta) {
+export function extract(packageJson, names) {
+    /*
+     * If we are adding a dependency, but that exact dependency version is
+     * already included in the monorepo, and thus figuring in the
+     * yarn.lock, no delta will be produced. In any case, we want to add it
+     * to the package.json at entry location.
+     */
+
+    const collect = bag =>
+        Object.keys(bag)
+            .filter(key => names.includes(key))
+            .reduce(
+                (result, key) => ({
+                    ...result,
+                    [key]: bag[key],
+                }),
+                {}
+            )
+
+    return {
+        dependencies: collect(packageJson.dependencies),
+        devDependencies: collect(packageJson.devDependencies),
+    }
+}
+
+function toResult(packageJson, appliedDelta) {
     return {
         appliedDelta,
         packageJson: isEmpty(appliedDelta)

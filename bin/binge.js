@@ -44,16 +44,6 @@ program
     })
 
 program
-    .command('check')
-    .description(
-        'Checks the local package tree for package.json and yarn.lock sync.'
-    )
-    .action((...args) => {
-        log.info(packageJson.version, 'version')
-        require('../lib/commands/check').runCommand(...args)
-    })
-
-program
     .command('copy <file> [newName]')
     .description('Copies the file into each package of the local package tree.')
     .action((...args) => {
