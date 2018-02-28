@@ -85,21 +85,6 @@ You find minimal example apps that illustrate the commands at [./examples](./exa
 
     **Note:** ``bootstrap`` also runs ``check`` (see below) and fails if ``check`` fails.
 
-* ``check``:
-
-    Checks if the [yarn-lock.json](https://yarnpkg.com/lang/en/docs/yarn-lock/) and ``package.json`` files in the local package tree are in sync.
-    Lock files ensure consistent build across machines.
-    This command helps ensure no developer forgets to push lock files changes.
-    For example, running ``binge check`` in [./examples/check-sync/app](./examples/check-sync/app) returns:
-
-    ```
-    Failure
-    Lock out of sync
-    Node name: root
-    Node path: …/binge/examples/check-sync/root
-    'angular' wanted 1.6.5 but no match found on the lock file
-    ```
-
 *  ``copy <file> [newName]``:
 
     Copies a file into each node of the local package tree, optionally with the newly specified file name.

@@ -79,6 +79,8 @@ export default (yarnArgs, spawnOptions) => (node, callback) => {
                 resultDelta,
                 lockTouch:
                     !error && !errorRestore && lockDataPrev !== lockDataNext,
+                packageJsonHoistedPrev,
+                packageJsonHoistedNext,
             })
         }
     )
