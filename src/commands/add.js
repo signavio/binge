@@ -4,6 +4,7 @@ import path from 'path'
 
 import duration from '../duration'
 import * as log from '../log'
+import packageName from '../util/packageName'
 import { extract as extractDelta } from '../util/dependencyDelta'
 import { withBase as createGraph } from '../graph/create'
 import createTaskYarn from '../tasks/yarn'
@@ -33,7 +34,7 @@ export default function run(packages, options, end) {
             cwd: nodeBase.path,
         })
 
-        const packageNames = packages.map(pkg => pkg.split('@')[0])
+        const packageNames = packages.map(packageName)
 
         /*
          * We could use the result DependencyDelta for the toucn input, however
