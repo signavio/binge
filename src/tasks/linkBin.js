@@ -22,7 +22,6 @@ function link([scriptName, scriptPath, binPath], callback) {
     } else {
         async.series(
             [
-                done => fse.remove(binPath, done),
                 done => fse.ensureDir(binPath, done),
                 done => fse.ensureSymlink(scriptPath, binLinkPath, done),
                 done => fse.chmod(binLinkPath, '755', done),

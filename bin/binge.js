@@ -123,6 +123,7 @@ program
 
 program
     .command('trace <targetBranch> [outputDir]')
+    .option('--all', 'Tag all as modified, output the whole graph.')
     .description(
         'Compares the current branch with the target branch. Outputs the trace up list of affected packages.'
     )
