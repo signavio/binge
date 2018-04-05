@@ -4,20 +4,17 @@ import path from 'path'
 import invariant from 'invariant'
 import * as packlistCache from '../util/packlistCache'
 
-export default function(node, callback) {
-    async.map(
-        node.reachable.filter(node => !node.isApp),
-        (childNode, done) => packNode(node, childNode, done),
-        callback
-    )
-}
-
-function packNode(node, childNode, callback) {
-    const srcPath = childNode.path
-    const destPath = path.join(node.path, 'node_modules', childNode.name)
-    packlistCache.get(childNode.path, (err, files) => {
+export default function(node, nodeBase, callback) {
+    if (node.path === nodeBase.path || node.isApp) {
+        callback(null)
+        return
+    }
+    const srcPath = node.path
+    const destPath = path.join(nodeBase.path, 'node_modules', node.name)
+    fse.removeSync(destPath)
+    packlistCache.get(srcPath, (err, files) => {
         invariant(!err, 'should never return an error')
-        async.map(
+        async.mapSeries(
             files,
             (filePath, done) => {
                 fse.copy(

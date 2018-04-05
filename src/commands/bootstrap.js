@@ -14,7 +14,7 @@ import createInstaller from '../tasks/install'
 import taskBuild from '../tasks/build'
 import taskDeploy from '../tasks/deploy'
 import taskLinkBin from '../tasks/linkBin'
-import taskPrune from '../tasks/prune'
+import taskPrune, { pruneBase as taskPruneBase } from '../tasks/prune'
 import taskIgnored from '../tasks/ignored'
 
 export function runCommand() {
@@ -50,13 +50,21 @@ export default function run(end) {
                 }
             )
 
-            taskInstall(nodeBase, (err, { upToDate, ...rest }) => {
-                if (upToDate) {
-                    log.info(`yarn install up to date`)
-                }
+            async.series(
+                [
+                    done => taskPruneBase(nodeBase, done),
+                    done => taskInstall(nodeBase, done),
+                ],
+                (err, result) => {
+                    const { upToDate, ...rest } = !err ? result[1] : {}
 
-                callback(err, { upToDate, ...rest })
-            })
+                    if (upToDate) {
+                        log.info(`yarn install up to date`)
+                    }
+
+                    callback(err, { upToDate, ...rest })
+                }
+            )
         }
 
         function ignoredPaths(callback) {
@@ -100,14 +108,14 @@ export default function run(end) {
             async.series(
                 [
                     done => taskPrune(node, nodeBase, done),
-                    done => taskDeploy(node, done),
                     done => taskLinkBin(node, nodeBase, done),
                     done => taskBuild(node, nodeBase, nodeEntry, done),
+                    done => taskDeploy(node, nodeBase, done),
                 ],
                 (err, results) => {
                     progressTick(node.name)
                     // pass the build results
-                    callback(err, !err && results[3])
+                    callback(err, !err && results[2])
                 }
             )
         }

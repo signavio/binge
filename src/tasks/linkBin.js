@@ -34,45 +34,35 @@ function link([scriptName, scriptPath, binPath], callback) {
 function readEntries(node, nodeBase, callback) {
     invariant(typeof callback === 'function', 'Expected a function')
 
-    if (node.path !== nodeBase.path) {
-        async.series(
-            [
-                done => readFromDependencies(node, nodeBase, done),
-                done => readFromLocalPackages(node, done),
-            ],
-            (err, result) => {
-                callback(err, !err && flatten(result))
-            }
-        )
-    } else {
-        readFromLocalPackages(node, callback)
-    }
-}
+    // if it is the base only need to link the local packages, the rest
+    // is linked by yarn
+    const read = node.path === nodeBase.path ? readEmpty : readPackageJsons
 
-function readFromDependencies(node, nodeBase, callback) {
-    readPackageJsons(node, nodeBase, (err, packageJsons) => {
+    read(node, nodeBase, (err, fromDependencies) => {
         invariant(!err, 'Should never have error result')
-        const entries = packageJsons.map(packageJson =>
-            mapFromDependencies(node, packageJson, nodeBase.path)
+
+        const fromLocalPackages = node.reachable
+            .filter(node => !node.isApp)
+            .map(node => node.packageJson)
+
+        const packageJsons = [...fromDependencies, ...fromLocalPackages]
+        const allEntries = packageJsons.map(packageJson =>
+            resolveLinks(node, nodeBase, packageJson)
         )
 
-        callback(null, flatten(entries))
+        callback(null, flatten(allEntries))
     })
 }
 
-function readFromLocalPackages(node, callback) {
-    const entries = node.reachable
-        .filter(node => !node.isApp)
-        .map(childNode => mapFromLocalPackages(node, childNode))
-
-    callback(null, flatten(entries))
+function readEmpty(node, nodeBase, callback) {
+    process.nextTick(() => callback(null, []))
 }
 
 /*
  * Produces:
  * [ scriptName, scriptPath, binPath ]
  */
-function mapFromDependencies(node, packageJson, basePath) {
+function resolveLinks(node, nodeBase, packageJson) {
     const entries =
         typeof packageJson.bin === 'string'
             ? [[packageJson.name, packageJson.name, packageJson.bin]]
@@ -84,36 +74,10 @@ function mapFromDependencies(node, packageJson, basePath) {
 
     return entries.map(([pkgName, scriptName, scriptCmd]) => [
         scriptName,
-        path.resolve(path.join(basePath, 'node_modules', pkgName, scriptCmd)),
-        path.join(node.path, 'node_modules', '.bin'),
-    ])
-}
-
-/*
- * Produces:
- * [ scriptName, scriptPath, binPath ]
- */
-function mapFromLocalPackages(nodeDestination, nodeSource) {
-    const entries =
-        typeof nodeSource.packageJson.bin === 'string'
-            ? [[nodeSource.name, nodeSource.packageJson.bin]]
-            : Object.keys(nodeSource.packageJson.bin || {}).map(scriptName => [
-                  scriptName,
-                  nodeSource.packageJson.bin[scriptName],
-              ])
-
-    return entries.map(([scriptName, scriptCmd]) => [
-        scriptName,
         path.resolve(
-            path.join(
-                nodeDestination.path,
-                'node_modules',
-                nodeSource.name,
-                scriptCmd
-            )
+            path.join(nodeBase.path, 'node_modules', pkgName, scriptCmd)
         ),
-        // path.resolve(path.join(nodeSource.path, scriptCmd)),
-        path.join(nodeDestination.path, 'node_modules', '.bin'),
+        path.join(node.path, 'node_modules', '.bin'),
     ])
 }
 

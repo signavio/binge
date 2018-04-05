@@ -1,6 +1,6 @@
 {
   "name": "binge",
-  "version": "5.2.2",
+  "version": "5.2.1",
   "description": "Tool for managing monorepos with local packages",
   "main": "lib/index.js",
   "scripts": {
@@ -9,8 +9,10 @@
     "dev": "yarn run clean && babel -w src -d lib",
     "lint": "eslint '{bin/**/*.js,src/**/*.js,test/**/*.js}'",
     "test": "mocha",
-    "prettier": "prettier --write --tab-width 4 --no-semi --single-quote --trailing-comma es5 '{bin/**/*.js,src/**/*.js,test/**/*.js}'",
-    "prettier:check": "prettier --list-different --tab-width 4 --no-semi --single-quote --trailing-comma es5 '{bin/**/*.js,src/**/*.js,test/**/*.js}'"
+    "prettier":
+      "prettier --write --tab-width 4 --no-semi --single-quote --trailing-comma es5 '{bin/**/*.js,src/**/*.js,test/**/*.js}'",
+    "prettier:check":
+      "prettier --list-different --tab-width 4 --no-semi --single-quote --trailing-comma es5 '{bin/**/*.js,src/**/*.js,test/**/*.js}'"
   },
   "author": "Cristovao Honorato",
   "repository": "https://github.com/CristovaoHonorato/binge",

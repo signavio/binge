@@ -1,52 +1,52 @@
-import invariant from "invariant";
-import chalk from "chalk";
-import path from "path";
-import fse from "fs-extra";
-import pad from "pad";
-import { spawnSync } from "child_process";
+import invariant from 'invariant'
+import chalk from 'chalk'
+import path from 'path'
+import fse from 'fs-extra'
+import pad from 'pad'
+import { spawnSync } from 'child_process'
 
-import * as log from "../log";
-import duration from "../duration";
+import * as log from '../log'
+import duration from '../duration'
 
-import createGraph from "../graph/create";
+import createGraph from '../graph/create'
 
 export function runCommand(targetBranch, outputDir, options) {
-    return run(targetBranch, outputDir, options, end);
+    return run(targetBranch, outputDir, options, end)
 }
 
 export function run(targetBranch, outputDir, options, end) {
-    const branchError = !options.all && checkTargetBranch(targetBranch);
+    const branchError = !options.all && checkTargetBranch(targetBranch)
     if (branchError) {
-        end(branchError);
+        end(branchError)
     }
 
-    const folderError = checkOutputFolder(outputDir);
+    const folderError = checkOutputFolder(outputDir)
     if (folderError) {
-        end(folderError);
+        end(folderError)
     }
 
-    const gitBaseDir = execGit("rev-parse", "--show-toplevel");
+    const gitBaseDir = execGit('rev-parse', '--show-toplevel')
 
-    createGraph(path.resolve("."), (err, nodes, layers) => {
+    createGraph(path.resolve('.'), (err, nodes, layers) => {
         if (err) {
-            end(err);
+            end(err)
         }
 
         const touchedNodes = options.all
             ? allNodes(nodes, layers)
-            : tracedNodes(nodes, layers, targetBranch);
+            : tracedNodes(nodes, layers, targetBranch)
 
         if (outputDir) {
-            writeResult(touchedNodes, outputDir, gitBaseDir);
+            writeResult(touchedNodes, outputDir, gitBaseDir)
         }
 
-        end(null, touchedNodes, outputDir, gitBaseDir, options);
-    });
+        end(null, touchedNodes, outputDir, gitBaseDir, options)
+    })
 }
 
 function allNodes(nodes, layers) {
-    const [entryNode] = nodes;
-    return [entryNode, ...entryNode.reachable].sort(sortByLayer(layers));
+    const [entryNode] = nodes
+    return [entryNode, ...entryNode.reachable].sort(sortByLayer(layers))
 }
 
 function tracedNodes(nodes, layers, targetBranch) {
@@ -60,31 +60,31 @@ function tracedNodes(nodes, layers, targetBranch) {
                 (result, node) => [
                     ...result,
                     node,
-                    ...nodeTraceUp(nodes, node)
+                    ...nodeTraceUp(nodes, node),
                 ],
                 []
             )
             // uniq
             .filter((entry, i, collection) => collection.indexOf(entry) === i)
             .sort(sortByLayer(layers))
-    );
+    )
 }
 
 function changedFilePaths(targetBranch) {
     // git always outputs a new
-    const comparisonBase = execGit("merge-base", "HEAD", targetBranch);
-    const gitBasePath = execGit("rev-parse", "--show-toplevel");
+    const comparisonBase = execGit('merge-base', 'HEAD', targetBranch)
+    const gitBasePath = execGit('rev-parse', '--show-toplevel')
     const diff = execGit(
-        "diff",
-        "-z",
-        "--name-only",
-        "--diff-filter=ACMRTUB",
+        'diff',
+        '-z',
+        '--name-only',
+        '--diff-filter=ACMRTUB',
         comparisonBase
-    );
+    )
 
     return ((diff && diff.match(/[^\0]+/g)) || []).map(filePath =>
         path.join(gitBasePath, filePath)
-    );
+    )
 }
 
 function nodeFromPath(nodes, filePath) {
@@ -94,50 +94,50 @@ function nodeFromPath(nodes, filePath) {
         [...nodes]
             .sort(sortByPath)
             .find(node => filePath.startsWith(node.path)) || null
-    );
+    )
 }
 
 function nodeTraceUp(nodes, targetNode) {
-    return nodes.filter(node => node.reachable.includes(targetNode));
+    return nodes.filter(node => node.reachable.includes(targetNode))
 }
 
 function checkTargetBranch(targetBranch) {
-    if (typeof targetBranch !== "string" || !targetBranch) {
-        return `Expected the first argument to be a branch name`;
+    if (typeof targetBranch !== 'string' || !targetBranch) {
+        return `Expected the first argument to be a branch name`
     }
 
-    const result = spawnSync("git", ["rev-parse", "--verify", targetBranch], {
-        stdio: "pipe"
-    });
+    const result = spawnSync('git', ['rev-parse', '--verify', targetBranch], {
+        stdio: 'pipe',
+    })
 
     if (result.status) {
-        return `Branch ${targetBranch} doesn't exist`;
+        return `Branch ${targetBranch} doesn't exist`
     }
 
-    return null;
+    return null
 }
 
 function checkOutputFolder(outputDir) {
-    if (typeof outputDir !== "string" || !outputDir) {
-        return null;
+    if (typeof outputDir !== 'string' || !outputDir) {
+        return null
     }
 
     return folderExists(outputDir)
         ? null
-        : `${outputDir} doesn't exist or not a directory`;
+        : `${outputDir} doesn't exist or not a directory`
 }
 
 function sortByPath({ path: p1 }, { path: p2 }) {
-    if (p1.length > p2.length) return -1;
-    if (p1.length < p2.length) return 1;
-    return 0;
+    if (p1.length > p2.length) return -1
+    if (p1.length < p2.length) return 1
+    return 0
 }
 
 function sortByLayer(layers) {
     const layerNumber = node =>
-        layers.indexOf(layers.find(layer => layer.includes(node)));
+        layers.indexOf(layers.find(layer => layer.includes(node)))
 
-    return (n1, n2) => (layerNumber(n1) > layerNumber(n2) ? 1 : -1);
+    return (n1, n2) => (layerNumber(n1) > layerNumber(n2) ? 1 : -1)
 }
 
 function writeResult(result, outputDir, gitBaseDir) {
@@ -145,71 +145,71 @@ function writeResult(result, outputDir, gitBaseDir) {
         const content = result
             .filter(node => node.testMode === mode)
             .map(node => path.relative(gitBaseDir, node.path))
-            .join("\n");
+            .join('\n')
         fse.writeFileSync(
             path.join(path.resolve(outputDir), `${mode}.txt`),
             `${content}\n`,
-            "utf8"
-        );
-    };
+            'utf8'
+        )
+    }
 
-    write("mocha");
-    write("karma");
-    write("none");
+    write('mocha')
+    write('karma')
+    write('none')
 }
 
 function folderExists(folderPath) {
-    let result;
+    let result
     try {
-        result = fse.statSync(path.resolve(folderPath));
+        result = fse.statSync(path.resolve(folderPath))
     } catch (e) {
-        result = null;
+        result = null
     }
 
-    return result && result.isDirectory();
+    return result && result.isDirectory()
 }
 
 function exec(command, args) {
-    const result = spawnSync(command, args, { stdio: "pipe" });
+    const result = spawnSync(command, args, { stdio: 'pipe' })
     invariant(
         result.status === 0,
         `The command returned with an error status:\n` +
-            `command: ${[command, ...args].join(" ")}\n` +
+            `command: ${[command, ...args].join(' ')}\n` +
             `error:   ${String(result.stderr)}`
-    );
+    )
 
-    return result.stdout.toString();
+    return result.stdout.toString()
 }
 
 function execGit(...args) {
-    return exec("git", args).trim();
+    return exec('git', args).trim()
 }
 
 function end(err, touchedNodes, outputDir, gitBaseDir, options) {
     if (err) {
-        log.failure(err);
-        process.exit(1);
+        log.failure(err)
+        process.exit(1)
     } else {
-        summary(touchedNodes, outputDir, gitBaseDir, options);
-        log.success(`done in ${duration()}`);
-        process.exit(0);
+        summary(touchedNodes, outputDir, gitBaseDir, options)
+        log.success(`done in ${duration()}`)
+        process.exit(0)
     }
 }
 
 function summary(touchedNodes, outputDir, gitBaseDir, options) {
     if (options.all) {
-        log.info(`Displaying all packages:`);
+        log.info(`Displaying all packages:`)
     } else {
         log.info(
             touchedNodes.length
                 ? `traced changes affecting ${touchedNodes.length} packages`
-                : "no changes found in the package tree"
-        );
+                : 'no changes found in the package tree'
+        )
     }
 
     const length = touchedNodes
         .map(node => node.name.length)
-        .reduce((result, next) => (next > result ? next : result), 0);
+        .reduce((result, next) => (next > result ? next : result), 0)
 
     touchedNodes
         .map(
@@ -219,5 +219,5 @@ function summary(touchedNodes, outputDir, gitBaseDir, options) {
                     node.path
                 )}`
         )
-        .forEach(text => log.info(text, "trace"));
+        .forEach(text => log.info(text, 'trace'))
 }
