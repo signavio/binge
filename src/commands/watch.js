@@ -14,7 +14,7 @@ import taskBuild from '../tasks/build'
 import taskIgnored from '../tasks/ignored'
 import taskLinkBin from '../tasks/linkBin'
 import taskLinkPackages from '../tasks/linkPackages'
-import taskPrune from '../tasks/prune'
+import taskPrune, { pruneBase as taskPruneBase } from '../tasks/prune'
 import taskWatch from '../tasks/watch'
 
 export function runCommand(watchScript) {
@@ -62,13 +62,21 @@ export default function run(rootWatchScript, end) {
                 }
             )
 
-            taskInstall(nodeBase, (err, { upToDate, ...rest }) => {
-                if (upToDate) {
-                    log.info(`yarn install up to date`)
-                }
+            async.series(
+                [
+                    done => taskPruneBase(nodeBase, done),
+                    done => taskInstall(nodeBase, done),
+                ],
+                (err, result) => {
+                    const { upToDate, ...rest } = !err ? result[1] : {}
 
-                callback(err, { upToDate, ...rest })
-            })
+                    if (upToDate) {
+                        log.info(`yarn install up to date`)
+                    }
+
+                    callback(err, { upToDate, ...rest })
+                }
+            )
         }
 
         function ignoredPaths(callback) {
@@ -112,7 +120,7 @@ export default function run(rootWatchScript, end) {
             async.series(
                 [
                     done => taskPrune(node, nodeBase, done),
-                    done => taskLinkPackages(node, done),
+                    done => taskLinkPackages(node, nodeBase, done),
                     done => taskLinkBin(node, nodeBase, done),
                     done => taskBuild(node, nodeBase, nodeEntry, done),
                 ],

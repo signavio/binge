@@ -8,7 +8,10 @@ import createNextState from './nextState'
 import { watchRoot, watchProject } from './fs'
 
 export default (rootNode, rootWatchScript, callback) => {
-    let state
+    let state = {
+        spawnedPackages: [],
+        nodes: [],
+    }
 
     const dispatchers = {
         change: changePath =>
@@ -25,10 +28,6 @@ export default (rootNode, rootWatchScript, callback) => {
     const nextState = createNextState(rootNode, dispatchers)
 
     log.info('indexing...')
-    state = {
-        spawnedPackages: [],
-        nodes: [],
-    }
     watchProject(rootNode, watcher => {
         watcher
             .on('change', changePath => {

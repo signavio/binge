@@ -110,7 +110,7 @@ export default function run(end) {
                     done => taskPrune(node, nodeBase, done),
                     done => taskLinkBin(node, nodeBase, done),
                     done => taskBuild(node, nodeBase, nodeEntry, done),
-                    done => taskDeploy(node, nodeBase, done),
+                    done => taskDeploy(node, nodeBase, nodeEntry, done),
                 ],
                 (err, results) => {
                     progressTick(node.name)
@@ -152,7 +152,7 @@ function end(err, results) {
     }
 }
 
-function summary([installResult, _, buildResults]) {
+function summary([installResult, _, buildResults] = []) {
     const bootstrapCount = buildResults.length
     const buildCount = buildResults.filter(e => e.upToDate === false).length
     const buildUpToDateCount = buildResults.filter(e => e.upToDate === true)

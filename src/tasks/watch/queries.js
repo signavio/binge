@@ -1,50 +1,14 @@
 import { scriptWatch } from '../../util/node'
 
-/*
-export function isAppStart(state, action) {
-    const node = nodeFromChangePath(state.nodes, action.changePath)
-    return baseAppStart(state, action) && scriptWatch(node)
-}
-*/
-
 export function isPackageStart(state, action) {
     const node = nodeFromChangePath(state.nodes, action.changePath)
     return basePackageStart(state, action) && scriptWatch(node)
 }
 
-/*
-export function isAppCantStart(state, action) {
-    const node = nodeFromChangePath(state.nodes, action.changePath)
-    return baseAppStart(state, action) && !scriptWatch(node)
-}
-*/
-
 export function isPackageCantStart(state, action) {
     const node = nodeFromChangePath(state.nodes, action.changePath)
     return basePackageStart(state, action) && !scriptWatch(node)
 }
-
-/*
-function baseAppStart(state, action) {
-    const node = nodeFromChangePath(state.nodes, action.changePath)
-    return (
-        node !== null &&
-        node.isApp === true &&
-        (!state.spawnedApp || state.spawnedApp.node !== node) &&
-        node.reachable.every(node => !node.isApp)
-    )
-}
-
-
-export function isPackageOrphan(state, action) {
-    const node = nodeFromChangePath(state.nodes, action.changePath)
-    return (
-        node !== null &&
-        node.isApp === false &&
-        (!state.spawnedApp || !state.spawnedApp.node.reachable.includes(node))
-    )
-}
-*/
 
 function basePackageStart(state, action) {
     const [rootNode] = state.nodes
