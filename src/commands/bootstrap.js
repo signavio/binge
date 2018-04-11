@@ -1,13 +1,11 @@
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
-import invariant from 'invariant'
 
 import duration from '../duration'
 import * as log from '../log'
 
 import { flatten } from '../util/array'
-import { init as initIgnoredCache } from '../util/ignoredCache'
 
 import { withBase as createGraph } from '../graph/create'
 import createInstaller from '../tasks/install'
@@ -15,7 +13,6 @@ import taskBuild from '../tasks/build'
 import taskDeploy from '../tasks/deploy'
 import taskLinkBin from '../tasks/linkBin'
 import taskPrune, { pruneBase as taskPruneBase } from '../tasks/prune'
-import taskIgnored from '../tasks/ignored'
 
 export function runCommand() {
     run(end)
@@ -33,14 +30,7 @@ export default function run(end) {
 
         log.info(`using hoisting base ${chalk.yellow(nodeBase.name)}`)
 
-        async.series(
-            [
-                done => install(done),
-                done => ignoredPaths(done),
-                done => buildAndDeploy(done),
-            ],
-            end
-        )
+        async.series([done => install(done), done => buildAndDeploy(done)], end)
 
         function install(callback) {
             const taskInstall = createInstaller(
@@ -65,16 +55,6 @@ export default function run(end) {
                     callback(err, { upToDate, ...rest })
                 }
             )
-        }
-
-        function ignoredPaths(callback) {
-            taskIgnored(nodeBase, (err, ignoredMap) => {
-                invariant(!err, 'should never return an error')
-                if (ignoredMap) {
-                    initIgnoredCache(ignoredMap)
-                }
-                callback(null)
-            })
         }
 
         function buildAndDeploy(callback) {
@@ -152,7 +132,7 @@ function end(err, results) {
     }
 }
 
-function summary([installResult, _, buildResults] = []) {
+function summary([installResult, buildResults] = []) {
     const bootstrapCount = buildResults.length
     const buildCount = buildResults.filter(e => e.upToDate === false).length
     const buildUpToDateCount = buildResults.filter(e => e.upToDate === true)

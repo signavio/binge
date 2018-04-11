@@ -1,17 +1,14 @@
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
-import invariant from 'invariant'
 
 import * as log from '../log'
 
 import { flatten } from '../util/array'
-import { init as initIgnoredCache } from '../util/ignoredCache'
 
 import { withBase as createGraph } from '../graph/create'
 import createInstaller from '../tasks/install'
 import taskBuild from '../tasks/build'
-import taskIgnored from '../tasks/ignored'
 import taskLinkBin from '../tasks/linkBin'
 import taskLinkPackages from '../tasks/linkPackages'
 import taskPrune, { pruneBase as taskPruneBase } from '../tasks/prune'
@@ -47,7 +44,6 @@ export default function run(rootWatchScript, end) {
         async.series(
             [
                 done => install(done),
-                done => ignoredPaths(done),
                 done => buildAndDeploy(done),
                 done => taskWatch(nodeEntry, rootWatchScript, done),
             ],
@@ -77,16 +73,6 @@ export default function run(rootWatchScript, end) {
                     callback(err, { upToDate, ...rest })
                 }
             )
-        }
-
-        function ignoredPaths(callback) {
-            taskIgnored(nodeBase, (err, ignoredMap) => {
-                invariant(!err, 'should never return an error')
-                if (ignoredMap) {
-                    initIgnoredCache(ignoredMap)
-                }
-                callback(null)
-            })
         }
 
         function buildAndDeploy(callback) {
