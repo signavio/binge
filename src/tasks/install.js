@@ -1,5 +1,7 @@
-import invariant from 'invariant'
 import async from 'async'
+import fse from 'fs-extra'
+import invariant from 'invariant'
+import path from 'path'
 import createTaskYarn from './yarn'
 
 import {
@@ -17,6 +19,12 @@ export default (yarnArgs, spawnOptions) => {
         invariant(typeof callback === 'function', 'Expected a function')
 
         const taskYarn = createTaskYarn(yarnArgs, spawnOptions)
+
+        if (!fse.existsSync(path.join(node.path, 'yarn.lock'))) {
+            // eslint-disable-next-line
+            callback(`No yarn.lock file found at ${node.path}`)
+            return
+        }
 
         async.waterfall(
             [
