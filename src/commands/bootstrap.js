@@ -28,7 +28,11 @@ export default function run(end) {
         // start from deeper layers and discard the base
         const reversedLayers = [...layers].reverse()
 
-        log.info(`using hoisting base ${chalk.yellow(nodeBase.name)}`)
+        log.info(
+            `${chalk.yellow(nodeEntry.name)} using hoisting base ${chalk.yellow(
+                nodeBase.name
+            )}`
+        )
 
         async.series([done => install(done), done => buildAndDeploy(done)], end)
 
