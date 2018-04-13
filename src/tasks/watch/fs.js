@@ -26,19 +26,6 @@ export function watchProject(rootNode, callback) {
         .on('ready', () => callback(watcher))
 }
 
-/*
-export function watchApp(appNode) {
-    invariant(appNode.isApp === true, 'Expected an app node')
-    const options = {
-        cwd: appNode.path,
-        stdio: 'inherit',
-    }
-
-    const scriptName = appNode.scriptWatch
-    return spawnYarn(['run', scriptName], options, () => {})
-}
-*/
-
 export function watchPackage(packageNode) {
     invariant(packageNode.isApp === false, 'Expected a package node')
 
@@ -50,7 +37,7 @@ export function watchPackage(packageNode) {
     return spawnYarn(['run', scriptWatch(packageNode)], options, () => {})
 }
 
-export function watchRoot(node, scriptWatch) {
+export function watchRoot(node, scriptWatch, callback) {
     const options = {
         cwd: node.path,
         stdio: ['ignore', 'inherit', 'inherit'],

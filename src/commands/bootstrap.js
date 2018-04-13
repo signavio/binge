@@ -1,21 +1,18 @@
 import async from 'async'
 import chalk from 'chalk'
 import path from 'path'
-import invariant from 'invariant'
 
 import duration from '../duration'
 import * as log from '../log'
 
 import { flatten } from '../util/array'
-import { init as initIgnoredCache } from '../util/ignoredCache'
 
 import { withBase as createGraph } from '../graph/create'
 import createInstaller from '../tasks/install'
 import taskBuild from '../tasks/build'
 import taskDeploy from '../tasks/deploy'
 import taskLinkBin from '../tasks/linkBin'
-import taskPrune from '../tasks/prune'
-import taskIgnored from '../tasks/ignored'
+import taskPrune, { pruneBase as taskPruneBase } from '../tasks/prune'
 
 export function runCommand() {
     run(end)
@@ -31,16 +28,13 @@ export default function run(end) {
         // start from deeper layers and discard the base
         const reversedLayers = [...layers].reverse()
 
-        log.info(`using hoisting base ${chalk.yellow(nodeBase.name)}`)
-
-        async.series(
-            [
-                done => install(done),
-                done => ignoredPaths(done),
-                done => buildAndDeploy(done),
-            ],
-            end
+        log.info(
+            `${chalk.yellow(nodeEntry.name)} using hoisting base ${chalk.yellow(
+                nodeBase.name
+            )}`
         )
+
+        async.series([done => install(done), done => buildAndDeploy(done)], end)
 
         function install(callback) {
             const taskInstall = createInstaller(
@@ -50,23 +44,21 @@ export default function run(end) {
                 }
             )
 
-            taskInstall(nodeBase, (err, { upToDate, ...rest }) => {
-                if (upToDate) {
-                    log.info(`yarn install up to date`)
-                }
+            async.series(
+                [
+                    done => taskPruneBase(nodeBase, done),
+                    done => taskInstall(nodeBase, done),
+                ],
+                (err, result) => {
+                    const { upToDate, ...rest } = !err ? result[1] : {}
 
-                callback(err, { upToDate, ...rest })
-            })
-        }
+                    if (upToDate) {
+                        log.info(`yarn install up to date`)
+                    }
 
-        function ignoredPaths(callback) {
-            taskIgnored(nodeBase, (err, ignoredMap) => {
-                invariant(!err, 'should never return an error')
-                if (ignoredMap) {
-                    initIgnoredCache(ignoredMap)
+                    callback(err, { upToDate, ...rest })
                 }
-                callback(null)
-            })
+            )
         }
 
         function buildAndDeploy(callback) {
@@ -100,14 +92,14 @@ export default function run(end) {
             async.series(
                 [
                     done => taskPrune(node, nodeBase, done),
-                    done => taskDeploy(node, done),
                     done => taskLinkBin(node, nodeBase, done),
                     done => taskBuild(node, nodeBase, nodeEntry, done),
+                    done => taskDeploy(node, nodeBase, nodeEntry, done),
                 ],
                 (err, results) => {
                     progressTick(node.name)
                     // pass the build results
-                    callback(err, !err && results[3])
+                    callback(err, !err && results[2])
                 }
             )
         }
@@ -144,7 +136,7 @@ function end(err, results) {
     }
 }
 
-function summary([installResult, _, buildResults]) {
+function summary([installResult, buildResults] = []) {
     const bootstrapCount = buildResults.length
     const buildCount = buildResults.filter(e => e.upToDate === false).length
     const buildUpToDateCount = buildResults.filter(e => e.upToDate === true)

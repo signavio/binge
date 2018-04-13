@@ -1,4 +1,5 @@
 import async from 'async'
+import npmPacklist from 'npm-packlist'
 import { yarn as spawnYarn } from '../util/spawnTool'
 import { scriptBuild } from '../util/node'
 import {
@@ -8,82 +9,103 @@ import {
     cleanBuild as integrityClean,
 } from '../integrity'
 
-import * as packlistCache from '../util/packlistCache'
-
 export default function(node, nodeBase, nodeEntry, callback) {
-    const unavailable = !scriptBuild(node)
-
     if (
-        unavailable ||
         node.isApp === true ||
         node.path === nodeBase.path ||
         node.path === nodeEntry.path
     ) {
-        callback(null, { skipped: unavailable ? true : null })
+        callback(null, { skipped: true })
         return
     }
+
+    const hasBuildScript = scriptBuild(node)
+
+    /*
+    if (!hasBuildScript) {
+        npmPacklist({ path: node.path }, (err, files) => {
+            node.packlist = files
+            callback(err, { skipped: true })
+        })
+        return
+    }
+    */
 
     async.waterfall(
         [
             done => integrityRead(node, done),
             // hash the current
-            ({ md5: prevMD5 }, done) => {
+            ({ md5: prevMD5, packlist }, done) => {
                 if (prevMD5) {
                     integrityHash(node, (err, { md5: nextMD5 }) => {
-                        const integrityMatch = Boolean(
+                        const upToDate = Boolean(
                             prevMD5 && nextMD5 && prevMD5 === nextMD5
                         )
-                        done(err, integrityMatch)
+                        done(err, { upToDate, packlist })
                     })
                 } else {
-                    const integrityMatch = false
-                    done(null, integrityMatch)
+                    done(null, { upToDate: false, packlist })
                 }
             },
             // If there is a mismatch, clean
-            (integrityMatch, done) => {
-                if (!integrityMatch) {
-                    packlistCache.put(node.path, null)
-                    integrityClean(node, err => done(err, integrityMatch))
+            ({ upToDate, packlist }, done) => {
+                if (!upToDate) {
+                    integrityClean(node, err =>
+                        done(err, { upToDate, packlist })
+                    )
                 } else {
-                    done(null, integrityMatch)
+                    done(null, { upToDate, packlist })
                 }
             },
             // If integrities match skip the Build. Otherwise build
-            (integrityMatch, done) => {
-                if (!integrityMatch) {
+            ({ upToDate, packlist }, done) => {
+                if (!upToDate && hasBuildScript) {
                     spawnYarn(
                         ['run', scriptBuild(node)],
                         {
                             cwd: node.path,
                         },
                         err => {
-                            done(err, { upToDate: false })
+                            done(err, { upToDate, packlist })
                         }
                     )
                 } else {
-                    done(null, { upToDate: true })
+                    done(null, { upToDate, packlist })
                 }
             },
             // Hash the local-package content
-            ({ upToDate }, done) => {
+            ({ upToDate, packlist }, done) => {
+                if (!upToDate) {
+                    npmPacklist({ path: node.path }, (err, files) => {
+                        done(err, { upToDate, packlist: files })
+                    })
+                } else {
+                    done(null, { upToDate, packlist })
+                }
+            },
+            // Hash the local-package content
+            ({ upToDate, packlist }, done) => {
                 if (!upToDate) {
                     integrityHash(node, (err, { md5, log }) =>
-                        done(err, { md5, log, upToDate })
+                        done(err, { upToDate, md5, packlist, log })
                     )
                 } else {
-                    done(null, { md5: null, log: null, upToDate })
+                    done(null, { upToDate, packlist })
                 }
             },
             // Write the final integrity
-            ({ md5, log, upToDate, ...rest }, done) => {
-                if (md5) {
-                    integrityWrite(node, { md5, log }, err =>
-                        done(err, { upToDate, ...rest })
+            ({ upToDate, md5, packlist, log }, done) => {
+                if (!upToDate) {
+                    integrityWrite(node, { md5, packlist, log }, err =>
+                        done(err, { upToDate, packlist })
                     )
                 } else {
-                    done(null, { upToDate, ...rest })
+                    done(null, { upToDate, packlist })
                 }
+            },
+            ({ upToDate, packlist }, done) => {
+                node.packlist = packlist
+                done(null, { upToDate })
             },
         ],
         callback

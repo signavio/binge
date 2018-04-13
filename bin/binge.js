@@ -123,6 +123,7 @@ program
 
 program
     .command('trace <targetBranch> [outputDir]')
+    .option('--all', 'Tag all as modified, output the whole graph.')
     .description(
         'Compares the current branch with the target branch. Outputs the trace up list of affected packages.'
     )
@@ -152,30 +153,3 @@ if (!process.argv.slice(2).length) {
 } else {
     program.parse(process.argv)
 }
-
-// const ensureRuntime = require('../lib/util/ensureRuntime').default
-
-/*
-ensureRuntime()
-var cli = meow([
-    'Usage',
-    '  $ binge [command]',
-    '',
-    'Graph Commands:',
-    '  bootstrap  install, build and deploy the local-package tree. If the',
-    '             yarn.lock files are not in sync, the command will fail.',
-    '  check      check the local-package tree for package.json and lock sync',
-    '  copy       copy a file into each of the local-package tree',
-    '  graph      print the package tree, and the layer topology',
-    '  harmony    check the local-package tree for dependency consistency',
-    '  install    install all reachable nodes in the local-package tree',
-    '  nuke       removes node_modules in the local-package tree',
-    '  trace      (targetBranch, ?outputFolder) compares the current branch with',
-    '             the target branch, transitively finding changed files. Outputs',
-    '             the list of affected local-packages.',
-    '             Example: binge trace develop',
-    '  watch      build and watch the local-package tree',
-])
-
-
-*/

@@ -1,20 +1,14 @@
-import async from 'async'
 import invariant from 'invariant'
 import fse from 'fs-extra'
 import path from 'path'
 
-export default function(node, callback) {
+export default function(node, nodeBase, callback) {
     invariant(typeof callback === 'function', 'Expected a function')
 
-    async.mapSeries(
-        node.reachable,
-        (childNode, done) =>
-            fse.ensureSymlink(
-                childNode.path,
-                path.join(node.path, 'node_modules', childNode.name),
-                'dir',
-                done
-            ),
-        callback
+    fse.ensureSymlink(
+        node.path,
+        path.join(nodeBase.path, 'node_modules', node.name),
+        'dir',
+        e => callback(e)
     )
 }

@@ -4,13 +4,10 @@ import fse from 'fs-extra'
 
 export default function(node, nodeBase, callback) {
     if (node.path === nodeBase.path) {
-        pruneBase(nodeBase, callback)
-    } else {
-        prune(node, callback)
+        callback(null)
+        return
     }
-}
 
-function prune(node, callback) {
     const dirPath = path.join(node.path, 'node_modules')
     fse.readdir(dirPath, 'utf8', (err, fileNames) => {
         const filePaths = err
@@ -19,7 +16,7 @@ function prune(node, callback) {
                   .filter(fileName => fileName !== '.cache')
                   .map(fileName => path.join(dirPath, fileName))
 
-        async.mapSeries(
+        async.map(
             filePaths,
             (filePath, done) => fse.remove(filePath, done),
             callback
@@ -27,7 +24,7 @@ function prune(node, callback) {
     })
 }
 
-function pruneBase(nodeBase, callback) {
+export function pruneBase(nodeBase, callback) {
     async.map(
         nodeBase.reachable,
         (childNode, done) => {
@@ -36,6 +33,6 @@ function pruneBase(nodeBase, callback) {
                 done
             )
         },
-        callback
+        err => callback(err)
     )
 }

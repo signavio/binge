@@ -1,6 +1,6 @@
 {
   "name": "binge",
-  "version": "5.2.2",
+  "version": "6.0.0",
   "description": "Tool for managing monorepos with local packages",
   "main": "lib/index.js",
   "scripts": {
@@ -16,13 +16,13 @@
   "repository": "https://github.com/CristovaoHonorato/binge",
   "license": "ISC",
   "dependencies": {
-    "async": "2.5.0",
+    "async": "2.6.0",
     "chalk": "2.1.0",
     "chokidar": "1.7.0",
     "cmd-shim": "2.0.2",
     "commander": "2.14.1",
     "cross-spawn": "5.1.0",
-    "fs-extra": "4.0.2",
+    "fs-extra": "5.0.0",
     "invariant": "2.2.2",
     "is-ci": "1.0.10",
     "klaw-sync": "3.0.0",
@@ -52,7 +52,6 @@
     "eslint-plugin-promise": "3.5.0",
     "eslint-plugin-standard": "3.0.1",
     "mocha": "4.0.1",
-    "prettier": "1.7.4",
     "rimraf": "2.6.2"
   }
 }

@@ -37,7 +37,7 @@ export default function run(packages, options, end) {
         const packageNames = packages.map(packageName)
 
         /*
-         * We could use the result DependencyDelta for the toucn input, however
+         * We could use the result DependencyDelta for the touch input, however
          * that does not suffice becase, if that exact dependency version is
          * already included in the monorepo, and thus figuring in the root
          * yarn.lock, no delta will be produced. In any case, we want to add it

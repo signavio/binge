@@ -10,12 +10,12 @@ import duration from '../duration'
 
 import createGraph from '../graph/create'
 
-export function runCommand(targetBranch, outputDir) {
-    return run(targetBranch, outputDir, end)
+export function runCommand(targetBranch, outputDir, options) {
+    return run(targetBranch, outputDir, options, end)
 }
 
-export function run(targetBranch, outputDir, end) {
-    const branchError = checkTargetBranch(targetBranch)
+export function run(targetBranch, outputDir, options, end) {
+    const branchError = !options.all && checkTargetBranch(targetBranch)
     if (branchError) {
         end(branchError)
     }
@@ -32,7 +32,26 @@ export function run(targetBranch, outputDir, end) {
             end(err)
         }
 
-        const touchedNodes = changedFilePaths(targetBranch)
+        const touchedNodes = options.all
+            ? allNodes(nodes, layers)
+            : tracedNodes(nodes, layers, targetBranch)
+
+        if (outputDir) {
+            writeResult(touchedNodes, outputDir, gitBaseDir)
+        }
+
+        end(null, touchedNodes, outputDir, gitBaseDir, options)
+    })
+}
+
+function allNodes(nodes, layers) {
+    const [entryNode] = nodes
+    return [entryNode, ...entryNode.reachable].sort(sortByLayer(layers))
+}
+
+function tracedNodes(nodes, layers, targetBranch) {
+    return (
+        changedFilePaths(targetBranch)
             .map(filePath => nodeFromPath(nodes, filePath))
             .filter(Boolean)
             // uniq
@@ -48,13 +67,7 @@ export function run(targetBranch, outputDir, end) {
             // uniq
             .filter((entry, i, collection) => collection.indexOf(entry) === i)
             .sort(sortByLayer(layers))
-
-        if (outputDir) {
-            writeResult(touchedNodes, outputDir, gitBaseDir)
-        }
-
-        end(null, touchedNodes, outputDir, gitBaseDir)
-    })
+    )
 }
 
 function changedFilePaths(targetBranch) {
@@ -172,23 +185,27 @@ function execGit(...args) {
     return exec('git', args).trim()
 }
 
-function end(err, touchedNodes, outputDir, gitBaseDir) {
+function end(err, touchedNodes, outputDir, gitBaseDir, options) {
     if (err) {
         log.failure(err)
         process.exit(1)
     } else {
-        summary(touchedNodes, outputDir, gitBaseDir)
+        summary(touchedNodes, outputDir, gitBaseDir, options)
         log.success(`done in ${duration()}`)
         process.exit(0)
     }
 }
 
-function summary(touchedNodes, outputDir, gitBaseDir) {
-    log.info(
-        touchedNodes.length
-            ? `traced changes affecting ${touchedNodes.length} packages`
-            : 'no changes found in the package tree'
-    )
+function summary(touchedNodes, outputDir, gitBaseDir, options) {
+    if (options.all) {
+        log.info(`Displaying all packages:`)
+    } else {
+        log.info(
+            touchedNodes.length
+                ? `traced changes affecting ${touchedNodes.length} packages`
+                : 'no changes found in the package tree'
+        )
+    }
 
     const length = touchedNodes
         .map(node => node.name.length)
