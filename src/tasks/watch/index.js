@@ -55,6 +55,8 @@ function shutdown(watcher, state) {
         log.info(
             `stopped ${chalk.yellow(entry.node.name)} pid ${entry.child.pid}`
         )
+    })
+    state.spawnedPackages.forEach(entry => {
         treeKill(entry.child.pid)
         entry.child.kill()
     })
@@ -79,9 +81,9 @@ function handleFileChange(state, changePath) {
         const node = nodeFromChangePath(state.nodes, changePath)
         if (node.scriptWatch) {
             log.warning(
-                `The configured scriptWatch '${node.scriptWatch}' not found in ${chalk.yellow(
-                    node.name
-                )}'s package.json`
+                `The configured scriptWatch '${
+                    node.scriptWatch
+                }' not found in ${chalk.yellow(node.name)}'s package.json`
             )
         }
     }
