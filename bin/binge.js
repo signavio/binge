@@ -141,6 +141,15 @@ program
     })
 
 program
+    .command('run <args...>')
+    .description('Hoists the local package tree, and pipes the remaining arguments to yarn')
+    .action((...args) => {
+        log.info(packageJson.version, 'version')        
+
+        require('../lib/commands/run').runCommand(...args)
+    })
+
+program
     .command('*', null, { noHelp: true }) // null is required to avoid the implicit 'help' command being added
     .action(cmd => {
         log.info(packageJson.version, 'version')
