@@ -33,7 +33,7 @@
     "semver": "5.4.1",
     "semver-intersect": "1.1.2",
     "signal-exit": "3.0.2",
-    "tree-kill": "1.2.0"
+    "tree-kill": "1.2.2"
   },
   "bin": {
     "binge": "./bin/binge.js"
