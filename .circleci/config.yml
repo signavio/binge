@@ -26,12 +26,12 @@ jobs:
 
 workflows:
   black-duck-scan:
-    # triggers:
-    #   - schedule:
-    #       cron: "0 0 * * *"
-    #       filters:
-    #         branches:
-    #           only: master
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only: master
     jobs:
       - build-and-black-duck-scan:
           context: BlackDuck
