@@ -26,7 +26,8 @@ jobs:
           blackduck-project-path: *workspace_root
 
   fortify-translate-and-scan:
-    executor: fortify
+    docker:
+      - image: cimg/node:lts-browsers
     working_directory: *workspace_root
     steps:
       - checkout
@@ -72,5 +73,3 @@ workflows:
       - fortify-translate-and-scan:
           context:
             - fortify
-          requires:
-            - approve-fortify-scan
