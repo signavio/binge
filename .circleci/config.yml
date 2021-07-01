@@ -68,12 +68,12 @@ workflows:
       - build-and-black-duck-scan:
           context: BlackDuck
   fortify-workflow:
-    # triggers:
-    #   - schedule:
-    #       cron: "0 0 * * *"
-    #       filters:
-    #         branches:
-    #           only: master
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only: master
     jobs:
       - fortify-translate-and-scan:
           context:
