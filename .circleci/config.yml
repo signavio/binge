@@ -8,6 +8,12 @@ orbs:
 references:
   workspace_root: &workspace_root ~/repo
 
+executors:
+  fortify:
+    machine:
+      image: ubuntu-2004:202104-01
+    resource_class: 2xlarge
+
 jobs:
   build-and-black-duck-scan:
     working_directory: *workspace_root
@@ -26,8 +32,7 @@ jobs:
           blackduck-project-path: *workspace_root
 
   fortify-translate-and-scan:
-    docker:
-      - image: cimg/node:lts-browsers
+    executor: fortify
     working_directory: *workspace_root
     steps:
       - checkout
@@ -43,7 +48,6 @@ jobs:
       - run:
           name: Analyze Binge
           command: |
-            set -x
             sourceanalyzer \
               -b binge \
               -verbose \
